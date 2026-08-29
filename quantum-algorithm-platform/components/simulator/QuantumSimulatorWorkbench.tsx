@@ -8,6 +8,8 @@ import type {
   ExecutionResponse,
   ComparisonResponse,
   BlochVector,
+  QuantumProblem,
+  ProblemCheckResponse,
 } from '@/types/quantum';
 import { BACKEND_URL } from '@/config';
 import { Navbar } from './Navbar';
@@ -17,9 +19,31 @@ import { CodePanel } from './CodePanel';
 import { ResultsPanel } from './ResultsPanel';
 import { QuirkImportModal } from './QuirkImportModal';
 import { AITutorPanel } from './AITutorPanel';
+import {
+  Trophy,
+  CheckCircle2,
+  Lightbulb,
+  Search,
+  BookOpen,
+  ArrowRight,
+  Sparkles,
+  X,
+  Play,
+  RotateCcw,
+} from 'lucide-react';
 
-export function QuantumSimulatorWorkbench() {
-  const [numQubits, setNumQubits] = useState<number>(4);
+interface QuantumSimulatorWorkbenchProps {
+  activeProblem?: QuantumProblem | null;
+  onExitProblem?: () => void;
+  onProblemSolved?: (problemId: string, nextProblemId?: string | null) => void;
+}
+
+export function QuantumSimulatorWorkbench({
+  activeProblem,
+  onExitProblem,
+  onProblemSolved,
+}: QuantumSimulatorWorkbenchProps) {
+  const [numQubits, setNumQubits] = useState<number>(activeProblem ? activeProblem.num_qubits : 4);
   const [numSteps, setNumSteps] = useState<number>(6);
   const [gates, setGates] = useState<PlacedGate[]>([]);
   const [history, setHistory] = useState<PlacedGate[][]>([]);
@@ -37,8 +61,14 @@ export function QuantumSimulatorWorkbench() {
 
   const [isQuirkModalOpen, setIsQuirkModalOpen] = useState<boolean>(false);
   const [isTutorModalOpen, setIsTutorModalOpen] = useState<boolean>(false);
+  const [tutorInitialMode, setTutorInitialMode] = useState<'default' | 'hint' | 'review' | 'concept'>('default');
 
   const [selectedBackend, setSelectedBackend] = useState<string>('qiskit_aer');
+
+  // Solution Checking State
+  const [isCheckingSolution, setIsCheckingSolution] = useState<boolean>(false);
+  const [checkResult, setCheckResult] = useState<ProblemCheckResponse | null>(null);
+  const [isCheckModalOpen, setIsCheckModalOpen] = useState<boolean>(false);
 
   const checkHealth = useCallback(async () => {
     try {
@@ -122,7 +152,7 @@ export function QuantumSimulatorWorkbench() {
             circuit: activeIR,
             tolerance: 0.0001,
             shots: 1024,
-            backends: ['qiskit_aer', 'pennylane', 'qsim', 'qbraid'],
+            backends: ['qiskit_aer', 'pennylane', 'qsim', 'cirq', 'qbraid'],
           }),
         });
 
@@ -152,7 +182,7 @@ export function QuantumSimulatorWorkbench() {
 
   const applyCircuitIR = useCallback(
     (ir: CircuitIR, autoRun = false) => {
-      const newNumQubits = Math.max(2, Math.min(5, ir.num_qubits));
+      const newNumQubits = Math.max(1, Math.min(5, ir.num_qubits));
       setNumQubits(newNumQubits);
 
       const placed: PlacedGate[] = [];
@@ -217,18 +247,23 @@ export function QuantumSimulatorWorkbench() {
     [gates, handleRunSimulation]
   );
 
+  // Initialize or rehydrate on activeProblem change
   useEffect(() => {
-    applyCircuitIR(
-      {
-        num_qubits: 4,
-        gates: [
-          { name: 'h', qubits: [0] },
-          { name: 'cx', qubits: [0, 1] },
-        ],
-      },
-      true
-    );
-  }, []);
+    if (activeProblem) {
+      applyCircuitIR(activeProblem.starter_circuit, true);
+    } else {
+      applyCircuitIR(
+        {
+          num_qubits: 4,
+          gates: [
+            { name: 'h', qubits: [0] },
+            { name: 'cx', qubits: [0, 1] },
+          ],
+        },
+        true
+      );
+    }
+  }, [activeProblem]);
 
   const handleLoadPreset = async (algorithmKey: string) => {
     setIsRunning(true);
@@ -451,12 +486,51 @@ export function QuantumSimulatorWorkbench() {
     setGates([]);
   };
 
+  // Check Solution Action
+  const handleCheckSolution = async () => {
+    if (!activeProblem) return;
+    setIsCheckingSolution(true);
+
+    try {
+      // First run simulation to get fresh metrics
+      await handleRunSimulation();
+
+      const res = await fetch(`${BACKEND_URL}/problem/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_id: activeProblem.id,
+          circuit: circuitIR,
+        }),
+      });
+
+      if (res.ok) {
+        const data: ProblemCheckResponse = await res.json();
+        setCheckResult(data);
+        setIsCheckModalOpen(true);
+
+        if (data.passed && onProblemSolved) {
+          onProblemSolved(activeProblem.id, data.next_problem_id);
+        }
+      }
+    } catch (err: any) {
+      setSimulationError('Failed to check problem solution.');
+    } finally {
+      setIsCheckingSolution(false);
+    }
+  };
+
+  const openTutorWithMode = (mode: 'default' | 'hint' | 'review' | 'concept') => {
+    setTutorInitialMode(mode);
+    setIsTutorModalOpen(true);
+  };
+
   return (
     <div className="w-full bg-[#f7f4ee] text-[#211f1b] flex flex-col font-sans selection:bg-[#c96b2c] selection:text-white min-h-screen">
       <Navbar
         onLoadPreset={handleLoadPreset}
         onOpenQuirkModal={() => setIsQuirkModalOpen(true)}
-        onOpenTutorModal={() => setIsTutorModalOpen(true)}
+        onOpenTutorModal={() => openTutorWithMode('default')}
         onRunSimulation={() => handleRunSimulation()}
         isLoading={isRunning}
         backendConnected={backendConnected}
@@ -468,6 +542,65 @@ export function QuantumSimulatorWorkbench() {
       />
 
       <div className="p-3 sm:p-4 max-w-[1750px] w-full mx-auto flex flex-col gap-4">
+        {/* Active Problem Challenge Banner (if challenge mode) */}
+        {activeProblem && (
+          <div className="p-4 rounded-xl bg-[#fffaf3] border border-[#f0d1b3] shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[#c96b2c]/15 text-[#c96b2c]">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#c96b2c] text-white">
+                    Challenge
+                  </span>
+                  <h2 className="font-bold text-sm text-[#211f1b]">{activeProblem.title}</h2>
+                  <span className="text-xs text-[#746e64]">• {activeProblem.topic}</span>
+                </div>
+                <p className="text-xs text-[#746e64] mt-0.5">{activeProblem.goal}</p>
+              </div>
+            </div>
+
+            {/* Quick Challenge Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openTutorWithMode('hint')}
+                className="px-3 py-1.5 rounded-lg bg-[#fffdf9] hover:bg-[#eee9df] border border-[#ded7cb] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Lightbulb className="w-3.5 h-3.5 text-[#c96b2c]" />
+                <span>💡 Hint</span>
+              </button>
+
+              <button
+                onClick={() => openTutorWithMode('review')}
+                className="px-3 py-1.5 rounded-lg bg-[#fffdf9] hover:bg-[#eee9df] border border-[#ded7cb] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5 text-[#4f806d]" />
+                <span>🔍 Review</span>
+              </button>
+
+              <button
+                onClick={handleCheckSolution}
+                disabled={isCheckingSolution}
+                className="px-4 py-1.5 rounded-lg bg-[#4f806d] hover:bg-[#3e6858] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isCheckingSolution ? 'Evaluating...' : 'Check Solution'}</span>
+              </button>
+
+              {onExitProblem && (
+                <button
+                  onClick={onExitProblem}
+                  className="p-1.5 rounded-lg text-[#746e64] hover:text-[#211f1b] hover:bg-[#eee9df] transition-colors cursor-pointer ml-1"
+                  title="Exit Challenge"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Top Grid: Operations | Canvas | Code */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
           <div className="lg:col-span-3">
@@ -538,7 +671,100 @@ export function QuantumSimulatorWorkbench() {
         circuitIR={circuitIR}
         isOpen={isTutorModalOpen}
         onClose={() => setIsTutorModalOpen(false)}
+        activeProblem={activeProblem}
+        initialMode={tutorInitialMode}
       />
+
+      {/* Solution Validation Evaluation Modal */}
+      {isCheckModalOpen && checkResult && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-[#211f1b]">
+            <div className="flex items-center justify-between border-b border-[#ded7cb] pb-4">
+              <div className="flex items-center gap-2.5">
+                {checkResult.passed ? (
+                  <div className="p-2 rounded-full bg-[#4f806d]/15 text-[#4f806d]">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-full bg-[#c96b2c]/15 text-[#c96b2c]">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-extrabold text-base">
+                    {checkResult.passed ? '🎉 Challenge Completed!' : 'Almost There!'}
+                  </h3>
+                  <p className="text-xs text-[#746e64]">{activeProblem?.title}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCheckModalOpen(false)}
+                className="p-1 rounded text-[#746e64] hover:text-[#211f1b] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* AI Feedback Box */}
+            <div
+              className={`p-4 rounded-xl text-xs flex flex-col gap-2 ${
+                checkResult.passed
+                  ? 'bg-[#f4f8f6] border border-[#bad8cb] text-[#211f1b]'
+                  : 'bg-[#fffaf3] border border-[#f0d1b3] text-[#211f1b]'
+              }`}
+            >
+              <strong className="text-sm">{checkResult.feedback}</strong>
+              <p className="leading-relaxed opacity-90 whitespace-pre-wrap">{checkResult.ai_explanation}</p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              {!checkResult.passed ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsCheckModalOpen(false);
+                      openTutorWithMode('hint');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-[#fffdf9] border border-[#ded7cb] hover:border-[#c96b2c] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5 text-[#c96b2c]" />
+                    <span>Ask AI for a Hint</span>
+                  </button>
+                  <button
+                    onClick={() => setIsCheckModalOpen(false)}
+                    className="px-5 py-2 rounded-lg bg-[#211f1b] hover:bg-[#38342e] text-white text-xs font-semibold cursor-pointer"
+                  >
+                    Keep Experimenting
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsCheckModalOpen(false)}
+                    className="px-4 py-2 rounded-lg bg-[#fffdf9] border border-[#ded7cb] text-xs font-semibold text-[#746e64] hover:text-[#211f1b] cursor-pointer"
+                  >
+                    Stay in Workbench
+                  </button>
+                  {onExitProblem && (
+                    <button
+                      onClick={() => {
+                        setIsCheckModalOpen(false);
+                        onExitProblem();
+                      }}
+                      className="px-5 py-2 rounded-lg bg-[#4f806d] hover:bg-[#3e6858] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <span>Next Challenge</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

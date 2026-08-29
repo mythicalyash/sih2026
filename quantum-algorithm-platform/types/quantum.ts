@@ -103,3 +103,61 @@ export interface PlacedGate {
   isControl?: boolean;
   isTarget?: boolean;
 }
+
+export interface QuantumProblem {
+  id: string;
+  title: string;
+  short_description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  topic: string;
+  xp: number;
+  num_qubits: number;
+  estimated_minutes: number;
+  starter_circuit: CircuitIR;
+  goal: string;
+  expected_behavior: string;
+  suggested_concept: string;
+  hints: string[];
+  concept_explanation: string;
+  available_gates?: string[];
+  requirements?: string[];
+  example_distribution?: Record<string, number>;
+}
+
+export interface ProblemHintResponse {
+  problem_id: string;
+  hint_level: number;
+  hint: string;
+  total_hints: number;
+}
+
+export interface ProblemReviewResponse {
+  problem_id: string;
+  status: 'clean' | 'warning' | 'error';
+  positives: string[];
+  guidance: string[];
+  qasm: string;
+}
+
+export interface ProblemExplainResponse {
+  problem_id: string;
+  title: string;
+  concept_explanation: string;
+  suggested_concept: string;
+}
+
+export interface ProblemCheckResponse {
+  problem_id: string;
+  passed: boolean;
+  feedback: string;
+  ai_explanation: string;
+  metrics: Record<string, any>;
+  next_problem_id?: string | null;
+}
+
+export interface ProblemProgressState {
+  solvedProblemIds: string[];
+  attemptedProblemIds: string[];
+  streakDays: number;
+  totalXp: number;
+}

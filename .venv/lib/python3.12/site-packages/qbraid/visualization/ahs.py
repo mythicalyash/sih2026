@@ -1,0 +1,78 @@
+# Copyright 2025 qBraid
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# pylint: disable=too-many-arguments
+
+"""
+Plot atomic register of AHS program.
+
+"""
+from typing import Optional
+
+
+def plot_atomic_register(
+    sites: list[tuple[float, float]],
+    filling: list[bool],
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    save_path: Optional[str] = None,
+    show: bool = True,
+) -> None:
+    """
+    Plots atomic register given site coordinates and filling.
+
+    Args:
+        sites (list[tuple[float, float]]): A list of tuples represents (x, y) coordinates.
+        filling (list[bool]): A list of booleans indicating the filling status at each site.
+        title (Optional[str]): The title of the plot. Defaults to "Atomic Register".
+        xlabel (Optional[str]): The label for the x-axis. Defaults to "X (meters)".
+        ylabel (Optional[str]): The label for the y-axis. Defaults to "Y (meters)".
+        save_path (Optional[str]): Path to save plot. Plot is not saved unless specified.
+        show (bool): If True, display the figure. Defaults to True.
+
+    """
+    # pylint: disable-next=import-outside-toplevel
+    import matplotlib.pyplot as plt
+
+    if not len(sites) == len(filling):
+        raise ValueError("sites and filling must be of equal length.")
+
+    xData = [x[0] for x in sites]
+    yData = [x[1] for x in sites]
+
+    plt.figure(figsize=(10, 10))
+    facecolors = ["purple" if fill else "none" for fill in filling]
+    plt.scatter(xData, yData, edgecolors="pink", facecolors=facecolors, s=100, zorder=5)
+
+    plt.scatter([], [], edgecolor="pink", label="Atom", s=100, facecolors="purple")
+    plt.scatter([], [], edgecolor="pink", label="No Atom", s=100, facecolors="none")
+
+    plt.legend(loc="upper left")
+
+    if title:
+        plt.title(title, fontsize=16)
+    if xlabel:
+        plt.xlabel(xlabel, fontsize=14)
+    if ylabel:
+        plt.ylabel(ylabel, fontsize=14)
+
+    plt.grid(False)
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path)
+
+    if show:
+        plt.show()

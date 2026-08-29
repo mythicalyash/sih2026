@@ -92,12 +92,19 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
     setDragOverCell(null);
     try {
       const raw = e.dataTransfer.getData('application/json');
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (data.source === 'palette') {
-        onDropGate(data.gate, targetQubit, targetStep, data.params);
-      } else if (data.source === 'canvas') {
-        onMoveGate(data.gateId, targetQubit, targetStep);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.source === 'palette' || data.gate) {
+          onDropGate(data.gate, targetQubit, targetStep, data.params);
+          return;
+        } else if (data.source === 'canvas') {
+          onMoveGate(data.gateId, targetQubit, targetStep);
+          return;
+        }
+      }
+      const textRaw = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+      if (textRaw) {
+        onDropGate(textRaw.toLowerCase(), targetQubit, targetStep);
       }
     } catch (err) {
       console.error('Drop error:', err);

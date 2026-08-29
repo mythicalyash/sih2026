@@ -1,0 +1,169 @@
+# Copyright 2021 The Cirq Developers
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""An implementation of AbstractJob that uses in-memory constructs
+and a provided sampler to execute circuits."""
+
+from __future__ import annotations
+
+import concurrent.futures
+from collections.abc import Sequence
+from typing import cast
+
+import duet
+
+import cirq
+from cirq_google.cloud import quantum
+from cirq_google.engine.abstract_local_job import AbstractLocalJob
+from cirq_google.engine.engine_result import EngineResult
+from cirq_google.engine.local_simulation_type import LocalSimulationType
+
+
+def _flatten_results(batch_results: Sequence[Sequence[EngineResult]]) -> list[EngineResult]:
+    if not batch_results:
+        return []
+    # Engine returns results grouped by program then by sweep.
+    # batch_results is already grouped by program then by sweep.
+    return [res for batch in batch_results for res in batch]
+
+
+def _to_engine_results(
+    batch_results: Sequence[Sequence[cirq.Result]], *, job_id: str
+) -> list[list[EngineResult]]:
+    """Convert cirq.Result from simulators into (simulated) EngineResults."""
+
+    return [
+        [EngineResult.from_result(result, job_id=job_id) for result in batch]
+        for batch in batch_results
+    ]
+
+
+class SimulatedLocalJob(AbstractLocalJob):
+    """A quantum job backed by a (local) sampler.
+
+    This class is designed to execute a local simulator using the
+    `AbstractEngine` and `AbstractJob` interface.  This class will
+    keep track of the status based on the sampler's results.
+
+    If the simulation type is SYNCHRONOUS, the sampler will be called
+    once the appropriate results method is called.  Other methods will
+    be added later.
+
+    This does not support calibration requests.
+    `
+    Attributes:
+        sampler: Sampler to call for results.
+        simulation_type:  Whether sampler execution should be
+            synchronous or asynchronous.
+    """
+
+    def __init__(
+        self,
+        *args,
+        sampler: cirq.Sampler | None = None,
+        simulation_type: LocalSimulationType = LocalSimulationType.SYNCHRONOUS,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self._sampler = sampler or cirq.Simulator()
+        self._simulation_type = simulation_type
+        self._state = quantum.ExecutionStatus.State.READY
+        self._type = simulation_type
+        self._failure_code = ''
+        self._failure_message = ''
+        if self._type == LocalSimulationType.ASYNCHRONOUS:
+            # If asynchronous mode, just kick off a new task and move on.
+            self._thread = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            try:
+                self._future = duet.AwaitableFuture.wrap(self._thread.submit(self._execute_results))
+            finally:
+                # We only expect the one future to run in this thread,
+                # So we can call shutdown immediately, which will
+                # close the thread pool once the future is complete.
+                self._thread.shutdown(wait=False)
+
+    def execution_status(self) -> quantum.ExecutionStatus.State:
+        """Return the execution status of the job."""
+        # Ignore type errors since mypy doesn't handle proto.Enum (a subclass of enum.IntEnum).
+        # See https://github.com/python/mypy/issues/6037.
+        return self._state  # type: ignore[return-value]
+
+    def failure(self) -> tuple[str, str] | None:
+        """Return failure code and message of the job if present."""
+        return (self._failure_code, self._failure_message)
+
+    def cancel(self) -> None:
+        """Cancel the job."""
+        self._state = quantum.ExecutionStatus.State.CANCELLED
+
+    def delete(self) -> None:
+        """Deletes the job and result, if any."""
+        self.program().delete_job(self.id())
+        self._state = quantum.ExecutionStatus.State.STATE_UNSPECIFIED
+
+    def _execute_results(self) -> Sequence[Sequence[EngineResult]]:
+        """Executes the circuit and sweeps on the sampler.
+
+        For synchronous execution, this is called when the results()
+        function is called.  For asynchronous execution, this function
+        is run in a thread pool that begins when the object is
+        instantiated.
+
+        Returns: a List of results from the sweep's execution.
+        """
+        reps = self._repetitions
+        sweeps = self._sweeps
+        parent = self.program()
+        try:
+            self._state = quantum.ExecutionStatus.State.RUNNING
+            programs = parent.get_circuits()
+            if len(sweeps) == 1 and len(programs) > 1:
+                sweeps = sweeps * len(programs)
+            elif len(programs) == 1 and len(sweeps) > 1:
+                programs = programs * len(sweeps)
+            batch_results = self._sampler.run_batch(
+                programs=programs, params_list=cast(list[cirq.Sweepable], sweeps), repetitions=reps
+            )
+            batch_engine_results = _to_engine_results(batch_results, job_id=self.id())
+            self._state = quantum.ExecutionStatus.State.SUCCESS
+            return batch_engine_results
+        except Exception as e:
+            self._failure_code = '500'
+            self._failure_message = str(e)
+            self._state = quantum.ExecutionStatus.State.FAILURE
+            raise e
+
+    async def results_async(self) -> Sequence[EngineResult]:
+        """Returns the job results, blocking until the job is complete."""
+        if self._type == LocalSimulationType.SYNCHRONOUS:
+            return _flatten_results(self._execute_results())
+        elif self._type == LocalSimulationType.ASYNCHRONOUS:
+            return _flatten_results(await self._future)
+        else:
+            raise ValueError(f'Unsupported simulation type {self._type}')
+
+    async def batched_results_async(self) -> Sequence[Sequence[EngineResult]]:
+        """Returns the job results split by program/circuit in the batch.
+
+        Instead of flattening results into a single list, this will return a Sequence[EngineResult]
+        for each circuit in the batch.
+        """
+        if not self.program().is_batch():
+            raise ValueError('batched_results called for a non-batch program.')
+        if self._type == LocalSimulationType.SYNCHRONOUS:
+            return self._execute_results()
+        elif self._type == LocalSimulationType.ASYNCHRONOUS:
+            return await self._future
+        else:
+            raise ValueError(f'Unsupported simulation type {self._type}')
