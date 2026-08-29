@@ -3,6 +3,8 @@ from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 
+import logging
+
 from backend.schemas import (
     CircuitIR,
     ExecutionRequest,
@@ -18,11 +20,21 @@ from backend.schemas import (
     TutorResponse,
     QuirkImportRequest,
     QuirkImportResponse,
+    CodeExecuteRequest,
+    CodeExecuteResponse,
     AlgorithmSummary,
 )
-from backend.converter import ir_to_qiskit, ir_to_qasm, ir_to_cirq
+from backend.converter import (
+    ir_to_qiskit,
+    ir_to_qasm,
+    ir_to_cirq,
+    ir_to_qiskit_code,
+    ir_to_cirq_code,
+    ir_to_pennylane_code,
+)
 from backend.engine import run_circuit, run_circuit_qiskit, get_available_backends
 from backend.comparator import compare_circuits
+from backend.code_runner import execute_python_code
 from backend.state_analyzer import (
     compute_bloch_vectors,
     statevector_to_probabilities,
@@ -31,6 +43,9 @@ from backend.state_analyzer import (
 from backend.algorithms import ALGORITHMS_REGISTRY
 from backend.quirk_importer import quirk_to_ir
 from backend.tutor import generate_circuit_explanation
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("quantum.engine")
 
 app = FastAPI(
     title="Quantum Computing Education Platform API",
@@ -66,15 +81,19 @@ def execute_circuit(req: ExecutionRequest):
     Execute a Quantum Circuit IR on a specified backend (qiskit_aer, pennylane, qsim, qbraid, cirq).
     Returns statevector amplitudes, shot counts, basis probabilities, and execution metrics.
     """
+    backend_choice = req.backend or "qiskit_aer"
+    logger.info(f"🚀 [SIMULATION START] Backend: {backend_choice} | Qubits: {req.circuit.num_qubits} | Gates: {len(req.circuit.gates)} | Shots: {req.shots}")
     try:
-        backend_choice = req.backend or "qiskit_aer"
-        return run_circuit(
+        res = run_circuit(
             circuit=req.circuit,
             backend=backend_choice,
             shots=req.shots,
             include_statevector=req.include_statevector,
         )
+        logger.info(f"✅ [SIMULATION COMPLETE] {backend_choice} executed in {res.execution_time_ms}ms | Measured {len(res.counts)} distinct states")
+        return res
     except Exception as e:
+        logger.error(f"❌ [SIMULATION ERROR] ({backend_choice}): {str(e)}")
         raise HTTPException(status_code=400, detail=f"Execution error ({req.backend}): {str(e)}")
 
 
@@ -84,14 +103,18 @@ def compare_circuit_execution(req: ComparisonRequest):
     Execute circuit across multiple quantum engines (Qiskit Aer, PennyLane, qsim, qBraid, Cirq),
     and verify mathematical equivalence and state fidelity.
     """
+    logger.info(f"🔬 [CROSS-ENGINE COMPARE] Verifying across {len(req.backends or [])} backends...")
     try:
-        return compare_circuits(
+        res = compare_circuits(
             circuit=req.circuit,
             tolerance=req.tolerance,
             shots=req.shots,
             backends=req.backends,
         )
+        logger.info(f"🎯 [CROSS-ENGINE VERIFIED] Match: {res.match} | Max Diff: {res.max_statevector_diff:.6f} | Fidelity: {res.fidelity:.6f}")
+        return res
     except Exception as e:
+        logger.error(f"❌ [COMPARE ERROR]: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Comparison error: {str(e)}")
 
 
@@ -241,4 +264,49 @@ def export_qasm_endpoint(circuit: CircuitIR):
         return {"qasm": qasm_str, "num_qubits": circuit.num_qubits}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"QASM export error: {str(e)}")
+
+
+@app.post("/export/qiskit")
+def export_qiskit_endpoint(circuit: CircuitIR):
+    """Export CircuitIR to executable Qiskit Python code."""
+    try:
+        code_str = ir_to_qiskit_code(circuit)
+        return {"code": code_str, "num_qubits": circuit.num_qubits, "language": "python"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Qiskit code generation error: {str(e)}")
+
+
+@app.post("/export/cirq")
+def export_cirq_endpoint(circuit: CircuitIR):
+    """Export CircuitIR to executable Google Cirq Python code."""
+    try:
+        code_str = ir_to_cirq_code(circuit)
+        return {"code": code_str, "num_qubits": circuit.num_qubits, "language": "python"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Cirq code generation error: {str(e)}")
+
+
+@app.post("/export/pennylane")
+def export_pennylane_endpoint(circuit: CircuitIR):
+    """Export CircuitIR to executable PennyLane Python code."""
+    try:
+        code_str = ir_to_pennylane_code(circuit)
+        return {"code": code_str, "num_qubits": circuit.num_qubits, "language": "python"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"PennyLane code generation error: {str(e)}")
+
+
+@app.post("/execute/code", response_model=CodeExecuteResponse)
+def execute_code_endpoint(req: CodeExecuteRequest):
+    """
+    Execute quantum Python code locally in the verified quantum Python virtual environment
+    with full Qiskit, Qiskit Aer, PennyLane, Cirq, and qsim support.
+    Returns stdout, stderr, execution time, and status.
+    """
+    try:
+        return execute_python_code(req)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Code execution failed: {str(e)}")
+
+
 

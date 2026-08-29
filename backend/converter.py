@@ -305,3 +305,174 @@ def ir_to_cirq(ir: CircuitIR) -> Any:
     return cirq.Circuit(ops)
 
 
+def ir_to_qiskit_code(circuit: CircuitIR) -> str:
+    """Generate clean, standalone, executable Qiskit Python code for the circuit."""
+    lines = [
+        "import numpy as np",
+        "from qiskit import QuantumCircuit",
+        "from qiskit.quantum_info import Statevector",
+        "from qiskit_aer import AerSimulator",
+        "",
+        f"# Initialize {circuit.num_qubits}-qubit Quantum Circuit",
+        f"qc = QuantumCircuit({circuit.num_qubits})",
+        "",
+    ]
+
+    for g in circuit.gates:
+        name = normalize_gate_name(g.name)
+        qs = g.qubits
+        params = g.params or []
+
+        if name in ("h", "x", "y", "z", "s", "sdg", "t", "tdg", "sx"):
+            for q in qs:
+                lines.append(f"qc.{name}({q})")
+        elif name in ("rx", "ry", "rz", "p") and len(params) > 0:
+            for q in qs:
+                lines.append(f"qc.{name}({params[0]:.6f}, {q})")
+        elif name == "cx" and len(qs) >= 2:
+            lines.append(f"qc.cx({qs[0]}, {qs[1]})")
+        elif name == "cz" and len(qs) >= 2:
+            lines.append(f"qc.cz({qs[0]}, {qs[1]})")
+        elif name == "swap" and len(qs) >= 2:
+            lines.append(f"qc.swap({qs[0]}, {qs[1]})")
+        elif name == "ccx" and len(qs) >= 3:
+            lines.append(f"qc.ccx({qs[0]}, {qs[1]}, {qs[2]})")
+        elif name == "reset":
+            for q in qs:
+                lines.append(f"qc.reset({q})")
+
+    lines.extend([
+        "",
+        "# 1. Calculate and display exact Quantum Statevector",
+        "sv = Statevector.from_instruction(qc)",
+        "print('=== Quantum Statevector ===')",
+        "for idx, amp in enumerate(sv.data):",
+        f"    bin_str = format(idx, '0{circuit.num_qubits}b')",
+        "    if abs(amp) > 1e-4:",
+        "        print(f'|{bin_str}>: {amp.real:+.4f} {amp.imag:+.4f}j  (prob: {abs(amp)**2:.4f})')",
+        "",
+        "# 2. Run shot-based simulation on Qiskit Aer",
+        "qc.measure_all()",
+        "sim = AerSimulator()",
+        "job = sim.run(qc, shots=1024)",
+        "counts = job.result().get_counts()",
+        "print('\\n=== Measurement Counts (1024 Shots) ===')",
+        "print(counts)",
+    ])
+    return "\n".join(lines)
+
+
+def ir_to_cirq_code(circuit: CircuitIR) -> str:
+    """Generate clean, standalone, executable Google Cirq Python code for the circuit."""
+    lines = [
+        "import cirq",
+        "import numpy as np",
+        "",
+        f"# Allocate {circuit.num_qubits} LineQubits",
+        f"qubits = cirq.LineQubit.range({circuit.num_qubits})",
+        "circuit = cirq.Circuit()",
+        "",
+    ]
+
+    for g in circuit.gates:
+        name = normalize_gate_name(g.name)
+        qs = g.qubits
+        params = g.params or []
+
+        if name == "h":
+            for q in qs: lines.append(f"circuit.append(cirq.H(qubits[{q}]))")
+        elif name == "x":
+            for q in qs: lines.append(f"circuit.append(cirq.X(qubits[{q}]))")
+        elif name == "y":
+            for q in qs: lines.append(f"circuit.append(cirq.Y(qubits[{q}]))")
+        elif name == "z":
+            for q in qs: lines.append(f"circuit.append(cirq.Z(qubits[{q}]))")
+        elif name == "s":
+            for q in qs: lines.append(f"circuit.append(cirq.S(qubits[{q}]))")
+        elif name == "t":
+            for q in qs: lines.append(f"circuit.append(cirq.T(qubits[{q}]))")
+        elif name == "rx" and len(params) > 0:
+            for q in qs: lines.append(f"circuit.append(cirq.rx({params[0]:.6f})(qubits[{q}]))")
+        elif name == "ry" and len(params) > 0:
+            for q in qs: lines.append(f"circuit.append(cirq.ry({params[0]:.6f})(qubits[{q}]))")
+        elif name == "rz" and len(params) > 0:
+            for q in qs: lines.append(f"circuit.append(cirq.rz({params[0]:.6f})(qubits[{q}]))")
+        elif name == "cx" and len(qs) >= 2:
+            lines.append(f"circuit.append(cirq.CNOT(qubits[{qs[0]}], qubits[{qs[1]}]))")
+        elif name == "cz" and len(qs) >= 2:
+            lines.append(f"circuit.append(cirq.CZ(qubits[{qs[0]}], qubits[{qs[1]}]))")
+        elif name == "swap" and len(qs) >= 2:
+            lines.append(f"circuit.append(cirq.SWAP(qubits[{qs[0]}], qubits[{qs[1]}]))")
+
+    lines.extend([
+        "",
+        "# Add measurements to all qubits",
+        "circuit.append(cirq.measure(*qubits, key='result'))",
+        "print('=== Cirq Circuit Diagram ===')",
+        "print(circuit)",
+        "",
+        "# Run simulation with Google Cirq Simulator",
+        "sim = cirq.Simulator()",
+        "result = sim.run(circuit, repetitions=1024)",
+        "print('\\n=== Measurement Histogram (1024 repetitions) ===')",
+        "print(result.histogram(key='result'))",
+    ])
+    return "\n".join(lines)
+
+
+def ir_to_pennylane_code(circuit: CircuitIR) -> str:
+    """Generate clean, standalone, executable Xanadu PennyLane Python code for the circuit."""
+    lines = [
+        "import pennylane as qml",
+        "import numpy as np",
+        "",
+        f"dev = qml.device('default.qubit', wires={circuit.num_qubits})",
+        "",
+        "@qml.qnode(dev)",
+        "def quantum_circuit():",
+    ]
+
+    for g in circuit.gates:
+        name = normalize_gate_name(g.name)
+        qs = g.qubits
+        params = g.params or []
+
+        if name == "h":
+            for q in qs: lines.append(f"    qml.Hadamard(wires={q})")
+        elif name == "x":
+            for q in qs: lines.append(f"    qml.PauliX(wires={q})")
+        elif name == "y":
+            for q in qs: lines.append(f"    qml.PauliY(wires={q})")
+        elif name == "z":
+            for q in qs: lines.append(f"    qml.PauliZ(wires={q})")
+        elif name == "s":
+            for q in qs: lines.append(f"    qml.S(wires={q})")
+        elif name == "t":
+            for q in qs: lines.append(f"    qml.T(wires={q})")
+        elif name == "rx" and len(params) > 0:
+            for q in qs: lines.append(f"    qml.RX({params[0]:.6f}, wires={q})")
+        elif name == "ry" and len(params) > 0:
+            for q in qs: lines.append(f"    qml.RY({params[0]:.6f}, wires={q})")
+        elif name == "rz" and len(params) > 0:
+            for q in qs: lines.append(f"    qml.RZ({params[0]:.6f}, wires={q})")
+        elif name == "cx" and len(qs) >= 2:
+            lines.append(f"    qml.CNOT(wires=[{qs[0]}, {qs[1]}])")
+        elif name == "cz" and len(qs) >= 2:
+            lines.append(f"    qml.CZ(wires=[{qs[0]}, {qs[1]}])")
+        elif name == "swap" and len(qs) >= 2:
+            lines.append(f"    qml.SWAP(wires=[{qs[0]}, {qs[1]}])")
+
+    lines.extend([
+        f"    return qml.probs(wires=range({circuit.num_qubits}))",
+        "",
+        "probs = quantum_circuit()",
+        "print('=== PennyLane Basis State Probabilities ===')",
+        "for idx, p in enumerate(probs):",
+        f"    bin_str = format(idx, '0{circuit.num_qubits}b')",
+        "    if p > 1e-4:",
+        "        print(f'|{bin_str}>: {p:.4f}')",
+    ])
+    return "\n".join(lines)
+
+
+

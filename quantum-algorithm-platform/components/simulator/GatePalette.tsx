@@ -101,39 +101,42 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
   };
 
   return (
-    <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-3 flex flex-col gap-3 shadow-sm select-none">
-      <div className="flex items-center justify-between border-b border-[#ded7cb] pb-2 px-1">
-        <span className="text-xs font-semibold text-[#211f1b] uppercase tracking-wider">Operations</span>
+    <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-2.5 flex flex-col justify-between h-full shadow-sm select-none gap-2 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[#ded7cb] pb-1.5 px-0.5 shrink-0">
+        <span className="text-[11px] font-semibold text-[#211f1b] uppercase tracking-wider">Operations</span>
         <div className="flex items-center gap-2 text-[#746e64]">
           <Search className="w-3.5 h-3.5 hover:text-[#211f1b] cursor-pointer" />
           <Sliders className="w-3.5 h-3.5 hover:text-[#211f1b] cursor-pointer" />
         </div>
       </div>
 
+      {/* Armed Gate Status */}
       {armedGate && (
-        <div className="p-2 rounded bg-[#fff5eb] border border-[#c96b2c] text-xs text-[#9a4214] flex flex-col gap-1">
+        <div className="p-1.5 rounded bg-[#fff5eb] border border-[#c96b2c] text-[11px] text-[#9a4214] flex flex-col gap-0.5 shrink-0">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-[#9a4214]">Armed: {armedGate.toUpperCase()}</span>
             <button
               onClick={onDisarm}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-[#fce8e6] text-[#c5221f] border border-[#ea4335] hover:bg-[#fbd0cb] cursor-pointer"
+              className="text-[9px] px-1 py-0.2 rounded bg-[#fce8e6] text-[#c5221f] border border-[#ea4335] hover:bg-[#fbd0cb] cursor-pointer"
             >
               Cancel
             </button>
           </div>
-          <span className="text-[10px] text-[#746e64]">
+          <span className="text-[9px] text-[#746e64] truncate">
             {armedGate === 'cnot' || armedGate === 'cz' || armedGate === 'swap'
               ? cnotControlPending !== null
-                ? `Control Q${cnotControlPending} set! Click target wire.`
-                : 'Click control wire cell.'
-              : 'Click or drag onto any cell on the circuit wire.'}
+                ? `Control Q${cnotControlPending} set! Click target.`
+                : 'Click control wire.'
+              : 'Click or drag onto wire.'}
           </span>
         </div>
       )}
 
+      {/* Rotation Parameter Presets */}
       {armedGate && ['rx', 'ry', 'rz', 'p'].includes(armedGate) && (
-        <div className="p-2 bg-[#f0ece4] rounded border border-[#ded7cb] flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px] text-[#211f1b]">
+        <div className="p-1.5 bg-[#f0ece4] rounded border border-[#ded7cb] flex flex-col gap-1 shrink-0">
+          <div className="flex items-center justify-between text-[10px] text-[#211f1b]">
             <span className="flex items-center gap-1 font-mono">
               <RotateCw className="w-3 h-3 text-[#c96b2c]" /> θ:
             </span>
@@ -144,7 +147,7 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
               <button
                 key={p}
                 onClick={() => handleAnglePresetChange(p)}
-                className={`text-[10px] py-0.5 rounded font-mono border transition-all cursor-pointer ${
+                className={`text-[9px] py-0.5 rounded font-mono border transition-all cursor-pointer ${
                   anglePreset === p
                     ? 'bg-[#c96b2c] border-[#c96b2c] text-white font-bold'
                     : 'bg-[#fffdf9] border-[#ded7cb] text-[#211f1b] hover:bg-[#eee9df]'
@@ -157,9 +160,10 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
+      {/* Operation Grid: 5 columns */}
+      <div className="flex-1 flex flex-col justify-around gap-1.5 py-0.5">
         {OPERATIONS_GRID.map((row, rIdx) => (
-          <div key={rIdx} className="grid grid-cols-5 gap-1.5">
+          <div key={rIdx} className="grid grid-cols-5 gap-1">
             {row.map((gate) => {
               const isArmed = armedGate === gate.id;
               return (
@@ -169,7 +173,7 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
                   onDragStart={(e) => handleDragStart(e, gate)}
                   onClick={() => handleGateClick(gate)}
                   title={`${gate.name}: ${gate.desc} (Click or Drag & Drop)`}
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-sm border flex items-center justify-center font-mono font-bold text-xs sm:text-sm transition-all transform active:scale-95 cursor-grab active:cursor-grabbing shadow-md ${
+                  className={`w-full aspect-square max-w-[34px] max-h-[34px] mx-auto rounded-sm border flex items-center justify-center font-mono font-bold text-xs transition-all transform active:scale-95 cursor-grab active:cursor-grabbing shadow-sm ${
                     gate.bgColor
                   } ${gate.textColor} ${gate.borderColor} ${
                     isArmed ? 'ring-2 ring-white scale-105 z-10' : 'opacity-90 hover:opacity-100 hover:scale-105'
@@ -181,6 +185,12 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
             })}
           </div>
         ))}
+      </div>
+
+      {/* Footer */}
+      <div className="pt-1 border-t border-[#ded7cb]/70 flex items-center justify-between text-[9px] text-[#746e64] font-mono shrink-0">
+        <span>20 Gates</span>
+        <span className="text-[#c96b2c]">Drag & Drop</span>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ interface CircuitCanvasProps {
   gates: PlacedGate[];
   numSteps: number;
   onAddStep: () => void;
+  onRemoveStep?: () => void;
   onCellClick: (qubit: number, step: number) => void;
   onRemoveGate: (gateId: string) => void;
   onUndo: () => void;
@@ -46,6 +47,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   gates,
   numSteps,
   onAddStep,
+  onRemoveStep,
   onCellClick,
   onRemoveGate,
   onUndo,
@@ -56,7 +58,6 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   onDropGate,
   onMoveGate,
 }) => {
-  const [inspectMode, setInspectMode] = useState<boolean>(false);
   const [dragOverCell, setDragOverCell] = useState<{ qubit: number; step: number } | null>(null);
 
   const cellMap = new Map<string, PlacedGate>();
@@ -120,89 +121,79 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   };
 
   return (
-    <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-3 sm:p-4 flex flex-col gap-3 shadow-sm select-none">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ded7cb] pb-2.5">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
+    <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-2.5 flex flex-col justify-between h-full shadow-sm select-none gap-2 overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-[#ded7cb] pb-1.5 shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={onUndo}
               disabled={!canUndo}
-              className="p-1.5 rounded hover:bg-[#eee9df] disabled:opacity-30 text-[#746e64] hover:text-[#211f1b] transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-[#eee9df] disabled:opacity-30 text-[#746e64] hover:text-[#211f1b] transition-colors cursor-pointer"
               title="Undo"
             >
               <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button
               disabled
-              className="p-1.5 rounded hover:bg-[#eee9df] opacity-30 text-[#746e64] cursor-not-allowed"
+              className="p-1 rounded hover:bg-[#eee9df] opacity-30 text-[#746e64] cursor-not-allowed"
               title="Redo"
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <div className="h-4 w-[1px] bg-[#ded7cb]" />
-
-          <div className="flex items-center gap-1 text-xs text-[#211f1b] px-2 py-1 rounded bg-[#f0ece4] border border-[#ded7cb] cursor-pointer">
-            <span>Left alignment</span>
-            <ChevronDown className="w-3 h-3 text-[#746e64]" />
-          </div>
-
-          <div className="h-4 w-[1px] bg-[#ded7cb]" />
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setInspectMode(!inspectMode)}
-              className={`w-7 h-4 rounded-full transition-colors relative cursor-pointer ${
-                inspectMode ? 'bg-[#c96b2c]' : 'bg-[#ded7cb]'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
-                  inspectMode ? 'translate-x-3' : ''
-                }`}
-              />
-            </button>
-            <span className="text-xs text-[#746e64]">Inspect</span>
-          </div>
-
-          <span className="hidden sm:inline-block text-[11px] text-[#746e64] italic ml-2">
-            Drag gates from palette or click to place
-          </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-[#f0ece4] px-2 py-1 rounded border border-[#ded7cb] text-xs">
+        <div className="flex items-center gap-2">
+          {/* Qubits Counter */}
+          <div className="flex items-center gap-1 bg-[#f0ece4] px-1.5 py-0.5 rounded border border-[#ded7cb] text-[11px]">
             <span className="text-[#746e64]">Qubits:</span>
             <button
               onClick={() => onNumQubitsChange(Math.max(2, numQubits - 1))}
               disabled={numQubits <= 2}
               className="p-0.5 rounded text-[#211f1b] hover:text-[#c96b2c] disabled:opacity-30 cursor-pointer"
+              title="Decrease qubits"
             >
               <Minus className="w-3 h-3" />
             </button>
-            <span className="font-mono font-bold text-[#211f1b] px-1">{numQubits}</span>
+            <span className="font-mono font-bold text-[#211f1b] px-0.5">{numQubits}</span>
             <button
-              onClick={() => onNumQubitsChange(Math.min(5, numQubits + 1))}
-              disabled={numQubits >= 5}
+              onClick={() => onNumQubitsChange(Math.min(8, numQubits + 1))}
+              disabled={numQubits >= 8}
               className="p-0.5 rounded text-[#211f1b] hover:text-[#c96b2c] disabled:opacity-30 cursor-pointer"
+              title="Increase qubits"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
+
+          {/* Steps Counter: Step - and Step + */}
+          <div className="flex items-center gap-1 bg-[#f0ece4] px-1.5 py-0.5 rounded border border-[#ded7cb] text-[11px]">
+            <span className="text-[#746e64]">Steps:</span>
+            {onRemoveStep && (
+              <button
+                onClick={onRemoveStep}
+                disabled={numSteps <= 4}
+                className="p-0.5 rounded text-[#211f1b] hover:text-[#c96b2c] disabled:opacity-30 cursor-pointer"
+                title="Decrease steps (-1)"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+            )}
+            <span className="font-mono font-bold text-[#211f1b] px-0.5">{numSteps}</span>
+            <button
+              onClick={onAddStep}
+              disabled={numSteps >= 32}
+              className="p-0.5 rounded text-[#211f1b] hover:text-[#c96b2c] disabled:opacity-30 cursor-pointer"
+              title="Increase steps (+1)"
             >
               <Plus className="w-3 h-3" />
             </button>
           </div>
 
           <button
-            onClick={onAddStep}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-[#f0ece4] hover:bg-[#eee9df] text-[#211f1b] border border-[#ded7cb] transition-colors cursor-pointer"
-          >
-            <Plus className="w-3 h-3 text-[#c96b2c]" />
-            <span>Step</span>
-          </button>
-
-          <button
             onClick={onClear}
             disabled={gates.length === 0}
-            className="p-1.5 rounded hover:bg-[#fce8e6] disabled:opacity-30 text-[#746e64] hover:text-[#c5221f] transition-colors cursor-pointer"
+            className="p-1 rounded hover:bg-[#fce8e6] disabled:opacity-30 text-[#746e64] hover:text-[#c5221f] transition-colors cursor-pointer"
             title="Clear all gates"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -210,25 +201,25 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
         </div>
       </div>
 
-      <div className="relative overflow-x-auto p-4 bg-[#f7f4ee] rounded-md border border-[#ded7cb] min-h-[260px]">
-        <div className="flex ml-16 mb-2 gap-3 min-w-max">
+      <div className="relative flex-1 min-h-0 overflow-x-auto overflow-y-auto p-2 sm:p-3 bg-[#f7f4ee] rounded-md border border-[#ded7cb]">
+        <div className="flex ml-14 mb-1 gap-2.5 min-w-max">
           {Array.from({ length: numSteps }).map((_, sIdx) => (
-            <div key={sIdx} className="w-10 text-center font-mono text-[9px] text-[#746e64]">
+            <div key={sIdx} className="w-9 text-center font-mono text-[9px] text-[#746e64]">
               {sIdx}
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col gap-6 min-w-max relative">
+        <div className="flex flex-col gap-3 min-w-max relative">
           {Array.from({ length: numQubits }).map((_, qIdx) => (
-            <div key={qIdx} className="flex items-center gap-3 relative h-10">
-              <div className="w-12 text-xs font-mono font-semibold text-[#211f1b] z-10">
+            <div key={qIdx} className="flex items-center gap-2.5 relative h-8">
+              <div className="w-10 text-xs font-mono font-semibold text-[#211f1b] z-10">
                 q[{qIdx}]
               </div>
 
-              <div className="absolute left-14 right-8 h-[1.5px] bg-[#c8c1b4] z-0 pointer-events-none" />
+              <div className="absolute left-12 right-7 h-[1.5px] bg-[#c8c1b4] z-0 pointer-events-none" />
 
-              <div className="flex gap-3 relative z-10 pl-2">
+              <div className="flex gap-2.5 relative z-10 pl-1">
                 {Array.from({ length: numSteps }).map((_, sIdx) => {
                   const key = `${qIdx}-${sIdx}`;
                   const gate = cellMap.get(key);

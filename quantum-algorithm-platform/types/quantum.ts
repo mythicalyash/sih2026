@@ -103,3 +103,17 @@ export interface PlacedGate {
   isControl?: boolean;
   isTarget?: boolean;
 }
+
+export interface ExecutionStatus {
+  id: number;
+  description: string;
+}
+
+export interface CodeExecutionResult {
+  stdout?: string | null;
+  stderr?: string | null;
+  status: ExecutionStatus;
+  time?: string;
+  source?: string;
+}
+

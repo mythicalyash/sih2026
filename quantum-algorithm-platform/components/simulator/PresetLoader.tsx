@@ -1,14 +1,15 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BookOpen } from 'lucide-react';
 
 interface PresetLoaderProps {
   onLoadPreset: (algorithmKey: string) => void;
   isLoading: boolean;
+  selectedPreset?: string;
 }
 
-const PRESETS = [
+export const PRESETS = [
   { id: 'deutsch_jozsa', name: 'Deutsch-Jozsa (Balanced)', desc: '1 query oracle determinism' },
   { id: 'bernstein_vazirani', name: 'Bernstein-Vazirani ("101")', desc: 'Recovers hidden bitstring in 1 query' },
   { id: 'grovers_search', name: 'Grover\'s Search ("11")', desc: 'Amplitude amplification speedup' },
@@ -17,23 +18,33 @@ const PRESETS = [
   { id: 'superdense_coding', name: 'Superdense Coding', desc: 'Send 2 classical bits with 1 qubit' },
 ];
 
-export const PresetLoader: React.FC<PresetLoaderProps> = ({ onLoadPreset, isLoading }) => {
+export const PresetLoader: React.FC<PresetLoaderProps> = ({
+  onLoadPreset,
+  isLoading,
+  selectedPreset: controlledPreset,
+}) => {
+  const [localPreset, setLocalPreset] = useState<string>('');
+  const activePreset = controlledPreset !== undefined ? controlledPreset : localPreset;
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setLocalPreset(val);
+    if (val) {
+      onLoadPreset(val);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <div className="relative">
         <select
-          onChange={(e) => {
-            if (e.target.value) {
-              onLoadPreset(e.target.value);
-              e.target.value = '';
-            }
-          }}
-          defaultValue=""
+          value={activePreset}
+          onChange={handleChange}
           disabled={isLoading}
-          className="appearance-none bg-[#f0ece4] border border-[#ded7cb] hover:border-[#c96b2c] rounded px-2.5 py-1 pr-7 text-xs text-[#211f1b] cursor-pointer focus:outline-none transition-colors"
+          className="appearance-none bg-[#f0ece4] border border-[#ded7cb] hover:border-[#c96b2c] rounded px-2.5 py-1 pr-7 text-xs text-[#211f1b] font-medium cursor-pointer focus:outline-none transition-colors"
         >
           <option value="" disabled>
-            📚 Load Preset...
+            Load Preset...
           </option>
           {PRESETS.map((p) => (
             <option key={p.id} value={p.id} className="bg-[#fffdf9] text-[#211f1b]">

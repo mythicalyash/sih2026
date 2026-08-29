@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import type { StatevectorAmplitude } from '@/types/quantum';
 import { RotateCcw } from 'lucide-react';
 
@@ -39,6 +39,7 @@ export const QSphere: React.FC<QSphereProps> = ({
   amplitudes = [],
   numQubits = 2,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Orbit rotation angles
@@ -140,20 +141,22 @@ export const QSphere: React.FC<QSphereProps> = ({
     return nodes;
   }, [amplitudes, numQubits]);
 
-  useEffect(() => {
+  const draw = useCallback(() => {
+    const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!container || !canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width === 0 || height === 0) return;
 
-    const width = rect.width;
-    const height = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     const centerX = width / 2;
     const centerY = height / 2;
     const sphereRadius = Math.min(width, height) * 0.36;
@@ -333,6 +336,21 @@ export const QSphere: React.FC<QSphereProps> = ({
     });
   }, [sphereNodes, rotX, rotY, showStateLabels, showPhaseLabels, numQubits]);
 
+  useEffect(() => {
+    draw();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const ro = new ResizeObserver(() => {
+      draw();
+    });
+    ro.observe(container);
+
+    return () => {
+      ro.disconnect();
+    };
+  }, [draw]);
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     isDraggingRef.current = true;
     lastMousePosRef.current = { x: e.clientX, y: e.clientY };
@@ -340,9 +358,9 @@ export const QSphere: React.FC<QSphereProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
@@ -404,27 +422,30 @@ export const QSphere: React.FC<QSphereProps> = ({
 
   return (
     <div className="relative w-full h-full flex flex-col justify-between bg-[#fffdf9] rounded-lg border border-[#ded7cb] select-none overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#ded7cb] bg-[#f0ece4]">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[#211f1b] uppercase tracking-wider">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#ded7cb] bg-[#f0ece4] shrink-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-[11px] font-semibold text-[#211f1b] uppercase tracking-wider truncate">
             Q-sphere
           </span>
-          <span className="text-[10px] text-[#746e64] font-mono">({numQubits} Qubits)</span>
+          <span className="text-[10px] text-[#746e64] font-mono shrink-0">({numQubits} Qubits)</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={handleResetOrientation}
             className="p-1 rounded text-[#746e64] hover:text-[#211f1b] hover:bg-[#eee9df] transition-colors cursor-pointer"
             title="Reset 3D View Orientation"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3 h-3" />
           </button>
         </div>
       </div>
 
+      {/* 3D Sphere Interactive Area */}
       <div
-        className="relative flex-1 w-full h-[280px] min-h-[260px] cursor-grab active:cursor-grabbing flex items-center justify-center bg-[#fcfbf9]"
+        ref={containerRef}
+        className="relative flex-1 w-full min-h-0 cursor-grab active:cursor-grabbing flex items-center justify-center bg-[#fcfbf9] overflow-hidden"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -433,67 +454,42 @@ export const QSphere: React.FC<QSphereProps> = ({
         <canvas
           ref={canvasRef}
           className="w-full h-full block"
-          style={{ width: '100%', height: '100%' }}
         />
 
         {hoveredNode && (
           <div
-            className="absolute z-20 pointer-events-none p-2.5 rounded-md bg-[#fffdf9] border border-[#ded7cb] shadow-xl text-xs font-mono text-[#211f1b] flex flex-col gap-1"
+            className="absolute z-20 pointer-events-none p-2 rounded-md bg-[#fffdf9] border border-[#ded7cb] shadow-xl text-[11px] font-mono text-[#211f1b] flex flex-col gap-0.5"
             style={{
-              left: Math.min(hoveredNode.screenX - 100, 220),
-              top: Math.min(hoveredNode.screenY - 140, 160),
+              left: Math.min(hoveredNode.screenX - 80, 160),
+              top: Math.min(hoveredNode.screenY - 120, 120),
             }}
           >
-            <div className="text-sm font-bold text-[#0f62fe]">|{hoveredNode.state}⟩</div>
-            <div className="text-[#4f806d] font-semibold">Prob: {(hoveredNode.prob * 100).toFixed(2)}%</div>
-            <div className="text-[#746e64]">Amp: {hoveredNode.magnitude.toFixed(4)}</div>
-            <div className="text-[#c96b2c]">Phase: {hoveredNode.phase_rad.toFixed(3)} rad ({hoveredNode.phase_deg.toFixed(1)}°)</div>
+            <div className="text-xs font-bold text-[#0f62fe]">|{hoveredNode.state}⟩</div>
+            <div className="text-[#4f806d] font-semibold">Prob: {(hoveredNode.prob * 100).toFixed(1)}%</div>
+            <div className="text-[#746e64]">Amp: {hoveredNode.magnitude.toFixed(3)}</div>
+            <div className="text-[#c96b2c]">Phase: {hoveredNode.phase_rad.toFixed(2)} rad ({hoveredNode.phase_deg.toFixed(0)}°)</div>
           </div>
         )}
 
-        <div className="absolute bottom-3 left-3 p-2 rounded-lg bg-[#fffdf9]/95 border border-[#ded7cb] flex items-center gap-2.5 shadow-md backdrop-blur-sm pointer-events-none">
-          <div className="relative w-9 h-9 flex items-center justify-center">
-            <div
-              className="w-8 h-8 rounded-full border border-[#ded7cb] shadow-inner"
-              style={{
-                background:
-                  'conic-gradient(from 0deg, hsl(260, 85%, 60%), hsl(200, 85%, 60%), hsl(140, 85%, 60%), hsl(35, 85%, 60%), hsl(260, 85%, 60%))',
-              }}
-            />
-            <div className="absolute inset-0 m-auto w-4 h-4 rounded-full bg-[#fffdf9] flex items-center justify-center text-[7px] font-bold text-[#211f1b]">
-              Phase
-            </div>
-          </div>
-
-          <div className="flex flex-col text-[8px] font-mono text-[#746e64] leading-tight font-medium">
-            <span>π/2</span>
-            <div className="flex justify-between gap-2">
-              <span>π</span>
-              <span>0</span>
-            </div>
-            <span>3π/2</span>
-          </div>
-        </div>
-
-        <div className="absolute bottom-3 right-3 p-2 rounded-lg bg-[#fffdf9]/95 border border-[#ded7cb] flex flex-col gap-1.5 shadow-md backdrop-blur-sm">
-          <span className="text-[9px] font-semibold uppercase text-[#746e64] tracking-wider">Labels</span>
-          <label className="flex items-center gap-1.5 text-[11px] text-[#211f1b] cursor-pointer hover:text-[#c96b2c]">
+        {/* Labels checkbox in bottom right */}
+        <div className="absolute bottom-2 right-2 p-1.5 rounded bg-[#fffdf9]/95 border border-[#ded7cb] flex items-center gap-2 shadow-xs backdrop-blur-xs text-[10px]">
+          <label className="flex items-center gap-1 text-[#211f1b] cursor-pointer hover:text-[#c96b2c]">
             <input
               type="checkbox"
               checked={showStateLabels}
               onChange={(e) => setShowStateLabels(e.target.checked)}
-              className="w-3 h-3 rounded bg-[#fffdf9] border-[#ded7cb] text-[#c96b2c] focus:ring-0 cursor-pointer"
+              className="w-2.5 h-2.5 rounded bg-[#fffdf9] border-[#ded7cb] text-[#c96b2c] focus:ring-0 cursor-pointer"
             />
             <span>State</span>
           </label>
-          <label className="flex items-center gap-1.5 text-[11px] text-[#211f1b] cursor-pointer hover:text-[#c96b2c]">
+          <label className="flex items-center gap-1 text-[#211f1b] cursor-pointer hover:text-[#c96b2c]">
             <input
               type="checkbox"
               checked={showPhaseLabels}
               onChange={(e) => setShowPhaseLabels(e.target.checked)}
-              className="w-3 h-3 rounded bg-[#fffdf9] border-[#ded7cb] text-[#c96b2c] focus:ring-0 cursor-pointer"
+              className="w-2.5 h-2.5 rounded bg-[#fffdf9] border-[#ded7cb] text-[#c96b2c] focus:ring-0 cursor-pointer"
             />
-            <span>Phase angle</span>
+            <span>Phase</span>
           </label>
         </div>
       </div>
