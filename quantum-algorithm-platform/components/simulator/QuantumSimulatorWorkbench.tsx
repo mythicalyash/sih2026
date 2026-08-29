@@ -22,7 +22,15 @@ import { GateCheatSheetModal } from './GateCheatSheetModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { AboutModal } from './AboutModal';
 
-export function QuantumSimulatorWorkbench() {
+interface QuantumSimulatorWorkbenchProps {
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
+}
+
+export function QuantumSimulatorWorkbench({
+  onToggleSidebar,
+  sidebarCollapsed,
+}: QuantumSimulatorWorkbenchProps = {}) {
   const [numQubits, setNumQubits] = useState<number>(4);
   const [numSteps, setNumSteps] = useState<number>(6);
   const [gates, setGates] = useState<PlacedGate[]>([]);
@@ -321,7 +329,9 @@ export function QuantumSimulatorWorkbench() {
   const handleCellClick = (qubit: number, step: number) => {
     if (!armedGate) return;
 
-    if (armedGate === 'cnot' || armedGate === 'cz' || armedGate === 'swap') {
+    const is2Qubit = ['cnot', 'cx', 'ncx', 'cz', 'swap', 'cp'].includes(armedGate);
+
+    if (is2Qubit) {
       if (cnotControlPending === null) {
         setCnotControlPending(qubit);
       } else {
@@ -381,7 +391,7 @@ export function QuantumSimulatorWorkbench() {
   };
 
   const handleDropGate = (gate: string, qubit: number, step: number, params?: number[]) => {
-    const isMulti = gate === 'cnot' || gate === 'cx' || gate === 'cz' || gate === 'swap';
+    const isMulti = ['cnot', 'cx', 'ncx', 'cz', 'swap', 'cp'].includes(gate);
 
     setHistory((prev) => [...prev, gates]);
 
@@ -665,6 +675,8 @@ export function QuantumSimulatorWorkbench() {
         }}
         selectedPreset={selectedPreset}
         onLoadPreset={handleLoadPreset}
+        onToggleSidebar={onToggleSidebar}
+        sidebarCollapsed={sidebarCollapsed}
       />
 
       {/* Main Resizable Workbench Area */}
@@ -682,7 +694,7 @@ export function QuantumSimulatorWorkbench() {
           >
             {/* Top Row: Gate Palette (Fixed Width) & Circuit Canvas (Flexible Width) */}
             <div className="h-[49%] min-h-[220px] max-h-[50%] flex-shrink-0 flex flex-row gap-2 items-stretch overflow-hidden">
-              <div className="w-[210px] xl:w-[220px] flex-shrink-0 flex flex-col h-full overflow-hidden">
+              <div className="w-[260px] xl:w-[270px] flex-shrink-0 flex flex-col h-full overflow-hidden">
                 <GatePalette
                   armedGate={armedGate}
                   onArmGate={(gate, params) => {

@@ -125,6 +125,24 @@ def run_circuit_pennylane(
                 for q in qubits: qml.T(wires=q)
             elif name == "tdg":
                 for q in qubits: qml.adjoint(qml.T(wires=q))
+            elif name == "sx":
+                for q in qubits: qml.SX(wires=q)
+            elif name == "sxdg":
+                for q in qubits: qml.adjoint(qml.SX(wires=q))
+            elif name == "sy":
+                for q in qubits: qml.RY(math.pi / 2, wires=q)
+            elif name == "sydg":
+                for q in qubits: qml.RY(-math.pi / 2, wires=q)
+            elif name == "x_1_4":
+                for q in qubits: qml.RX(math.pi / 4, wires=q)
+            elif name == "x_neg1_4":
+                for q in qubits: qml.RX(-math.pi / 4, wires=q)
+            elif name == "y_1_4":
+                for q in qubits: qml.RY(math.pi / 4, wires=q)
+            elif name == "y_neg1_4":
+                for q in qubits: qml.RY(-math.pi / 4, wires=q)
+            elif name == "z_1_8":
+                for q in qubits: qml.PhaseShift(math.pi / 8, wires=q)
             elif name == "rx":
                 for q in qubits: qml.RX(theta, wires=q)
             elif name == "ry":
@@ -133,10 +151,14 @@ def run_circuit_pennylane(
                 for q in qubits: qml.RZ(theta, wires=q)
             elif name == "p":
                 for q in qubits: qml.PhaseShift(theta, wires=q)
-            elif name == "sx":
-                for q in qubits: qml.SX(wires=q)
+            elif name in ("u", "u3") and len(params) >= 3:
+                for q in qubits: qml.Rot(params[1], params[0], params[2], wires=q)
             elif name == "cx":
                 qml.CNOT(wires=[qubits[0], qubits[1]])
+            elif name == "ncx":
+                qml.PauliX(wires=qubits[0])
+                qml.CNOT(wires=[qubits[0], qubits[1]])
+                qml.PauliX(wires=qubits[0])
             elif name == "cz":
                 qml.CZ(wires=[qubits[0], qubits[1]])
             elif name == "swap":
@@ -145,6 +167,10 @@ def run_circuit_pennylane(
                 qml.Toffoli(wires=[qubits[0], qubits[1], qubits[2]])
             elif name == "cswap":
                 qml.CSWAP(wires=[qubits[0], qubits[1], qubits[2]])
+            elif name == "qft":
+                qml.QFT(wires=qubits)
+            elif name == "iqft":
+                qml.adjoint(qml.QFT)(wires=qubits)
 
         return qml.state()
 
@@ -189,6 +215,24 @@ def run_circuit_pennylane(
                     for q in qubits: qml.T(wires=q)
                 elif name == "tdg":
                     for q in qubits: qml.adjoint(qml.T(wires=q))
+                elif name == "sx":
+                    for q in qubits: qml.SX(wires=q)
+                elif name == "sxdg":
+                    for q in qubits: qml.adjoint(qml.SX(wires=q))
+                elif name == "sy":
+                    for q in qubits: qml.RY(math.pi / 2, wires=q)
+                elif name == "sydg":
+                    for q in qubits: qml.RY(-math.pi / 2, wires=q)
+                elif name == "x_1_4":
+                    for q in qubits: qml.RX(math.pi / 4, wires=q)
+                elif name == "x_neg1_4":
+                    for q in qubits: qml.RX(-math.pi / 4, wires=q)
+                elif name == "y_1_4":
+                    for q in qubits: qml.RY(math.pi / 4, wires=q)
+                elif name == "y_neg1_4":
+                    for q in qubits: qml.RY(-math.pi / 4, wires=q)
+                elif name == "z_1_8":
+                    for q in qubits: qml.PhaseShift(math.pi / 8, wires=q)
                 elif name == "rx":
                     for q in qubits: qml.RX(theta, wires=q)
                 elif name == "ry":
@@ -197,10 +241,14 @@ def run_circuit_pennylane(
                     for q in qubits: qml.RZ(theta, wires=q)
                 elif name == "p":
                     for q in qubits: qml.PhaseShift(theta, wires=q)
-                elif name == "sx":
-                    for q in qubits: qml.SX(wires=q)
+                elif name in ("u", "u3") and len(params) >= 3:
+                    for q in qubits: qml.Rot(params[1], params[0], params[2], wires=q)
                 elif name == "cx":
                     qml.CNOT(wires=[qubits[0], qubits[1]])
+                elif name == "ncx":
+                    qml.PauliX(wires=qubits[0])
+                    qml.CNOT(wires=[qubits[0], qubits[1]])
+                    qml.PauliX(wires=qubits[0])
                 elif name == "cz":
                     qml.CZ(wires=[qubits[0], qubits[1]])
                 elif name == "swap":
@@ -209,6 +257,10 @@ def run_circuit_pennylane(
                     qml.Toffoli(wires=[qubits[0], qubits[1], qubits[2]])
                 elif name == "cswap":
                     qml.CSWAP(wires=[qubits[0], qubits[1], qubits[2]])
+                elif name == "qft":
+                    qml.QFT(wires=qubits)
+                elif name == "iqft":
+                    qml.adjoint(qml.QFT)(wires=qubits)
             return qml.sample(wires=list(range(num_qubits)))
 
         samples = pl_sample_circuit()

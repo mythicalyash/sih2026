@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Activity, Bell, BookOpen, BrainCircuit, ChevronRight, CircleHelp, Code2,
   Flame, Gauge, GitBranch, Home as HomeIcon, Layers3, LayoutDashboard, Menu, MessageCircle,
   Moon, Play, Plus, Search, Settings, Sparkles, Terminal, Trophy, X, Zap,
+  PanelLeftClose, PanelLeftOpen, PanelLeft
 } from 'lucide-react'
 
 const navItems = [
@@ -35,11 +36,72 @@ function Brand() {
 }
 
 function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: string; setActive: (v: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void }) {
+  const handleNavClick = (label: string) => {
+    setActive(label);
+    if (label === 'Quantum Simulation') {
+      setCollapsed(true);
+    }
+  };
+
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-    <div className="sidebar-top"><Brand /><button className="icon-button" aria-label="Collapse sidebar" onClick={() => setCollapsed(!collapsed)}>{collapsed ? <ChevronRight /> : <Menu />}</button></div>
+    <div className="sidebar-top">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="bg-transparent border-0 p-0 cursor-pointer text-left transition-opacity hover:opacity-80"
+        title={collapsed ? 'Click to expand sidebar (⌘\\)' : 'Click to collapse sidebar (⌘\\)'}
+      >
+        <Brand />
+      </button>
+    </div>
     <div className="eyebrow">Workspace</div>
-    <nav className="nav-list">{navItems.map(({ label, icon: Icon }) => <button key={label} className={`nav-item ${active === label ? 'active' : ''}`} onClick={() => setActive(label)}><Icon /><span>{label}</span>{label === 'AI Tutor' && <i className="nav-pip" />}</button>)}</nav>
-    <div className="sidebar-bottom"><div className="eyebrow">Your progress</div><div className="side-progress"><div className="progress-row"><span>Level 08</span><span>2,840 / 3,200 XP</span></div><div className="progress-track"><span style={{ width: '88%' }} /></div></div><button className="nav-item"><Settings /><span>Settings</span></button><div className="profile"><div className="avatar">AM</div><div className="profile-copy"><strong>Arjun Mehta</strong><span>Quantum explorer</span></div><ChevronRight /></div></div>
+    <nav className="nav-list">
+      {navItems.map(({ label, icon: Icon }) => (
+        <button
+          key={label}
+          className={`nav-item ${active === label ? 'active' : ''}`}
+          onClick={() => handleNavClick(label)}
+          title={collapsed ? label : undefined}
+        >
+          <Icon />
+          <span>{label}</span>
+          {label === 'AI Tutor' && <i className="nav-pip" />}
+        </button>
+      ))}
+
+      {/* Sidebar Expand / Collapse Action Item */}
+      <button
+        className="nav-item mt-2 text-[#746e64] hover:text-[#211f1b] hover:bg-[#e4ded4] border border-[#ded7cb] rounded-md transition-all cursor-pointer"
+        onClick={() => setCollapsed(!collapsed)}
+        title={collapsed ? 'Expand sidebar (⌘\\)' : 'Collapse sidebar (⌘\\)'}
+      >
+        {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+        <span>{collapsed ? 'Expand' : 'Collapse sidebar'}</span>
+      </button>
+    </nav>
+    <div className="sidebar-bottom">
+      <div className="eyebrow">Your progress</div>
+      <div className="side-progress">
+        <div className="progress-row">
+          <span>Level 08</span>
+          <span>2,840 / 3,200 XP</span>
+        </div>
+        <div className="progress-track">
+          <span style={{ width: '88%' }} />
+        </div>
+      </div>
+      <button className="nav-item">
+        <Settings />
+        <span>Settings</span>
+      </button>
+      <div className="profile">
+        <div className="avatar">AM</div>
+        <div className="profile-copy">
+          <strong>Arjun Mehta</strong>
+          <span>Quantum explorer</span>
+        </div>
+        <ChevronRight />
+      </div>
+    </div>
   </aside>
 }
 
@@ -174,13 +236,34 @@ export default function Page() {
   const [active, setActive] = useState('Home');
   const [collapsed, setCollapsed] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setCollapsed((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSelectTab = (tab: string) => {
+    setActive(tab);
+    if (tab === 'Quantum Simulation') {
+      setCollapsed(true);
+    }
+  };
+
   const content =
     active === 'Home' ? (
-      <Home setActive={setActive} />
+      <Home setActive={handleSelectTab} />
     ) : active === 'Learn Quantum' ? (
-      <Learn setActive={setActive} />
+      <Learn setActive={handleSelectTab} />
     ) : active === 'Quantum Simulation' ? (
-      <QuantumSimulatorWorkbench />
+      <QuantumSimulatorWorkbench
+        onToggleSidebar={() => setCollapsed((prev) => !prev)}
+        sidebarCollapsed={collapsed}
+      />
     ) : active === 'AI Tutor' ? (
       <Tutor />
     ) : active === 'Dashboard' ? (
@@ -195,12 +278,12 @@ export default function Page() {
     <div className="app-shell">
       <Sidebar
         active={active}
-        setActive={setActive}
+        setActive={handleSelectTab}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
       />
       <div className="main-shell">
-        {active !== 'Quantum Simulation' && <Topbar active={active} setActive={setActive} />}
+        {active !== 'Quantum Simulation' && <Topbar active={active} setActive={handleSelectTab} />}
         {content}
       </div>
     </div>

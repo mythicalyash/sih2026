@@ -52,7 +52,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({
     pennylane: '',
     qasm: '',
     ir: '',
-    custom: '# Custom Quantum Experiment\nimport numpy as np\nprint("Executing custom quantum code...")\n',
+    custom: 'import numpy as np\nprint("Executing custom quantum code...")\n',
   });
 
   // User edited live code per mode
@@ -62,7 +62,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({
     pennylane: '',
     qasm: '',
     ir: '',
-    custom: '# Custom Quantum Experiment\nimport numpy as np\nprint("Executing custom quantum code...")\n',
+    custom: 'import numpy as np\nprint("Executing custom quantum code...")\n',
   });
 
   // Track if user has customized the code for that mode
@@ -332,6 +332,30 @@ export const CodePanel: React.FC<CodePanelProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5">
+          {/* Run Python Code Button */}
+          {isExecutable && (
+            <button
+              onClick={handleRunCode}
+              disabled={isExecuting}
+              className="px-2.5 py-1 rounded bg-[#c96b2c] hover:bg-[#b55e24] text-white flex items-center gap-1.5 text-[11px] font-sans font-semibold cursor-pointer disabled:opacity-50 shadow-sm transition-all active:scale-95"
+              title="Run Python script in quantum sandbox (⌘+Enter / Ctrl+Enter)"
+            >
+              <Play className={`w-3 h-3 fill-current ${isExecuting ? 'animate-spin' : ''}`} />
+              <span>{isExecuting ? 'Running...' : 'Run'}</span>
+            </button>
+          )}
+
+          {/* Apply IR Button */}
+          {viewMode === 'ir' && (
+            <button
+              onClick={handleApplyIR}
+              className="px-2.5 py-1 rounded bg-[#c96b2c] hover:bg-[#b55e24] text-white flex items-center gap-1.5 text-[11px] font-sans font-semibold cursor-pointer shadow-sm transition-all active:scale-95"
+              title="Apply JSON IR back to Circuit Canvas"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>Apply</span>
+            </button>
+          )}
 
           <button
             onClick={handleResetToCircuit}

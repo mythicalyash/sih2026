@@ -21,6 +21,7 @@ import {
   Layout,
   ChevronDown,
   Sparkles,
+  PanelLeft,
 } from 'lucide-react';
 import { PresetLoader } from './PresetLoader';
 
@@ -52,6 +53,8 @@ interface NavbarProps {
   onSelectBackend: (b: any) => void;
   selectedPreset?: string;
   onLoadPreset: (algorithmKey: string) => void;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 const BACKENDS_LIST = [
@@ -90,6 +93,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectBackend,
   selectedPreset,
   onLoadPreset,
+  onToggleSidebar,
+  sidebarCollapsed,
 }) => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'view' | 'help' | null>(null);
@@ -137,7 +142,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Main Composer Navigation Bar */}
       <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-4">
         {/* Left Section: Circuit Title & Menu Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-1 rounded hover:bg-[#eee9df] text-[#746e64] hover:text-[#211f1b] transition-colors cursor-pointer"
+              title={sidebarCollapsed ? 'Expand App Sidebar (⌘\\)' : 'Collapse App Sidebar (⌘\\)'}
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+          )}
           {/* Circuit Title */}
           {isEditingName ? (
             <input

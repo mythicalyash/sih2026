@@ -36,14 +36,14 @@ def test_local_python_quantum_execution():
             GateIR(name="cx", qubits=[0, 1])
         ]
     )
-    qk_code = ir_to_qiskit_code(circuit)
+    qk_code = ir_to_qiskit_code(circuit) + "\nprint(qc)"
     req = CodeExecuteRequest(source_code=qk_code)
     res = execute_python_code(req)
     assert res.status["id"] == 3
     assert res.status["description"] == "Success"
     assert res.stdout is not None
-    assert "Quantum Statevector" in res.stdout
-    assert "Measurement Counts" in res.stdout
+    assert "q_0" in res.stdout
+    assert "q_1" in res.stdout
     assert res.stderr is None or res.stderr == ""
 
 

@@ -31,14 +31,35 @@ const GATE_STYLE_MAP: Record<string, { bg: string; text: string; border: string;
   sdg: { bg: 'bg-[#1192e8]', text: 'text-white', border: 'border-[#33b1ff]', label: 'S†' },
   t: { bg: 'bg-[#1192e8]', text: 'text-white', border: 'border-[#33b1ff]', label: 'T' },
   tdg: { bg: 'bg-[#1192e8]', text: 'text-white', border: 'border-[#33b1ff]', label: 'T†' },
+  sx: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: '√X' },
+  sxdg: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: '√X†' },
+  sy: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: '√Y' },
+  sydg: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: '√Y†' },
+  x_1_4: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'X¼' },
+  x_neg1_4: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'X⁻¼' },
+  y_1_4: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'Y¼' },
+  y_neg1_4: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'Y⁻¼' },
+  z_1_8: { bg: 'bg-[#1192e8]', text: 'text-white', border: 'border-[#33b1ff]', label: 'Z⅛' },
   p: { bg: 'bg-[#1192e8]', text: 'text-white', border: 'border-[#33b1ff]', label: 'P' },
   rx: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'RX' },
   ry: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: 'RY' },
   rz: { bg: 'bg-[#0072c3]', text: 'text-white', border: 'border-[#1192e8]', label: 'RZ' },
-  id: { bg: 'bg-[#0f62fe]', text: 'text-white', border: 'border-[#4589ff]', label: 'I' },
-  sx: { bg: 'bg-[#d12771]', text: 'text-white', border: 'border-[#ee5396]', label: '√X' },
+  u: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#8a3ffc]', label: 'U' },
+  id: { bg: 'bg-[#525252]', text: 'text-white', border: 'border-[#6f6f6f]', label: 'I' },
   reset: { bg: 'bg-[#525252]', text: 'text-white', border: 'border-[#6f6f6f]', label: '|0⟩' },
   measure: { bg: 'bg-[#002d9c]', text: 'text-white', border: 'border-[#0f62fe]', label: '◓' },
+  prob_0: { bg: 'bg-[#262626]', text: 'text-white', border: 'border-[#525252]', label: '|0⟩⟨0|' },
+  prob_1: { bg: 'bg-[#262626]', text: 'text-white', border: 'border-[#525252]', label: '|1⟩⟨1|' },
+  qft: { bg: 'bg-[#005d5d]', text: 'text-white', border: 'border-[#007d79]', label: 'QFT' },
+  iqft: { bg: 'bg-[#005d5d]', text: 'text-white', border: 'border-[#007d79]', label: 'QFT†' },
+  gphase_i: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#8a3ffc]', label: '+i' },
+  gphase_ni: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#8a3ffc]', label: '-i' },
+  gphase_sqrt_i: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#8a3ffc]', label: '√i' },
+  gphase_sqrt_ni: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#8a3ffc]', label: '√-i' },
+  ccx: { bg: 'bg-[#002d9c]', text: 'text-white', border: 'border-[#0f62fe]', label: 'CCX' },
+  cswap: { bg: 'bg-[#002d9c]', text: 'text-white', border: 'border-[#0f62fe]', label: 'CSW' },
+  ncx: { bg: 'bg-[#0f62fe]', text: 'text-white', border: 'border-[#4589ff]', label: '⊖' },
+  cp: { bg: 'bg-[#0f62fe]', text: 'text-white', border: 'border-[#4589ff]', label: 'CP' },
 };
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
@@ -269,16 +290,20 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                           }}
                           className={`w-9 h-9 rounded-sm border flex flex-col items-center justify-center font-mono font-bold text-xs shadow-md transition-all cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 ${
                             gate.isControl
-                              ? 'bg-[#0f62fe] border-[#0043ce] text-white rounded-full !w-4 !h-4'
-                              : gate.isTarget && (gate.gate === 'cx' || gate.gate === 'cnot')
+                              ? gate.gate === 'ncx'
+                                ? 'bg-[#fffdf9] border-2 border-[#0f62fe] rounded-full !w-4 !h-4'
+                                : 'bg-[#0f62fe] border-[#0043ce] text-white rounded-full !w-4 !h-4'
+                              : gate.isTarget && (gate.gate === 'cx' || gate.gate === 'cnot' || gate.gate === 'ncx')
                               ? 'bg-[#0f62fe] border-[#0043ce] text-white rounded-full !w-6 !h-6 text-sm font-bold'
                               : style?.bg + ' ' + style?.text + ' ' + style?.border
                           }`}
                         >
                           {gate.isControl ? (
-                            <span className="w-2 h-2 bg-white rounded-full" />
+                            gate.gate === 'ncx' ? null : <span className="w-2 h-2 bg-white rounded-full" />
                           ) : gate.isTarget && (gate.gate === 'cx' || gate.gate === 'cnot') ? (
                             <span>⊕</span>
+                          ) : gate.isTarget && gate.gate === 'ncx' ? (
+                            <span>⊖</span>
                           ) : (
                             <>
                               <span>{style?.label || gate.gate.toUpperCase()}</span>
