@@ -24,6 +24,7 @@ import {
   Info,
 } from 'lucide-react';
 import { QSphere } from './QSphere';
+import { StatevectorVisualizer } from './StatevectorVisualizer';
 
 interface ResultsPanelProps {
   onRunSimulation: () => void;
@@ -55,26 +56,17 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   });
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="h-full flex flex-col gap-1.5 overflow-hidden">
       {/* Top Action & Verification Status Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onRunSimulation()}
-            disabled={isRunning}
-            className="flex items-center gap-2 px-5 py-2 rounded bg-[#c96b2c] hover:bg-[#b55e24] disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-sm cursor-pointer"
-          >
-            <Play className={`w-3.5 h-3.5 fill-current ${isRunning ? 'animate-spin' : ''}`} />
-            <span>{isRunning ? 'Simulating...' : 'Run Simulation'}</span>
-          </button>
-
+      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
+        <div className="flex items-center gap-2">
           {executionResult && (
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="px-2 py-0.5 rounded bg-[#f0ece4] border border-[#ded7cb] text-[#211f1b] font-semibold text-[11px]">
+            <div className="flex items-center gap-1.5 text-[11px] font-mono">
+              <span className="px-1.5 py-0.5 rounded bg-[#f0ece4] border border-[#ded7cb] text-[#211f1b] font-semibold text-[10px]">
                 {executionResult.backend_name || 'Qiskit Aer'}
               </span>
-              <div className="flex items-center gap-1 text-[#746e64]">
-                <Clock className="w-3 h-3 text-[#746e64]" />
+              <div className="hidden sm:flex items-center gap-1 text-[#746e64] text-[10px]">
+                <Clock className="w-2.5 h-2.5 text-[#746e64]" />
                 <span>{executionResult.execution_time_ms} ms</span>
               </div>
             </div>
@@ -84,7 +76,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
         {/* Cross-Backend Equivalence Badge */}
         {comparisonResult && (
           <div
-            className={`flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium transition-all ${
               comparisonResult.match
                 ? 'bg-[#e6f4ea] border border-[#34a853] text-[#137333]'
                 : 'bg-[#fce8e6] border border-[#ea4335] text-[#c5221f]'
@@ -93,16 +85,16 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
           >
             {comparisonResult.match ? (
               <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#137333]" />
-                <span>
-                  Multi-Backend Verified: MATCH (Δ={comparisonResult.max_diff.toFixed(6)}, F={comparisonResult.fidelity.toFixed(4)})
+                <CheckCircle2 className="w-3 h-3 text-[#137333]" />
+                <span className="truncate">
+                  Verified: MATCH (Δ={comparisonResult.max_diff.toFixed(6)})
                 </span>
               </>
             ) : (
               <>
-                <XCircle className="w-3.5 h-3.5 text-[#c5221f]" />
-                <span>
-                  MISMATCH (Δ={comparisonResult.max_diff.toFixed(6)}, Tol={comparisonResult.tolerance})
+                <XCircle className="w-3 h-3 text-[#c5221f]" />
+                <span className="truncate">
+                  MISMATCH (Δ={comparisonResult.max_diff.toFixed(6)})
                 </span>
               </>
             )}
@@ -111,17 +103,18 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
       </div>
 
       {error && (
-        <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ea4335] text-[#c5221f] text-xs">
+        <div className="p-1.5 rounded bg-[#fce8e6] border border-[#ea4335] text-[#c5221f] text-[11px] shrink-0">
           <strong>Simulation Error:</strong> {error}
         </div>
       )}
 
-      {/* Main Split View: Probabilities (Left) and Q-Sphere (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg flex flex-col h-full shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#ded7cb] bg-[#f0ece4]">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#211f1b] uppercase tracking-wider">
+      {/* Main 3-Box View: Probabilities, Statevector, and Q-Sphere */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-2 items-stretch overflow-hidden">
+        {/* 1. State Probabilities */}
+        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg flex flex-col h-full shadow-sm overflow-hidden min-w-0">
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#ded7cb] bg-[#f0ece4] shrink-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-[#211f1b] uppercase tracking-wider">
                 Probabilities
               </span>
             </div>
@@ -130,15 +123,15 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
             </div>
           </div>
 
-          <div className="p-4 flex-1 flex flex-col justify-between min-h-[300px]">
-            <div className="h-[250px] w-full">
+          <div className="p-2 flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+            <div className="flex-1 min-h-0 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 25 }}>
+                <BarChart data={chartData} margin={{ top: 6, right: 6, left: -30, bottom: 18 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ded7cb" vertical={false} />
                   <XAxis
                     dataKey="state"
                     stroke="#746e64"
-                    fontSize={10}
+                    fontSize={9}
                     interval={0}
                     angle={-45}
                     textAnchor="end"
@@ -146,7 +139,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   />
                   <YAxis
                     stroke="#746e64"
-                    fontSize={10}
+                    fontSize={9}
                     domain={[0, 100]}
                     unit="%"
                     tickLine={false}
@@ -174,13 +167,22 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="text-center text-[10px] text-[#746e64] font-mono -mt-2">
+            <div className="text-center text-[9px] text-[#746e64] font-mono shrink-0">
               Computational basis states
             </div>
           </div>
         </div>
 
-        <div className="h-full min-h-[340px]">
+        {/* 2. Statevector Visualizer */}
+        <div className="h-full min-h-0 min-w-0 overflow-hidden">
+          <StatevectorVisualizer
+            amplitudes={executionResult?.statevector}
+            numQubits={numQubits}
+          />
+        </div>
+
+        {/* 3. Q-Sphere */}
+        <div className="h-full min-h-0 min-w-0 overflow-hidden">
           <QSphere
             amplitudes={executionResult?.statevector}
             numQubits={numQubits}

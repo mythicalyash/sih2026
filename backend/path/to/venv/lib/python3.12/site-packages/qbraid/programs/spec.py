@@ -1,0 +1,132 @@
+# Copyright 2025 qBraid
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Module defining base program type specification
+
+"""
+from typing import Any, Callable, Optional, Type
+
+from .experiment import ExperimentType
+from .registry import (
+    derive_program_type_alias,
+    get_native_experiment_type,
+    is_registered_alias_native,
+    register_program_type,
+)
+
+
+class ProgramSpec:
+    """Base class used to register program type and type alias."""
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        program_type: Type[Any],
+        alias: Optional[str] = None,
+        overwrite: bool = False,
+        serialize: Optional[Callable[[Any], Any]] = None,
+        validate: Optional[Callable[[Any], None]] = None,
+        experiment_type: Optional[ExperimentType] = None,
+    ):
+        self._program_type = program_type
+        self._serialize = serialize or (lambda program: program)
+        self._validate = validate or (lambda program: None)
+
+        register_program_type(program_type, alias=alias, overwrite=overwrite)
+        self._alias = alias or derive_program_type_alias(program_type)
+        self._native = is_registered_alias_native(self._alias)
+        self._experiment_type: Optional[ExperimentType] = None
+        self.experiment_type = experiment_type
+
+    @property
+    def program_type(self) -> Type[Any]:
+        """Return the registered program type."""
+        return self._program_type
+
+    @property
+    def alias(self) -> str:
+        """Return the alias of the registered program type."""
+        return self._alias
+
+    @property
+    def native(self) -> bool:
+        """True if program is natively supported by qBraid, False otherwise."""
+        return self._native
+
+    @property
+    def experiment_type(self) -> Optional[ExperimentType]:
+        """Getter for experiment type."""
+        return self._experiment_type
+
+    @experiment_type.setter
+    def experiment_type(self, value: Optional[ExperimentType]):
+        """Setter for experiment type with logic for native aliases."""
+        if value is not None:
+            self._experiment_type = value
+        elif self._native:
+            self._experiment_type = get_native_experiment_type(self._alias)
+        else:
+            self._experiment_type = None
+
+    def serialize(self, program: Any) -> Any:
+        """
+        Convert the given program to a format suitable for submission the
+        qBraid API using the serialize lambda.
+
+        Args:
+            program (Any): The program to convert.
+
+        Returns:
+            Any: The serialized program, or the program itself if serialize is None.
+        """
+        return self._serialize(program)
+
+    def validate(self, program: Any) -> None:
+        """
+        Validate the given program using the validate lambda.
+
+        Args:
+            program (Any): The program to validate.
+
+        Raises:
+            ValueError: If the program is invalid.
+        """
+        self._validate(program)
+
+    def __str__(self) -> str:
+        return f"ProgramSpec({self._program_type.__name__}, {self.alias})"
+
+    def __repr__(self) -> str:
+        return (
+            f"<ProgramSpec('{self._program_type.__module__}.{self._program_type.__name__}', "
+            f"'{self.alias}')>"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare this ProgramSpec object with another object for equality based on type and alias.
+
+        Args:
+            other (object): Another object to compare against.
+
+        Returns:
+            bool: True if both objects are instances of ProgramSpec and have the
+                  same type and alias, False otherwise.
+        """
+        if not isinstance(other, ProgramSpec):
+            return False
+
+        this_spec = (self._program_type, self._alias, self._native)
+        other_spec = (other._program_type, other._alias, other._native)
+        return this_spec == other_spec

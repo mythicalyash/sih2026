@@ -1,0 +1,156 @@
+# Copyright 2025 qBraid
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# pylint: disable=unused-argument
+
+"""
+Module for Cirq custom gates to aid the transpiler and qasm parser
+
+"""
+
+import fractions
+
+import numpy as np
+from cirq import CircuitDiagramInfo, Gate, IdentityGate, TwoQubitDiagonalGate
+
+
+class U2Gate(Gate):
+    """A single qubit gate for rotations about the
+    X+Z axis of the Bloch sphere.
+    """
+
+    def __init__(self, phi, lam):
+        self._phi = float(phi)
+        self._lam = float(lam)
+
+        super()
+
+    def _num_qubits_(self) -> int:
+        return 1
+
+    def _unitary_(self):
+        isqrt2 = 1 / np.sqrt(2)
+        phi = self._phi
+        lam = self._lam
+
+        return np.array(
+            [
+                [isqrt2, -np.exp(1j * lam) * isqrt2],
+                [
+                    np.exp(1j * phi) * isqrt2,
+                    np.exp(1j * (phi + lam)) * isqrt2,
+                ],
+            ],
+        )
+
+    def _circuit_diagram_info_(self, args):
+        cirq_phi = self._phi / np.pi
+        cirq_lam = self._lam / np.pi
+        return f"U2({cirq_phi}, {cirq_lam})"
+
+    def __str__(self) -> str:
+        cirq_phi = fractions.Fraction(self._phi / np.pi)
+        cirq_lam = fractions.Fraction(self._lam / np.pi)
+        gate_str = f"U2({cirq_phi},{cirq_lam})"
+        frac_str = gate_str.replace("/", "π/")
+        return frac_str.replace("1π", "π")
+
+
+class U3Gate(Gate):
+    """A single qubit gate for generic rotations
+    given 3 Euler angles.
+    """
+
+    def __init__(self, theta, phi, lam):
+        self._theta = float(theta)
+        self._phi = float(phi)
+        self._lam = float(lam)
+
+        super()
+
+    def _num_qubits_(self) -> int:
+        return 1
+
+    def _unitary_(self):
+        cos = np.cos(self._theta / 2)
+        sin = np.sin(self._theta / 2)
+        phi = self._phi
+        lam = self._lam
+
+        return np.array(
+            [
+                [cos, -np.exp(complex(0, lam)) * sin],
+                [
+                    np.exp(complex(0, phi)) * sin,
+                    np.exp(complex(0, phi + lam)) * cos,
+                ],
+            ]
+        )
+
+    def _circuit_diagram_info_(self, args):
+        cirq_theta = self._theta / np.pi
+        cirq_phi = self._phi / np.pi
+        cirq_lam = self._lam / np.pi
+        return f"U3({cirq_theta}, {cirq_phi}, {cirq_lam})"
+
+    def __str__(self) -> str:
+        cirq_theta = fractions.Fraction(self._theta / np.pi)
+        cirq_phi = fractions.Fraction(self._phi / np.pi)
+        cirq_lam = fractions.Fraction(self._lam / np.pi)
+        gate_str = f"U3({cirq_theta},{cirq_phi},{cirq_lam})"
+        frac_str = gate_str.replace("/", "π/")
+        return frac_str.replace("1π", "π")
+
+
+class RZZGate(Gate):
+    """A two qubit gate for rotations about ZZ."""
+
+    def __init__(self, rads):
+        self._rads = rads
+
+        super()
+
+    def _num_qubits_(self) -> int:
+        return 2
+
+    def _unitary_(self):
+        itheta2 = 1j * self._rads * np.pi / 2
+        matrix = np.array(
+            [
+                [np.exp(-itheta2), 0, 0, 0],
+                [0, np.exp(itheta2), 0, 0],
+                [0, 0, np.exp(itheta2), 0],
+                [0, 0, 0, np.exp(-itheta2)],
+            ],
+        )
+        return np.round(matrix, decimals=15)
+
+    def _circuit_diagram_info_(self, args):
+        rounded_theta = np.array(self._rads)
+        if args.precision is not None:
+            rounded_theta = rounded_theta.round(args.precision)
+        gate_str = f"RZZ({rounded_theta})"
+        return CircuitDiagramInfo((gate_str, gate_str))
+
+
+def rzz(rads: float | int) -> Gate:
+    """Returns custom cirq RZZ gate given rotation angle in radians."""
+    if rads == 0:
+        return IdentityGate(2)
+    if rads == 2:
+        return TwoQubitDiagonalGate([np.pi] * 4)
+
+    # gate with the matrix exp(-i Z⊗Z rads)
+    # return ZZPowGate(exponent=2 * rads / np.pi, global_shift=-0.5)
+    return RZZGate(rads)

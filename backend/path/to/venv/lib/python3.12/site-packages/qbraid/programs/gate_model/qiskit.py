@@ -1,0 +1,122 @@
+# Copyright 2025 qBraid
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Module defining QiskitCircuit Class
+
+"""
+from __future__ import annotations
+
+from collections import OrderedDict
+from typing import TYPE_CHECKING
+
+import qiskit
+from packaging import version
+from qiskit.circuit import Qubit
+from qiskit.converters import circuit_to_dag, dag_to_circuit
+from qiskit.quantum_info import Operator
+from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+
+from qbraid.programs.exceptions import ProgramTypeError
+
+from ._model import GateModelProgram
+
+if TYPE_CHECKING:
+    import numpy as np
+
+
+class QiskitCircuit(GateModelProgram):
+    """Wrapper class for ``qiskit.QuantumCircuit`` objects"""
+
+    def __init__(self, program: qiskit.QuantumCircuit):
+        super().__init__(program)
+        if not isinstance(program, qiskit.QuantumCircuit):
+            raise ProgramTypeError(
+                message=f"Expected 'qiskit.QuantumCircuit' object, got '{type(program)}'."
+            )
+
+    @property
+    def qubits(self) -> list[Qubit]:
+        """Return the qubits acted upon by the operations in this circuit"""
+        return self.program.qubits
+
+    @property
+    def num_qubits(self) -> int:
+        """Return the number of qubits in the circuit."""
+        return self.program.num_qubits
+
+    @property
+    def num_clbits(self) -> int:
+        """Return the number of classical bits in the circuit."""
+        return self.program.num_clbits
+
+    @property
+    def depth(self) -> int:
+        """Return the circuit depth (i.e., length of critical path)."""
+        return self.program.depth()
+
+    def _unitary(self) -> np.ndarray:
+        """Calculate unitary of circuit. Removes measurement gates to
+        perform calculation if necessary."""
+        circuit = self.program.copy()
+        circuit.remove_final_measurements()
+        return Operator(circuit).data
+
+    def remove_idle_qubits(self) -> None:
+        """Checks whether the circuit uses contiguous qubits/indices,
+        and if not, reduces dimension accordingly."""
+        circuit = self.program.copy()
+
+        dag = circuit_to_dag(circuit)
+
+        idle_wires = list(dag.idle_wires())
+        if version.parse(qiskit.__version__) >= version.parse("1.3"):
+            idle_qubit_wires = []
+            idle_clbit_wires = []
+
+            for wire in idle_wires:
+                if isinstance(wire, Qubit):
+                    idle_qubit_wires.append(wire)
+                else:
+                    idle_clbit_wires.append(wire)
+
+            dag.remove_qubits(*idle_qubit_wires)
+            dag.remove_clbits(*idle_clbit_wires)
+        else:  # pragma: no cover
+            for w in idle_wires:
+                dag._remove_idle_wire(w)
+                try:
+                    dag.qubits.remove(w)
+                except ValueError:
+                    pass
+
+            dag.qregs = OrderedDict()
+
+        self._program = dag_to_circuit(dag)
+
+    def reverse_qubit_order(self) -> None:
+        """Reverse the order of the qubits in the circuit."""
+        circuit = self.program.copy()
+        reversed_circuit = circuit.reverse_bits()
+        self._program = reversed_circuit
+
+    def transform(self, device) -> None:
+        """Transform program to according to device target profile."""
+        if getattr(device.profile, "local", False) is True:
+            self.remove_idle_qubits()
+
+        pm_option = device._options.get("pass_manager")
+        pm = pm_option or generate_preset_pass_manager(backend=device._backend)
+        isa_circuit = pm.run(self._program)
+        self._program = isa_circuit

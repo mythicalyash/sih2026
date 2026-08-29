@@ -138,6 +138,22 @@ class QuirkImportResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
 
 
+class CodeExecuteRequest(BaseModel):
+    source_code: str
+    language: str = "python"
+    stdin: Optional[str] = None
+    timeout: Optional[float] = 8.0
+
+
+class CodeExecuteResponse(BaseModel):
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    status: Dict[str, Any] = Field(default_factory=lambda: {"id": 3, "description": "Success"})
+    time: Optional[str] = "0.000"
+    source: str = "quantum_sandbox"
+
+
+
 class AlgorithmSummary(BaseModel):
     name: str
     display_name: str

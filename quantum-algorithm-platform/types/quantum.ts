@@ -161,3 +161,17 @@ export interface ProblemProgressState {
   streakDays: number;
   totalXp: number;
 }
+
+export interface ExecutionStatus {
+  id: number;
+  description: string;
+}
+
+export interface CodeExecutionResult {
+  stdout?: string | null;
+  stderr?: string | null;
+  status: ExecutionStatus;
+  time?: string;
+  source?: string;
+}
+

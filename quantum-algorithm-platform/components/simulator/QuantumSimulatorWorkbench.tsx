@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type {
   CircuitIR,
   GateIR,
@@ -8,9 +8,8 @@ import type {
   ExecutionResponse,
   ComparisonResponse,
   BlochVector,
-  QuantumProblem,
-  ProblemCheckResponse,
 } from '@/types/quantum';
+import { ChevronLeft, ChevronRight, PanelRightOpen } from 'lucide-react';
 import { BACKEND_URL } from '@/config';
 import { Navbar } from './Navbar';
 import { GatePalette } from './GatePalette';
@@ -19,31 +18,20 @@ import { CodePanel } from './CodePanel';
 import { ResultsPanel } from './ResultsPanel';
 import { QuirkImportModal } from './QuirkImportModal';
 import { AITutorPanel } from './AITutorPanel';
-import {
-  Trophy,
-  CheckCircle2,
-  Lightbulb,
-  Search,
-  BookOpen,
-  ArrowRight,
-  Sparkles,
-  X,
-  Play,
-  RotateCcw,
-} from 'lucide-react';
+import { GateCheatSheetModal } from './GateCheatSheetModal';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { AboutModal } from './AboutModal';
 
 interface QuantumSimulatorWorkbenchProps {
-  activeProblem?: QuantumProblem | null;
-  onExitProblem?: () => void;
-  onProblemSolved?: (problemId: string, nextProblemId?: string | null) => void;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 export function QuantumSimulatorWorkbench({
-  activeProblem,
-  onExitProblem,
-  onProblemSolved,
-}: QuantumSimulatorWorkbenchProps) {
-  const [numQubits, setNumQubits] = useState<number>(activeProblem ? activeProblem.num_qubits : 4);
+  onToggleSidebar,
+  sidebarCollapsed,
+}: QuantumSimulatorWorkbenchProps = {}) {
+  const [numQubits, setNumQubits] = useState<number>(4);
   const [numSteps, setNumSteps] = useState<number>(6);
   const [gates, setGates] = useState<PlacedGate[]>([]);
   const [history, setHistory] = useState<PlacedGate[][]>([]);
@@ -59,16 +47,66 @@ export function QuantumSimulatorWorkbench({
   const [blochVectors, setBlochVectors] = useState<BlochVector[]>([]);
   const [simulationError, setSimulationError] = useState<string | null>(null);
 
+  const [circuitName, setCircuitName] = useState<string>('Untitled circuit');
   const [isQuirkModalOpen, setIsQuirkModalOpen] = useState<boolean>(false);
   const [isTutorModalOpen, setIsTutorModalOpen] = useState<boolean>(false);
-  const [tutorInitialMode, setTutorInitialMode] = useState<'default' | 'hint' | 'review' | 'concept'>('default');
-
+  const [isCheatSheetOpen, setIsCheatSheetOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [selectedBackend, setSelectedBackend] = useState<string>('qiskit_aer');
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
 
-  // Solution Checking State
-  const [isCheckingSolution, setIsCheckingSolution] = useState<boolean>(false);
-  const [checkResult, setCheckResult] = useState<ProblemCheckResponse | null>(null);
-  const [isCheckModalOpen, setIsCheckModalOpen] = useState<boolean>(false);
+  // Resizable Code Editor States
+  const [editorWidthPercent, setEditorWidthPercent] = useState<number>(40);
+  const [isEditorCollapsed, setIsEditorCollapsed] = useState<boolean>(false);
+  const [isEditorMaximized, setIsEditorMaximized] = useState<boolean>(false);
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+  const workbenchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Mouse drag handler for horizontal splitter
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSplitter || !workbenchContainerRef.current) return;
+      const rect = workbenchContainerRef.current.getBoundingClientRect();
+      const rightDistance = rect.right - e.clientX;
+      const newPercent = (rightDistance / rect.width) * 100;
+      // Clamp between 20% and 75%
+      const clamped = Math.max(20, Math.min(75, newPercent));
+      setEditorWidthPercent(clamped);
+      if (isEditorCollapsed) setIsEditorCollapsed(false);
+      if (isEditorMaximized) setIsEditorMaximized(false);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSplitter(false);
+    };
+
+    if (isDraggingSplitter) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDraggingSplitter, isEditorCollapsed, isEditorMaximized]);
+
+  const handleSetWidthPreset = (preset: 'compact' | 'standard' | 'wide') => {
+    setIsEditorCollapsed(false);
+    setIsEditorMaximized(false);
+    if (preset === 'compact') setEditorWidthPercent(28);
+    else if (preset === 'standard') setEditorWidthPercent(40);
+    else if (preset === 'wide') setEditorWidthPercent(56);
+  };
+
 
   const checkHealth = useCallback(async () => {
     try {
@@ -126,6 +164,10 @@ export function QuantumSimulatorWorkbench({
       setIsRunning(true);
       setSimulationError(null);
 
+      console.group(`%c🚀 Quantum Simulation Running [${bChoice.toUpperCase()}]`, 'color: #c96b2c; font-weight: bold; font-size: 12px;');
+      console.log(`%c[CIRCUIT DETAILS]%c Qubits: ${activeIR.num_qubits} | Gates: ${activeIR.gates.length}`, 'color: #746e64; font-weight: bold;', 'color: #211f1b;', activeIR.gates);
+      console.log(`%c[BACKEND]%c ${bChoice} (1024 shots)`, 'color: #746e64; font-weight: bold;', 'color: #211f1b;');
+
       try {
         const execRes = await fetch(`${BACKEND_URL}/execute`, {
           method: 'POST',
@@ -145,6 +187,12 @@ export function QuantumSimulatorWorkbench({
         const execData: ExecutionResponse = await execRes.json();
         setExecutionResult(execData);
 
+        console.log(`%c[EXECUTION SUCCESS]%c Simulated in ${execData.execution_time_ms} ms`, 'color: #137333; font-weight: bold;', 'color: #137333;', {
+          probabilities: execData.probabilities,
+          measuredCounts: execData.counts,
+          statevector: execData.statevector,
+        });
+
         const compRes = await fetch(`${BACKEND_URL}/execute/compare`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -152,13 +200,14 @@ export function QuantumSimulatorWorkbench({
             circuit: activeIR,
             tolerance: 0.0001,
             shots: 1024,
-            backends: ['qiskit_aer', 'pennylane', 'qsim', 'cirq', 'qbraid'],
+            backends: ['qiskit_aer', 'pennylane', 'qsim', 'qbraid'],
           }),
         });
 
         if (compRes.ok) {
           const compData: ComparisonResponse = await compRes.json();
           setComparisonResult(compData);
+          console.log(`%c[CROSS-ENGINE VERIFICATION]%c Match: ${compData.match ? '✅ EXACT' : '❌ DIFF'} | Fidelity: ${compData.fidelity?.toFixed(6)} | Max Diff: ${compData.max_statevector_diff?.toFixed(6)}`, 'color: #0f62fe; font-weight: bold;', 'color: #211f1b;', compData.comparison);
         }
 
         const blochRes = await fetch(`${BACKEND_URL}/state/bloch`, {
@@ -172,8 +221,10 @@ export function QuantumSimulatorWorkbench({
           setBlochVectors(blochData.bloch_vectors || []);
         }
       } catch (err: any) {
+        console.error(`%c[SIMULATION ERROR]%c ${err.message || 'Error executing simulation'}`, 'color: #c5221f; font-weight: bold;', 'color: #c5221f;');
         setSimulationError(err.message || 'Error executing simulation.');
       } finally {
+        console.groupEnd();
         setIsRunning(false);
       }
     },
@@ -182,7 +233,7 @@ export function QuantumSimulatorWorkbench({
 
   const applyCircuitIR = useCallback(
     (ir: CircuitIR, autoRun = false) => {
-      const newNumQubits = Math.max(1, Math.min(5, ir.num_qubits));
+      const newNumQubits = Math.max(2, Math.min(5, ir.num_qubits));
       setNumQubits(newNumQubits);
 
       const placed: PlacedGate[] = [];
@@ -247,25 +298,21 @@ export function QuantumSimulatorWorkbench({
     [gates, handleRunSimulation]
   );
 
-  // Initialize or rehydrate on activeProblem change
   useEffect(() => {
-    if (activeProblem) {
-      applyCircuitIR(activeProblem.starter_circuit, true);
-    } else {
-      applyCircuitIR(
-        {
-          num_qubits: 4,
-          gates: [
-            { name: 'h', qubits: [0] },
-            { name: 'cx', qubits: [0, 1] },
-          ],
-        },
-        true
-      );
-    }
-  }, [activeProblem]);
+    applyCircuitIR(
+      {
+        num_qubits: 4,
+        gates: [
+          { name: 'h', qubits: [0] },
+          { name: 'cx', qubits: [0, 1] },
+        ],
+      },
+      true
+    );
+  }, []);
 
   const handleLoadPreset = async (algorithmKey: string) => {
+    setSelectedPreset(algorithmKey);
     setIsRunning(true);
     try {
       const res = await fetch(`${BACKEND_URL}/algorithms/${algorithmKey}`);
@@ -282,7 +329,9 @@ export function QuantumSimulatorWorkbench({
   const handleCellClick = (qubit: number, step: number) => {
     if (!armedGate) return;
 
-    if (armedGate === 'cnot' || armedGate === 'cz' || armedGate === 'swap') {
+    const is2Qubit = ['cnot', 'cx', 'ncx', 'cz', 'swap', 'cp'].includes(armedGate);
+
+    if (is2Qubit) {
       if (cnotControlPending === null) {
         setCnotControlPending(qubit);
       } else {
@@ -342,7 +391,7 @@ export function QuantumSimulatorWorkbench({
   };
 
   const handleDropGate = (gate: string, qubit: number, step: number, params?: number[]) => {
-    const isMulti = gate === 'cnot' || gate === 'cx' || gate === 'cz' || gate === 'swap';
+    const isMulti = ['cnot', 'cx', 'ncx', 'cz', 'swap', 'cp'].includes(gate);
 
     setHistory((prev) => [...prev, gates]);
 
@@ -486,51 +535,136 @@ export function QuantumSimulatorWorkbench({
     setGates([]);
   };
 
-  // Check Solution Action
-  const handleCheckSolution = async () => {
-    if (!activeProblem) return;
-    setIsCheckingSolution(true);
-
-    try {
-      // First run simulation to get fresh metrics
-      await handleRunSimulation();
-
-      const res = await fetch(`${BACKEND_URL}/problem/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          problem_id: activeProblem.id,
-          circuit: circuitIR,
-        }),
-      });
-
-      if (res.ok) {
-        const data: ProblemCheckResponse = await res.json();
-        setCheckResult(data);
-        setIsCheckModalOpen(true);
-
-        if (data.passed && onProblemSolved) {
-          onProblemSolved(activeProblem.id, data.next_problem_id);
-        }
-      }
-    } catch (err: any) {
-      setSimulationError('Failed to check problem solution.');
-    } finally {
-      setIsCheckingSolution(false);
-    }
+  const downloadFile = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const openTutorWithMode = (mode: 'default' | 'hint' | 'review' | 'concept') => {
-    setTutorInitialMode(mode);
-    setIsTutorModalOpen(true);
+  const handleNewCircuit = () => {
+    setHistory((prev) => [...prev, gates]);
+    setGates([]);
+    setNumQubits(3);
+    setNumSteps(6);
+    setCircuitName('New Quantum Circuit');
+    setSelectedPreset('');
+  };
+
+  const handleExportQASM = () => {
+    const lines = [
+      'OPENQASM 3.0;',
+      'include "stdgates.inc";',
+      '',
+      `qubit[${circuitIR.num_qubits}] q;`,
+      `bit[${circuitIR.num_qubits}] c;`,
+      '',
+    ];
+    for (const g of circuitIR.gates) {
+      const name = g.name.toLowerCase();
+      if (name === 'cx' || name === 'cnot') {
+        lines.push(`cx q[${g.qubits[0]}], q[${g.qubits[1]}];`);
+      } else if (name === 'cz') {
+        lines.push(`cz q[${g.qubits[0]}], q[${g.qubits[1]}];`);
+      } else if (name === 'swap') {
+        lines.push(`swap q[${g.qubits[0]}], q[${g.qubits[1]}];`);
+      } else if (name === 'ccx') {
+        lines.push(`ccx q[${g.qubits[0]}], q[${g.qubits[1]}], q[${g.qubits[2]}];`);
+      } else if (name === 'measure') {
+        lines.push(`c[${g.qubits[0]}] = measure q[${g.qubits[0]}];`);
+      } else if (['rx', 'ry', 'rz', 'p'].includes(name) && g.params) {
+        lines.push(`${name}(${g.params[0].toFixed(4)}) q[${g.qubits[0]}];`);
+      } else {
+        lines.push(`${name} q[${g.qubits[0]}];`);
+      }
+    }
+    const safeName = (circuitName || 'circuit').toLowerCase().replace(/\s+/g, '_');
+    downloadFile(lines.join('\n'), `${safeName}.qasm`, 'text/plain');
+  };
+
+  const handleExportPython = () => {
+    const lines = [
+      'import numpy as np',
+      'from qiskit import QuantumCircuit',
+      'from qiskit_aer import AerSimulator',
+      '',
+      `# Initialize ${circuitIR.num_qubits}-qubit quantum circuit`,
+      `qc = QuantumCircuit(${circuitIR.num_qubits})`,
+      '',
+    ];
+    for (const g of circuitIR.gates) {
+      const name = g.name.toLowerCase();
+      if (['h', 'x', 'y', 'z', 's', 'sdg', 't', 'tdg'].includes(name)) {
+        lines.push(`qc.${name}(${g.qubits[0]})`);
+      } else if (name === 'cx' || name === 'cnot') {
+        lines.push(`qc.cx(${g.qubits[0]}, ${g.qubits[1]})`);
+      } else if (name === 'cz') {
+        lines.push(`qc.cz(${g.qubits[0]}, ${g.qubits[1]})`);
+      } else if (name === 'swap') {
+        lines.push(`qc.swap(${g.qubits[0]}, ${g.qubits[1]})`);
+      } else if (name === 'ccx') {
+        lines.push(`qc.ccx(${g.qubits[0]}, ${g.qubits[1]}, ${g.qubits[2]})`);
+      } else if (['rx', 'ry', 'rz', 'p'].includes(name) && g.params) {
+        lines.push(`qc.${name}(${g.params[0].toFixed(6)}, ${g.qubits[0]})`);
+      }
+    }
+    lines.push('');
+    lines.push('# Simulate on Qiskit Aer backend');
+    lines.push('sim = AerSimulator()');
+    lines.push('qc.measure_all()');
+    lines.push('result = sim.run(qc, shots=1024).result()');
+    lines.push('print("Measurement Counts:", result.get_counts())');
+
+    const safeName = (circuitName || 'circuit').toLowerCase().replace(/\s+/g, '_');
+    downloadFile(lines.join('\n'), `${safeName}_qiskit.py`, 'text/x-python');
+  };
+
+  const handleExportJSON = () => {
+    const jsonStr = JSON.stringify(circuitIR, null, 2);
+    const safeName = (circuitName || 'circuit').toLowerCase().replace(/\s+/g, '_');
+    downloadFile(jsonStr, `${safeName}.json`, 'application/json');
+  };
+
+  const handleImportFile = (content: string, filename: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.num_qubits && Array.isArray(parsed.gates)) {
+        applyCircuitIR(parsed, true);
+        setCircuitName(filename.replace(/\.[^/.]+$/, ''));
+        return;
+      }
+    } catch {
+      // Text format
+    }
+    setCircuitName(filename.replace(/\.[^/.]+$/, ''));
   };
 
   return (
-    <div className="w-full bg-[#f7f4ee] text-[#211f1b] flex flex-col font-sans selection:bg-[#c96b2c] selection:text-white min-h-screen">
+    <div className="w-full h-full max-h-screen bg-[#f7f4ee] text-[#211f1b] flex flex-col font-sans selection:bg-[#c96b2c] selection:text-white overflow-hidden">
       <Navbar
-        onLoadPreset={handleLoadPreset}
+        circuitName={circuitName}
+        onRenameCircuit={setCircuitName}
+        onNewCircuit={handleNewCircuit}
+        onExportQASM={handleExportQASM}
+        onExportPython={handleExportPython}
+        onExportJSON={handleExportJSON}
+        onImportFile={handleImportFile}
+        onUndo={handleUndo}
+        canUndo={history.length > 0}
+        onClearGates={handleClear}
+        onAddQubit={() => setNumQubits((prev) => Math.min(8, prev + 1))}
+        onRemoveQubit={() => setNumQubits((prev) => Math.max(1, prev - 1))}
+        numQubits={numQubits}
+        onAddSteps={() => setNumSteps((prev) => prev + 2)}
+        onToggleCodeEditor={() => setIsEditorCollapsed((prev) => !prev)}
         onOpenQuirkModal={() => setIsQuirkModalOpen(true)}
-        onOpenTutorModal={() => openTutorWithMode('default')}
+        onOpenTutorModal={() => setIsTutorModalOpen(true)}
+        onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onOpenAbout={() => setIsAboutOpen(true)}
         onRunSimulation={() => handleRunSimulation()}
         isLoading={isRunning}
         backendConnected={backendConnected}
@@ -539,124 +673,129 @@ export function QuantumSimulatorWorkbench({
           setSelectedBackend(b);
           handleRunSimulation(undefined, b);
         }}
+        selectedPreset={selectedPreset}
+        onLoadPreset={handleLoadPreset}
+        onToggleSidebar={onToggleSidebar}
+        sidebarCollapsed={sidebarCollapsed}
       />
 
-      <div className="p-3 sm:p-4 max-w-[1750px] w-full mx-auto flex flex-col gap-4">
-        {/* Active Problem Challenge Banner (if challenge mode) */}
-        {activeProblem && (
-          <div className="p-4 rounded-xl bg-[#fffaf3] border border-[#f0d1b3] shadow-sm flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#c96b2c]/15 text-[#c96b2c]">
-                <Trophy className="w-5 h-5" />
+      {/* Main Resizable Workbench Area */}
+      <div
+        ref={workbenchContainerRef}
+        className="flex-1 min-h-0 overflow-hidden p-2 sm:p-2.5 max-w-[1920px] w-full mx-auto flex flex-col lg:flex-row gap-2 lg:gap-0 items-stretch relative"
+      >
+        {/* Left Side: Circuit Canvas & Visualizers */}
+        {!isEditorMaximized && (
+          <div
+            className="h-full flex flex-col gap-2 min-w-0 overflow-hidden transition-[width] duration-75"
+            style={{
+              width: isEditorCollapsed ? '100%' : `calc(${100 - editorWidthPercent}% - 8px)`,
+            }}
+          >
+            {/* Top Row: Gate Palette (Fixed Width) & Circuit Canvas (Flexible Width) */}
+            <div className="h-[49%] min-h-[220px] max-h-[50%] flex-shrink-0 flex flex-row gap-2 items-stretch overflow-hidden">
+              <div className="w-[260px] xl:w-[270px] flex-shrink-0 flex flex-col h-full overflow-hidden">
+                <GatePalette
+                  armedGate={armedGate}
+                  onArmGate={(gate, params) => {
+                    setArmedGate(gate);
+                    setArmedParams(params);
+                    setCnotControlPending(null);
+                  }}
+                  onDisarm={() => {
+                    setArmedGate(null);
+                    setArmedParams(undefined);
+                    setCnotControlPending(null);
+                  }}
+                  cnotControlPending={cnotControlPending}
+                />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#c96b2c] text-white">
-                    Challenge
-                  </span>
-                  <h2 className="font-bold text-sm text-[#211f1b]">{activeProblem.title}</h2>
-                  <span className="text-xs text-[#746e64]">• {activeProblem.topic}</span>
-                </div>
-                <p className="text-xs text-[#746e64] mt-0.5">{activeProblem.goal}</p>
+
+              <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+                <CircuitCanvas
+                  numQubits={numQubits}
+                  onNumQubitsChange={(val) => {
+                    setNumQubits(val);
+                    setGates((prev) => prev.filter((g) => g.qubit < val && (!g.controlQubit || g.controlQubit < val)));
+                  }}
+                  gates={gates}
+                  numSteps={numSteps}
+                  onAddStep={() => setNumSteps((prev) => Math.min(32, prev + 1))}
+                  onRemoveStep={() => setNumSteps((prev) => Math.max(4, prev - 1))}
+                  onCellClick={handleCellClick}
+                  onRemoveGate={handleRemoveGate}
+                  onUndo={handleUndo}
+                  onClear={handleClear}
+                  canUndo={history.length > 0}
+                  armedGate={armedGate}
+                  cnotControlPending={cnotControlPending}
+                  onDropGate={handleDropGate}
+                  onMoveGate={handleMoveGate}
+                />
               </div>
             </div>
 
-            {/* Quick Challenge Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => openTutorWithMode('hint')}
-                className="px-3 py-1.5 rounded-lg bg-[#fffdf9] hover:bg-[#eee9df] border border-[#ded7cb] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Lightbulb className="w-3.5 h-3.5 text-[#c96b2c]" />
-                <span>💡 Hint</span>
-              </button>
-
-              <button
-                onClick={() => openTutorWithMode('review')}
-                className="px-3 py-1.5 rounded-lg bg-[#fffdf9] hover:bg-[#eee9df] border border-[#ded7cb] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Search className="w-3.5 h-3.5 text-[#4f806d]" />
-                <span>🔍 Review</span>
-              </button>
-
-              <button
-                onClick={handleCheckSolution}
-                disabled={isCheckingSolution}
-                className="px-4 py-1.5 rounded-lg bg-[#4f806d] hover:bg-[#3e6858] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{isCheckingSolution ? 'Evaluating...' : 'Check Solution'}</span>
-              </button>
-
-              {onExitProblem && (
-                <button
-                  onClick={onExitProblem}
-                  className="p-1.5 rounded-lg text-[#746e64] hover:text-[#211f1b] hover:bg-[#eee9df] transition-colors cursor-pointer ml-1"
-                  title="Exit Challenge"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            {/* Bottom Row: Probabilities & Q-Sphere Visualizers (Constant Locked Height) */}
+            <div className="h-[51%] min-h-0 flex-1 flex flex-col overflow-hidden">
+              <ResultsPanel
+                onRunSimulation={() => handleRunSimulation()}
+                isRunning={isRunning}
+                executionResult={executionResult}
+                comparisonResult={comparisonResult}
+                blochVectors={blochVectors}
+                numQubits={numQubits}
+                error={simulationError}
+              />
             </div>
           </div>
         )}
 
-        {/* Top Grid: Operations | Canvas | Code */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-          <div className="lg:col-span-3">
-            <GatePalette
-              armedGate={armedGate}
-              onArmGate={(gate, params) => {
-                setArmedGate(gate);
-                setArmedParams(params);
-                setCnotControlPending(null);
-              }}
-              onDisarm={() => {
-                setArmedGate(null);
-                setArmedParams(undefined);
-                setCnotControlPending(null);
-              }}
-              cnotControlPending={cnotControlPending}
+        {/* Resizable Horizontal Splitter Bar (Desktop) */}
+        {!isEditorCollapsed && !isEditorMaximized && (
+          <div
+            onMouseDown={() => setIsDraggingSplitter(true)}
+            onDoubleClick={() => setEditorWidthPercent(40)}
+            className={`hidden lg:flex items-center justify-center w-2 hover:w-3 cursor-col-resize select-none group transition-all shrink-0 z-20 mx-1 ${
+              isDraggingSplitter ? 'bg-[#c96b2c]/40' : 'hover:bg-[#c96b2c]/20'
+            }`}
+            title="Drag horizontally to resize editor (Double-click to reset to 40%)"
+          >
+            <div className="w-[3px] h-16 rounded-full bg-[#ded7cb] group-hover:bg-[#c96b2c] transition-colors" />
+          </div>
+        )}
+
+        {/* Whole Right Side: Code Editor */}
+        {!isEditorCollapsed && (
+          <div
+            className="h-full flex flex-col shrink-0 min-w-0 overflow-hidden transition-[width] duration-75"
+            style={{
+              width: isEditorMaximized ? '100%' : `${editorWidthPercent}%`,
+            }}
+          >
+            <CodePanel
+              circuitIR={circuitIR}
+              onApplyIR={applyCircuitIR}
+              isMaximized={isEditorMaximized}
+              onToggleMaximize={() => setIsEditorMaximized((prev) => !prev)}
+              onToggleCollapse={() => setIsEditorCollapsed(true)}
+              onSetWidthPreset={handleSetWidthPreset}
             />
           </div>
+        )}
 
-          <div className="lg:col-span-6">
-            <CircuitCanvas
-              numQubits={numQubits}
-              onNumQubitsChange={(val) => {
-                setNumQubits(val);
-                setGates((prev) => prev.filter((g) => g.qubit < val && (!g.controlQubit || g.controlQubit < val)));
-              }}
-              gates={gates}
-              numSteps={numSteps}
-              onAddStep={() => setNumSteps((prev) => prev + 2)}
-              onCellClick={handleCellClick}
-              onRemoveGate={handleRemoveGate}
-              onUndo={handleUndo}
-              onClear={handleClear}
-              canUndo={history.length > 0}
-              armedGate={armedGate}
-              cnotControlPending={cnotControlPending}
-              onDropGate={handleDropGate}
-              onMoveGate={handleMoveGate}
-            />
-          </div>
-
-          <div className="lg:col-span-3">
-            <CodePanel circuitIR={circuitIR} onApplyIR={applyCircuitIR} />
-          </div>
-        </div>
-
-        {/* Bottom Section: Probabilities & Q-Sphere */}
-        <ResultsPanel
-          onRunSimulation={() => handleRunSimulation()}
-          isRunning={isRunning}
-          executionResult={executionResult}
-          comparisonResult={comparisonResult}
-          blochVectors={blochVectors}
-          numQubits={numQubits}
-          error={simulationError}
-        />
+        {/* Floating Expand Trigger when Editor is Collapsed */}
+        {isEditorCollapsed && (
+          <button
+            onClick={() => setIsEditorCollapsed(false)}
+            className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 bg-[#fffdf9] border-l border-y border-[#ded7cb] hover:border-[#c96b2c] rounded-l-md px-2 py-4 shadow-md text-[#211f1b] hover:text-[#c96b2c] items-center gap-1 text-xs font-mono transition-all cursor-pointer group"
+            title="Open Code Editor"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-[#c96b2c] group-hover:-translate-x-0.5 transition-transform" />
+            <span className="[writing-mode:vertical-rl] tracking-wider font-semibold text-[11px]">
+              Code Editor
+            </span>
+          </button>
+        )}
       </div>
 
       <QuirkImportModal
@@ -671,100 +810,22 @@ export function QuantumSimulatorWorkbench({
         circuitIR={circuitIR}
         isOpen={isTutorModalOpen}
         onClose={() => setIsTutorModalOpen(false)}
-        activeProblem={activeProblem}
-        initialMode={tutorInitialMode}
       />
 
-      {/* Solution Validation Evaluation Modal */}
-      {isCheckModalOpen && checkResult && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">
-          <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-[#211f1b]">
-            <div className="flex items-center justify-between border-b border-[#ded7cb] pb-4">
-              <div className="flex items-center gap-2.5">
-                {checkResult.passed ? (
-                  <div className="p-2 rounded-full bg-[#4f806d]/15 text-[#4f806d]">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                ) : (
-                  <div className="p-2 rounded-full bg-[#c96b2c]/15 text-[#c96b2c]">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-extrabold text-base">
-                    {checkResult.passed ? '🎉 Challenge Completed!' : 'Almost There!'}
-                  </h3>
-                  <p className="text-xs text-[#746e64]">{activeProblem?.title}</p>
-                </div>
-              </div>
+      <GateCheatSheetModal
+        isOpen={isCheatSheetOpen}
+        onClose={() => setIsCheatSheetOpen(false)}
+      />
 
-              <button
-                onClick={() => setIsCheckModalOpen(false)}
-                className="p-1 rounded text-[#746e64] hover:text-[#211f1b] cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
 
-            {/* AI Feedback Box */}
-            <div
-              className={`p-4 rounded-xl text-xs flex flex-col gap-2 ${
-                checkResult.passed
-                  ? 'bg-[#f4f8f6] border border-[#bad8cb] text-[#211f1b]'
-                  : 'bg-[#fffaf3] border border-[#f0d1b3] text-[#211f1b]'
-              }`}
-            >
-              <strong className="text-sm">{checkResult.feedback}</strong>
-              <p className="leading-relaxed opacity-90 whitespace-pre-wrap">{checkResult.ai_explanation}</p>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
-              {!checkResult.passed ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setIsCheckModalOpen(false);
-                      openTutorWithMode('hint');
-                    }}
-                    className="px-4 py-2 rounded-lg bg-[#fffdf9] border border-[#ded7cb] hover:border-[#c96b2c] text-xs font-semibold text-[#211f1b] flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5 text-[#c96b2c]" />
-                    <span>Ask AI for a Hint</span>
-                  </button>
-                  <button
-                    onClick={() => setIsCheckModalOpen(false)}
-                    className="px-5 py-2 rounded-lg bg-[#211f1b] hover:bg-[#38342e] text-white text-xs font-semibold cursor-pointer"
-                  >
-                    Keep Experimenting
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setIsCheckModalOpen(false)}
-                    className="px-4 py-2 rounded-lg bg-[#fffdf9] border border-[#ded7cb] text-xs font-semibold text-[#746e64] hover:text-[#211f1b] cursor-pointer"
-                  >
-                    Stay in Workbench
-                  </button>
-                  {onExitProblem && (
-                    <button
-                      onClick={() => {
-                        setIsCheckModalOpen(false);
-                        onExitProblem();
-                      }}
-                      className="px-5 py-2 rounded-lg bg-[#4f806d] hover:bg-[#3e6858] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
-                    >
-                      <span>Next Challenge</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+      />
     </div>
   );
 }

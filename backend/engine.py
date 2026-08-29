@@ -125,6 +125,24 @@ def run_circuit_pennylane(
                 for q in qubits: qml.T(wires=q)
             elif name == "tdg":
                 for q in qubits: qml.adjoint(qml.T(wires=q))
+            elif name == "sx":
+                for q in qubits: qml.SX(wires=q)
+            elif name == "sxdg":
+                for q in qubits: qml.adjoint(qml.SX(wires=q))
+            elif name == "sy":
+                for q in qubits: qml.RY(math.pi / 2, wires=q)
+            elif name == "sydg":
+                for q in qubits: qml.RY(-math.pi / 2, wires=q)
+            elif name == "x_1_4":
+                for q in qubits: qml.RX(math.pi / 4, wires=q)
+            elif name == "x_neg1_4":
+                for q in qubits: qml.RX(-math.pi / 4, wires=q)
+            elif name == "y_1_4":
+                for q in qubits: qml.RY(math.pi / 4, wires=q)
+            elif name == "y_neg1_4":
+                for q in qubits: qml.RY(-math.pi / 4, wires=q)
+            elif name == "z_1_8":
+                for q in qubits: qml.PhaseShift(math.pi / 8, wires=q)
             elif name == "rx":
                 for q in qubits: qml.RX(theta, wires=q)
             elif name == "ry":
@@ -133,10 +151,14 @@ def run_circuit_pennylane(
                 for q in qubits: qml.RZ(theta, wires=q)
             elif name == "p":
                 for q in qubits: qml.PhaseShift(theta, wires=q)
-            elif name == "sx":
-                for q in qubits: qml.SX(wires=q)
+            elif name in ("u", "u3") and len(params) >= 3:
+                for q in qubits: qml.Rot(params[1], params[0], params[2], wires=q)
             elif name == "cx":
                 qml.CNOT(wires=[qubits[0], qubits[1]])
+            elif name == "ncx":
+                qml.PauliX(wires=qubits[0])
+                qml.CNOT(wires=[qubits[0], qubits[1]])
+                qml.PauliX(wires=qubits[0])
             elif name == "cz":
                 qml.CZ(wires=[qubits[0], qubits[1]])
             elif name == "swap":
@@ -145,6 +167,10 @@ def run_circuit_pennylane(
                 qml.Toffoli(wires=[qubits[0], qubits[1], qubits[2]])
             elif name == "cswap":
                 qml.CSWAP(wires=[qubits[0], qubits[1], qubits[2]])
+            elif name == "qft":
+                qml.QFT(wires=qubits)
+            elif name == "iqft":
+                qml.adjoint(qml.QFT)(wires=qubits)
 
         return qml.state()
 
@@ -162,7 +188,87 @@ def run_circuit_pennylane(
 
     amplitudes = statevector_to_amplitudes(sv_reordered, num_qubits)
     exact_probs = statevector_to_probabilities(sv_reordered, num_qubits)
-    counts = _sample_counts_from_probs(exact_probs, shots)
+    # 2. Native Shot measurement in PennyLane
+    counts: Dict[str, int] = {}
+    try:
+        dev_shots = qml.device("default.qubit", wires=num_qubits)
+        @qml.qnode(dev_shots, shots=shots)
+        def pl_sample_circuit():
+            for g in active_gates:
+                name = normalize_gate_name(g.name)
+                qubits = g.qubits
+                params = g.params or []
+                theta = float(params[0]) if len(params) > 0 else math.pi
+                if name == "h":
+                    for q in qubits: qml.Hadamard(wires=q)
+                elif name == "x":
+                    for q in qubits: qml.PauliX(wires=q)
+                elif name == "y":
+                    for q in qubits: qml.PauliY(wires=q)
+                elif name == "z":
+                    for q in qubits: qml.PauliZ(wires=q)
+                elif name == "s":
+                    for q in qubits: qml.S(wires=q)
+                elif name == "sdg":
+                    for q in qubits: qml.adjoint(qml.S(wires=q))
+                elif name == "t":
+                    for q in qubits: qml.T(wires=q)
+                elif name == "tdg":
+                    for q in qubits: qml.adjoint(qml.T(wires=q))
+                elif name == "sx":
+                    for q in qubits: qml.SX(wires=q)
+                elif name == "sxdg":
+                    for q in qubits: qml.adjoint(qml.SX(wires=q))
+                elif name == "sy":
+                    for q in qubits: qml.RY(math.pi / 2, wires=q)
+                elif name == "sydg":
+                    for q in qubits: qml.RY(-math.pi / 2, wires=q)
+                elif name == "x_1_4":
+                    for q in qubits: qml.RX(math.pi / 4, wires=q)
+                elif name == "x_neg1_4":
+                    for q in qubits: qml.RX(-math.pi / 4, wires=q)
+                elif name == "y_1_4":
+                    for q in qubits: qml.RY(math.pi / 4, wires=q)
+                elif name == "y_neg1_4":
+                    for q in qubits: qml.RY(-math.pi / 4, wires=q)
+                elif name == "z_1_8":
+                    for q in qubits: qml.PhaseShift(math.pi / 8, wires=q)
+                elif name == "rx":
+                    for q in qubits: qml.RX(theta, wires=q)
+                elif name == "ry":
+                    for q in qubits: qml.RY(theta, wires=q)
+                elif name == "rz":
+                    for q in qubits: qml.RZ(theta, wires=q)
+                elif name == "p":
+                    for q in qubits: qml.PhaseShift(theta, wires=q)
+                elif name in ("u", "u3") and len(params) >= 3:
+                    for q in qubits: qml.Rot(params[1], params[0], params[2], wires=q)
+                elif name == "cx":
+                    qml.CNOT(wires=[qubits[0], qubits[1]])
+                elif name == "ncx":
+                    qml.PauliX(wires=qubits[0])
+                    qml.CNOT(wires=[qubits[0], qubits[1]])
+                    qml.PauliX(wires=qubits[0])
+                elif name == "cz":
+                    qml.CZ(wires=[qubits[0], qubits[1]])
+                elif name == "swap":
+                    qml.SWAP(wires=[qubits[0], qubits[1]])
+                elif name == "ccx":
+                    qml.Toffoli(wires=[qubits[0], qubits[1], qubits[2]])
+                elif name == "cswap":
+                    qml.CSWAP(wires=[qubits[0], qubits[1], qubits[2]])
+                elif name == "qft":
+                    qml.QFT(wires=qubits)
+                elif name == "iqft":
+                    qml.adjoint(qml.QFT)(wires=qubits)
+            return qml.sample(wires=list(range(num_qubits)))
+
+        samples = pl_sample_circuit()
+        for row in samples:
+            bitstring = "".join(str(int(b)) for b in row[::-1])
+            counts[bitstring] = counts.get(bitstring, 0) + 1
+    except Exception:
+        counts = _sample_counts_from_probs(exact_probs, shots)
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0
     return ExecutionResponse(
@@ -188,22 +294,26 @@ def run_circuit_qsim(
 
     num_qubits = circuit.num_qubits
     qubits = cirq.LineQubit.range(num_qubits)
-    cc = ir_to_cirq(circuit)
+    
+    # 1. Statevector evaluation (pure quantum circuit without destructive collapse)
+    non_measure_gates = [g for g in circuit.gates if normalize_gate_name(g.name) != "measure"]
+    ir_pure = CircuitIR(num_qubits=num_qubits, gates=non_measure_gates)
+    cc_pure = ir_to_cirq(ir_pure)
 
     # Use reversed qubit order [q_{n-1}, ..., q_0] for exact match with standard Qiskit bitstring indexing
     qsim_sim = qsimcirq.QSimSimulator()
-    res = qsim_sim.simulate(cc, qubit_order=qubits[::-1])
+    res = qsim_sim.simulate(cc_pure, qubit_order=qubits[::-1])
     raw_sv = res.state_vector()
     statevector_np = np.array(raw_sv, dtype=complex)
 
     amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
     exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
 
-    # Sample measurement counts
+    # 2. Sample measurement counts using Google C++ qsim simulator
     has_measurements = any(normalize_gate_name(g.name) == "measure" for g in circuit.gates)
     counts: Dict[str, int] = {}
     try:
-        cc_measure = cc.copy()
+        cc_measure = ir_to_cirq(circuit)
         if not has_measurements:
             cc_measure.append([cirq.measure(qubits[i], key=f"q{i}") for i in range(num_qubits)])
         run_res = qsim_sim.run(cc_measure, repetitions=shots)
@@ -230,22 +340,45 @@ def run_circuit_cirq(
     shots: int = 1024,
     include_statevector: bool = True
 ) -> ExecutionResponse:
-    """Execute on Google Cirq native statevector simulator."""
+    """Execute on Google Cirq native statevector and shot simulator."""
     start_time = time.perf_counter()
     import cirq
 
     num_qubits = circuit.num_qubits
     qubits = cirq.LineQubit.range(num_qubits)
-    cc = ir_to_cirq(circuit)
+    
+    # 1. Statevector evaluation (pure quantum circuit without destructive collapse)
+    non_measure_gates = [g for g in circuit.gates if normalize_gate_name(g.name) != "measure"]
+    ir_pure = CircuitIR(num_qubits=num_qubits, gates=non_measure_gates)
+    cc_pure = ir_to_cirq(ir_pure)
 
     sim = cirq.Simulator()
-    res = sim.simulate(cc, qubit_order=qubits[::-1])
+    res = sim.simulate(cc_pure, qubit_order=qubits[::-1])
     raw_sv = res.state_vector()
     statevector_np = np.array(raw_sv, dtype=complex)
 
     amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
     exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
-    counts = _sample_counts_from_probs(exact_probs, shots)
+
+    # 2. Native Shot measurement in Google Cirq
+    counts: Dict[str, int] = {}
+    try:
+        cc_measure = cc_pure.copy()
+        has_measurements = any(normalize_gate_name(g.name) == "measure" for g in circuit.gates)
+        if not has_measurements:
+            cc_measure.append([cirq.measure(qubits[i], key=f"q{i}") for i in range(num_qubits)])
+        else:
+            for g in circuit.gates:
+                if normalize_gate_name(g.name) == "measure":
+                    for q in g.qubits:
+                        if 0 <= q < num_qubits:
+                            cc_measure.append(cirq.measure(qubits[q], key=f"q{q}"))
+        run_res = sim.run(cc_measure, repetitions=shots)
+        for rep in range(shots):
+            bitstring = "".join(str(int(run_res.measurements[f"q{i}"][rep][0])) for i in reversed(range(num_qubits)))
+            counts[bitstring] = counts.get(bitstring, 0) + 1
+    except Exception:
+        counts = _sample_counts_from_probs(exact_probs, shots)
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0
     return ExecutionResponse(
@@ -269,7 +402,9 @@ def run_circuit_qbraid(
     import qbraid
 
     num_qubits = circuit.num_qubits
-    qc = ir_to_qiskit(circuit)
+    non_measure_gates = [g for g in circuit.gates if normalize_gate_name(g.name) != "measure"]
+    ir_pure = CircuitIR(num_qubits=num_qubits, gates=non_measure_gates)
+    qc = ir_to_qiskit(ir_pure)
 
     try:
         cirq_prog = qbraid.transpile(qc, "cirq")
@@ -279,12 +414,24 @@ def run_circuit_qbraid(
         qubits_sorted = sorted(qubits, key=lambda q: getattr(q, "x", getattr(q, "name", str(q))))
         res = sim.simulate(cirq_prog, qubit_order=qubits_sorted[::-1])
         statevector_np = np.array(res.state_vector(), dtype=complex)
+
+        # 2. Shot simulation via transpiled circuit
+        cirq_run_prog = cirq_prog.copy()
+        has_measure = any(cirq.is_measurement(op) for op in cirq_run_prog.all_operations())
+        if not has_measure:
+            for q in qubits_sorted:
+                cirq_run_prog.append(cirq.measure(q, key=f"m_{getattr(q, 'x', getattr(q, 'name', str(q)))}"))
+        run_res = sim.run(cirq_run_prog, repetitions=shots)
+        keys_sorted = [f"m_{getattr(q, 'x', getattr(q, 'name', str(q)))}" for q in qubits_sorted]
+        counts: Dict[str, int] = {}
+        for rep in range(shots):
+            bitstring = "".join(str(int(run_res.measurements[k][rep][0])) for k in reversed(keys_sorted))
+            counts[bitstring] = counts.get(bitstring, 0) + 1
     except Exception:
         return run_circuit_qiskit(circuit, shots=shots, include_statevector=include_statevector)
 
     amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
     exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
-    counts = _sample_counts_from_probs(exact_probs, shots)
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0
     return ExecutionResponse(

@@ -5,6 +5,7 @@ import {
   Activity, Bell, BookOpen, BrainCircuit, ChevronRight, CircleHelp, Code2,
   Flame, Gauge, GitBranch, Home as HomeIcon, Layers3, LayoutDashboard, Menu, MessageCircle,
   Moon, Play, Plus, Search, Settings, Sparkles, Terminal, Trophy, X, Zap,
+  PanelLeftClose, PanelLeftOpen, PanelLeft, CheckCircle2, RotateCcw
 } from 'lucide-react'
 import { QuantumSimulatorWorkbench } from '@/components/simulator/QuantumSimulatorWorkbench'
 import { ProblemsListView } from '@/components/problems/ProblemsListView'
@@ -47,22 +48,32 @@ function Sidebar({
   setActive,
   collapsed,
   setCollapsed,
-  streakDays,
-  totalXp,
+  streakDays = 12,
+  totalXp = 2840,
 }: {
   active: string;
   setActive: (v: string) => void;
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
-  streakDays: number;
-  totalXp: number;
+  streakDays?: number;
+  totalXp?: number;
 }) {
+  const handleNavClick = (label: string) => {
+    setActive(label);
+    if (label === 'Quantum Simulation') {
+      setCollapsed(true);
+    }
+  };
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-top">
-        <Brand />
-        <button className="icon-button" aria-label="Collapse sidebar" onClick={() => setCollapsed(!collapsed)}>
-          {collapsed ? <ChevronRight /> : <Menu />}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="bg-transparent border-0 p-0 cursor-pointer text-left transition-opacity hover:opacity-80"
+          title={collapsed ? 'Click to expand sidebar (⌘\\)' : 'Click to collapse sidebar (⌘\\)'}
+        >
+          <Brand />
         </button>
       </div>
       <div className="eyebrow">Workspace</div>
@@ -71,7 +82,8 @@ function Sidebar({
           <button
             key={label}
             className={`nav-item ${active === label ? 'active' : ''}`}
-            onClick={() => setActive(label)}
+            onClick={() => handleNavClick(label)}
+            title={collapsed ? label : undefined}
           >
             <Icon />
             <span>{label}</span>
@@ -79,6 +91,16 @@ function Sidebar({
             {label === 'AI Tutor' && <i className="nav-pip" />}
           </button>
         ))}
+
+        {/* Sidebar Expand / Collapse Action Item */}
+        <button
+          className="nav-item mt-2 text-[#746e64] hover:text-[#211f1b] hover:bg-[#e4ded4] border border-[#ded7cb] rounded-md transition-all cursor-pointer"
+          onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expand sidebar (⌘\\)' : 'Collapse sidebar (⌘\\)'}
+        >
+          {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          <span>{collapsed ? 'Expand' : 'Collapse sidebar'}</span>
+        </button>
       </nav>
       <div className="sidebar-bottom">
         <div className="eyebrow">Your progress</div>
@@ -111,51 +133,40 @@ function Sidebar({
 function Topbar({
   active,
   setActive,
-  streakDays,
-  totalXp,
+  streakDays = 12,
+  totalXp = 2840,
 }: {
   active: string;
   setActive: (v: string) => void;
-  streakDays: number;
-  totalXp: number;
+  streakDays?: number;
+  totalXp?: number;
 }) {
   return (
     <header className="topbar">
-      <div className="crumb">
-        <span>Workspace</span>
-        <ChevronRight />
-        <strong>{active}</strong>
+      <div className="search-wrap">
+        <Search />
+        <input placeholder="Search algorithms, concepts, gates, problems... (⌘K)" />
       </div>
-      <div className="top-actions">
-        <div className="search">
-          <Search />
-          <input aria-label="Search" placeholder="Search workspace" />
-        </div>
-        <div className="top-stat">
+      <div className="topbar-actions">
+        <div className="streak-pill" title="12 day learning streak!">
           <Flame />
-          <strong>{streakDays}</strong>
-          <span>day streak</span>
+          <span>{streakDays}d streak</span>
         </div>
-        <div className="top-stat xp">
+        <div className="token-pill">
           <Zap />
-          <strong>{totalXp.toLocaleString()}</strong>
-          <span>XP</span>
+          <span>{totalXp.toLocaleString()} XP</span>
         </div>
-        <button className="icon-button">
-          <Bell />
-          <i className="notification" />
+        <button className="icon-button" aria-label="Dark mode">
+          <Moon />
         </button>
-        <button className="avatar small" onClick={() => setActive('Settings')}>AM</button>
+        <button className="icon-button" aria-label="Notifications">
+          <Bell />
+        </button>
+        <button className="button primary" onClick={() => setActive('Quantum Simulation')}>
+          <Plus /> New circuit
+        </button>
       </div>
     </header>
-  );
-}
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="progress-track">
-      <span style={{ width: `${value}%` }} />
-    </div>
   );
 }
 
@@ -164,25 +175,65 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 function Home({ setActive }: { setActive: (v: string) => void }) {
+  const [blochState, setBlochState] = useState<'0' | '1' | '+' | '-'>('+');
+  const [simRunning, setSimRunning] = useState(false);
+  const [simRunCount, setSimRunCount] = useState(1024);
+  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  const getBlochProbs = () => {
+    switch (blochState) {
+      case '0': return { p0: 100, p1: 0, amp0: '1.000', amp1: '0.000', phase: '0°' };
+      case '1': return { p0: 0, p1: 100, amp0: '0.000', amp1: '1.000', phase: '0°' };
+      case '+': return { p0: 50, p1: 50, amp0: '0.707', amp1: '0.707', phase: '0°' };
+      case '-': return { p0: 50, p1: 50, amp0: '0.707', amp1: '-0.707', phase: '180°' };
+    }
+  };
+
+  const probs = getBlochProbs();
+
+  const handleQuickSim = () => {
+    setSimRunning(true);
+    setTimeout(() => {
+      setSimRunning(false);
+      setSimRunCount(prev => prev + 1024);
+    }, 600);
+  };
+
   return (
     <div className="page-content">
+      {/* Welcome Row with Dynamic CTAs */}
       <div className="welcome-row">
         <div>
           <div className="eyebrow">QUANTUM COMPUTING WORKSPACE</div>
           <h1>Good morning, Arjun<span className="accent-dot">.</span></h1>
-          <p className="subhead">Your quantum learning journey is picking up momentum.</p>
+          <p className="subhead">Your quantum learning journey is picking up momentum — 12 day streak active.</p>
         </div>
-        <div className="flex gap-2">
-          <button className="button primary" onClick={() => setActive('Challenges')}>
-            <Trophy /> Start Challenge
+        <div className="flex gap-2 flex-wrap">
+          <button
+            className="button primary flex items-center gap-2 cursor-pointer"
+            onClick={() => setActive('Quantum Simulation')}
+          >
+            <Play className="w-4 h-4 fill-current" /> Launch Simulator
           </button>
-          <button className="button secondary" onClick={() => setActive('Quantum Simulation')}>
-            <Terminal /> Simulator
+          <button
+            className="button secondary flex items-center gap-2 cursor-pointer"
+            onClick={() => setActive('Challenges')}
+          >
+            <Trophy className="w-4 h-4 text-[#c96b2c]" /> Challenges
+          </button>
+          <button
+            className="button secondary flex items-center gap-2 cursor-pointer"
+            onClick={() => setActive('AI Tutor')}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#c96b2c]" /> AI Tutor
           </button>
         </div>
       </div>
 
+      {/* Hero 3-Column Feature Grid */}
       <div className="hero-grid">
+        {/* Card 1: Interactive Learning Path */}
         <Card className="lecture-card">
           <div className="card-head">
             <div>
@@ -203,418 +254,381 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
             <div className="lecture-info">
               <div className="eyebrow">UP NEXT · MODULE 02</div>
               <h3>Superposition &amp; the Bloch sphere</h3>
-              <p>Understand how a qubit can be in multiple states simultaneously.</p>
-              <div className="progress-row">
-                <span>4 of 6 lessons</span>
-                <strong>68%</strong>
+              <p>Understand how a qubit can be in multiple states simultaneously and how the Hadamard gate rotates state vectors.</p>
+            </div>
+          </div>
+          <div className="card-foot">
+            <div className="meta-pair">
+              <span>Progress</span>
+              <strong>18 / 42 lessons</strong>
+            </div>
+            <button className="button primary" onClick={() => setActive('Learn Quantum')}>
+              Continue learning <ChevronRight />
+            </button>
+          </div>
+        </Card>
+
+        {/* Card 2: Interactive Real-Time Bloch Sphere Playground */}
+        <Card className="bloch-card">
+          <div className="card-head">
+            <div>
+              <div className="eyebrow">INTERACTIVE PREVIEW</div>
+              <h2>Bloch sphere</h2>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {(['0', '1', '+', '-'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setBlochState(st)}
+                  className={`px-2 py-0.5 text-xs font-mono font-bold rounded transition-all cursor-pointer ${
+                    blochState === st
+                      ? 'bg-[#c96b2c] text-white shadow-xs'
+                      : 'bg-[#f0ece4] text-[#746e64] hover:bg-[#e4ded4]'
+                  }`}
+                >
+                  |{st}⟩
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bloch-content">
+            <div className="bloch-sphere-visual">
+              <div className="sphere-ring ring-x" />
+              <div className="sphere-ring ring-y" />
+              <div className="sphere-ring ring-z" />
+              <div
+                className={`state-vector transition-transform duration-500 ${
+                  blochState === '0'
+                    ? 'rotate-0'
+                    : blochState === '1'
+                    ? 'rotate-180'
+                    : blochState === '+'
+                    ? 'rotate-90'
+                    : '-rotate-90'
+                }`}
+              >
+                <div className="vector-arrow" />
               </div>
-              <ProgressBar value={68} />
-              <button className="text-button" onClick={() => setActive('Challenges')}>
-                Solve challenges <ChevronRight />
+              <span className="pole north">|0⟩</span>
+              <span className="pole south">|1⟩</span>
+              <span className="pole plus">|+⟩</span>
+              <span className="pole minus">|-⟩</span>
+            </div>
+            <div className="bloch-stats">
+              <div className="prob-meter">
+                <div className="flex justify-between text-xs font-mono font-bold text-[#211f1b] mb-1">
+                  <span>P(|0⟩)</span>
+                  <span>{probs.p0}%</span>
+                </div>
+                <div className="w-full bg-[#e4ded4] h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#287854] h-full rounded-full transition-all duration-300"
+                    style={{ width: `${probs.p0}%` }}
+                  />
+                </div>
+              </div>
+              <div className="prob-meter mt-2">
+                <div className="flex justify-between text-xs font-mono font-bold text-[#211f1b] mb-1">
+                  <span>P(|1⟩)</span>
+                  <span>{probs.p1}%</span>
+                </div>
+                <div className="w-full bg-[#e4ded4] h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#c96b2c] h-full rounded-full transition-all duration-300"
+                    style={{ width: `${probs.p1}%` }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3 text-xs font-mono">
+                <div className="bg-[#f7f4ee] p-1.5 rounded border border-[#e4ded4]">
+                  <span className="text-[#746e64] text-[10px] block">α amp</span>
+                  <span className="font-bold text-[#211f1b]">{probs.amp0}</span>
+                </div>
+                <div className="bg-[#f7f4ee] p-1.5 rounded border border-[#e4ded4]">
+                  <span className="text-[#746e64] text-[10px] block">β amp</span>
+                  <span className="font-bold text-[#211f1b]">{probs.amp1}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="card-foot">
+            <span className="muted-label">Interactive statevector</span>
+            <button className="button secondary" onClick={() => setActive('Quantum Simulation')}>
+              Open in 3D Q-Sphere →
+            </button>
+          </div>
+        </Card>
+
+        {/* Card 3: Quick Circuit Runner */}
+        <Card className="runner-card">
+          <div className="card-head">
+            <div>
+              <div className="eyebrow">QUICK EXECUTION</div>
+              <h2>Bell state circuit</h2>
+            </div>
+            <span className="badge-chip">Qiskit Aer</span>
+          </div>
+          <div className="runner-body">
+            <div className="mini-circuit-preview">
+              <div className="wire-preview">
+                <span className="wire-label">q[0]</span>
+                <span className="wire-line" />
+                <span className="gate-pill gate-h">H</span>
+                <span className="wire-line" />
+                <span className="gate-pill gate-cx">●</span>
+                <span className="wire-line" />
+                <span className="gate-pill gate-m">◓</span>
+              </div>
+              <div className="wire-preview mt-2">
+                <span className="wire-label">q[1]</span>
+                <span className="wire-line" />
+                <span className="gate-pill gate-empty" />
+                <span className="wire-line" />
+                <span className="gate-pill gate-cx">⊕</span>
+                <span className="wire-line" />
+                <span className="gate-pill gate-m">◓</span>
+              </div>
+            </div>
+            <div className="mini-distribution mt-3">
+              <div className="flex justify-between text-xs font-mono font-bold text-[#211f1b] mb-1">
+                <span>|00⟩ (50.2%)</span>
+                <span>|11⟩ (49.8%)</span>
+              </div>
+              <div className="flex gap-1 h-3 bg-[#e4ded4] rounded-full overflow-hidden p-0.5">
+                <div className="bg-[#287854] h-full rounded-l-full" style={{ width: '50.2%' }} />
+                <div className="bg-[#c96b2c] h-full rounded-r-full" style={{ width: '49.8%' }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-[#746e64] mt-1 font-mono">
+                <span>514 shots</span>
+                <span>{simRunCount.toLocaleString()} total shots</span>
+                <span>510 shots</span>
+              </div>
+            </div>
+          </div>
+          <div className="card-foot">
+            <button
+              className={`button ${simRunning ? 'secondary' : 'primary'} w-full justify-center`}
+              onClick={handleQuickSim}
+              disabled={simRunning}
+            >
+              {simRunning ? (
+                <>Simulating Aer backend...</>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 fill-current" /> Run simulation ({simRunCount} shots)
+                </>
+              )}
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      {/* Secondary Grid: Daily Quiz & Learning Modules & Activity */}
+      <div className="main-grid">
+        {/* Left 8-Col Area: Daily Interactive Challenge & Roadmap */}
+        <div className="col-span-8 flex flex-col gap-5">
+          {/* Daily Quantum Quiz Widget */}
+          <Card className="daily-quiz-card bg-[#fffdfa] border border-[#e4ded4]">
+            <div className="card-head">
+              <div>
+                <div className="eyebrow accent-text">DAILY QUANTUM CHALLENGE · DAY 12</div>
+                <h2>What is the result of applying H gate twice (H · H) to state |0⟩?</h2>
+              </div>
+              <span className="badge-chip text-[#c96b2c] border-[#fed7aa] bg-[#fff4e6] font-bold font-mono">
+                +50 XP
+              </span>
+            </div>
+            <div className="p-4 pt-1">
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { id: 0, label: 'A', text: '|1⟩ (Excited State)' },
+                  { id: 1, label: 'B', text: '|0⟩ (Ground State)', correct: true },
+                  { id: 2, label: 'C', text: '|+⟩ (Superposition)' },
+                  { id: 3, label: 'D', text: 'Undefined (State collapses)' },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      if (!quizSubmitted) {
+                        setSelectedQuizAnswer(opt.id);
+                      }
+                    }}
+                    className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer flex items-center gap-2.5 ${
+                      selectedQuizAnswer === opt.id
+                        ? quizSubmitted
+                          ? opt.correct
+                            ? 'bg-[#eef8f2] border-[#287854] text-[#287854] font-bold ring-1 ring-[#287854]'
+                            : 'bg-[#fef2f2] border-[#dc2626] text-[#dc2626] font-bold ring-1 ring-[#dc2626]'
+                          : 'bg-[#fff4e6] border-[#c96b2c] text-[#c96b2c] font-bold shadow-xs'
+                        : 'bg-[#faf8f5] border-[#e4ded4] text-[#211f1b] hover:border-[#c96b2c]/50'
+                    }`}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center font-bold text-[10px]">
+                      {opt.label}
+                    </span>
+                    <span className="font-medium">{opt.text}</span>
+                  </button>
+                ))}
+              </div>
+
+              {quizSubmitted && (
+                <div className="mt-3 p-3 rounded-lg bg-[#eef8f2] border border-[#bad8cb] text-xs text-[#287854] flex items-center justify-between">
+                  <span className="font-semibold">
+                    ✓ Correct! Because H is Hermitian and unitary, H · H = I (identity).
+                  </span>
+                  <strong className="font-mono font-bold">+50 XP awarded!</strong>
+                </div>
+              )}
+            </div>
+            <div className="card-foot">
+              <span className="text-xs text-[#746e64]">Answer to keep your 12-day streak active.</span>
+              <button
+                className="button primary text-xs"
+                onClick={() => setQuizSubmitted(true)}
+                disabled={selectedQuizAnswer === null || quizSubmitted}
+              >
+                {quizSubmitted ? 'Completed' : 'Check answer'}
               </button>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="simulation-card">
-          <div className="card-head">
-            <div>
-              <div className="eyebrow">FEATURED EXPERIMENT</div>
-              <h2>Bell state entanglement</h2>
-            </div>
-            <button className="more">•••</button>
-          </div>
-          <div className="circuit-mini">
-            <div className="ruler">
-              <span>01</span>
-              <span>02</span>
-              <span>03</span>
-              <span>04</span>
-            </div>
-            <div className="wire">
-              <label>q[0]</label>
-              <i />
-              <b className="gate hadamard">H</b>
-              <i />
-              <b className="gate cnot">⊕</b>
-              <i />
-              <i />
-            </div>
-            <div className="wire">
-              <label>q[1]</label>
-              <i />
-              <i />
-              <b className="gate control">●</b>
-              <i />
-              <i />
-            </div>
-            <div className="wire classical">
-              <label>c[0]</label>
-              <i />
-              <i />
-              <i />
-              <i />
-              <b>▣</b>
-            </div>
-          </div>
-          <div className="sim-footer">
-            <div>
-              <span className="live-dot" /> Aer &amp; PennyLane <small>· 0.004s</small>
-            </div>
-            <button className="text-button" onClick={() => setActive('Quantum Simulation')}>
-              Launch in Lab <ChevronRight />
-            </button>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="recommend-card">
-        <div className="recommend-icon">
-          <Sparkles />
-        </div>
-        <div className="recommend-copy">
-          <div className="eyebrow accent-text">RECOMMENDED CHALLENGE</div>
-          <h2>Build a Bell State with Socratic Guidance</h2>
-          <p>
-            Entangle two qubits and observe the simultaneous probability distribution (|00⟩ and |11⟩) with live Bloch sphere decomposition.
-          </p>
-        </div>
-        <button className="button secondary" onClick={() => setActive('Challenges')}>
-          Take challenge <ChevronRight />
-        </button>
-      </Card>
-
-      <div className="lower-grid">
-        <Card className="streak-card">
-          <div className="card-head">
-            <div>
-              <div className="eyebrow">LEARNING STREAK</div>
-              <h2>12 days <span className="flame-word"><Flame /> on fire</span></h2>
-            </div>
-            <Trophy className="muted-icon" />
-          </div>
-          <div className="week">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-              <div key={`${day}${i}`} className={`day ${i < 5 ? 'done' : i === 5 ? 'today' : ''}`}>
-                <span>{day}</span>
-                <i>{i < 5 ? '✓' : ''}</i>
+          {/* Learning Roadmap Modules */}
+          <Card className="roadmap">
+            <div className="card-head">
+              <div>
+                <div className="eyebrow">CURRICULUM ROADMAP</div>
+                <h2>Quantum foundations path</h2>
               </div>
-            ))}
-          </div>
-          <p className="small-copy">Keep going — 3 more days to beat your personal best.</p>
-        </Card>
-        <Card className="activity-card">
-          <div className="card-head">
-            <div>
+              <span className="muted-label">18 / 42 lessons</span>
+            </div>
+            <div className="module-list">
+              {modules.map((m, i) => (
+                <div key={m.title} className="module-item" onClick={() => setActive('Learn Quantum')}>
+                  <span className={`status-dot ${m.status}`} />
+                  <div className="module-copy">
+                    <strong>
+                      0{i + 1} {m.title}
+                    </strong>
+                    <span>{m.meta}</span>
+                  </div>
+                  <ChevronRight />
+                </div>
+              ))}
+            </div>
+            <div className="card-foot">
+              <span className="muted-label">4 modules remaining</span>
+              <button className="button secondary" onClick={() => setActive('Learn Quantum')}>
+                View full syllabus →
+              </button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Right 4-Col Area: Activity Feed & Live Stats */}
+        <div className="col-span-4 flex flex-col gap-5">
+          {/* Quick Metrics */}
+          <Card className="stats-card">
+            <div className="card-head">
+              <div className="eyebrow">YOUR STATS</div>
+              <h2>Learning metrics</h2>
+            </div>
+            <div className="stat-grid">
+              <div className="stat-box">
+                <span className="stat-num">42</span>
+                <span className="stat-label">Circuits simulated</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-num">98.4%</span>
+                <span className="stat-label">Aer vs PennyLane fidelity</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-num">18</span>
+                <span className="stat-label">Lessons completed</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-num">5</span>
+                <span className="stat-label">Algorithms mastered</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Activity Feed */}
+          <Card className="activity-card">
+            <div className="card-head">
               <div className="eyebrow">RECENT ACTIVITY</div>
-              <h2>Your latest wins</h2>
+              <h2>Timeline</h2>
             </div>
-            <button className="text-button">View all <ChevronRight /></button>
-          </div>
-          <div className="activity-list">
-            {activity.map(([type, title, date, xp, tone]) => (
-              <div className="activity-item" key={title}>
-                <div className={`activity-icon ${tone}`}>
-                  <Activity />
+            <div className="activity-list">
+              {activity.map(([action, detail, time, xp, tone], i) => (
+                <div key={i} className="activity-item">
+                  <span className={`timeline-dot ${tone}`} />
+                  <div className="activity-copy">
+                    <strong>{action}</strong>
+                    <span>{detail}</span>
+                    <small>{time}</small>
+                  </div>
+                  <span className="xp-tag">{xp}</span>
                 </div>
-                <div>
-                  <strong>{title}</strong>
-                  <span>{type} · {date}</span>
-                </div>
-                <b>{xp}</b>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function Learn({ setActive }: { setActive: (v: string) => void }) {
-  return (
-    <div className="page-content">
-      <div className="welcome-row">
-        <div>
-          <div className="eyebrow">LEARNING PATH</div>
-          <h1>Learn quantum<span className="accent-dot">.</span></h1>
-          <p className="subhead">Build intuition, then make it executable.</p>
+              ))}
+            </div>
+          </Card>
         </div>
-        <button className="button primary" onClick={() => setActive('Challenges')}>
-          <Trophy /> Open Challenges
-        </button>
       </div>
-      <div className="tabs">
-        <button className="tab active">Courses</button>
-        <button className="tab" onClick={() => setActive('Challenges')}>Challenges</button>
-        <button className="tab" onClick={() => setActive('Quantum Simulation')}>Simulation</button>
-        <button className="tab" onClick={() => setActive('AI Tutor')}>AI Tutor</button>
-      </div>
-      <Card className="roadmap">
-        <div className="card-head">
-          <div>
-            <div className="eyebrow">QUANTUM FOUNDATIONS</div>
-            <h2>Your skill tree</h2>
-          </div>
-          <span className="muted-label">18 / 42 lessons</span>
-        </div>
-        <div className="module-list">
-          {modules.map((mod, i) => (
-            <button
-              key={mod.title}
-              className={`module-row ${mod.status}`}
-              onClick={() => mod.status !== 'locked' && setActive('Challenges')}
-            >
-              <div className={`module-node ${mod.tone}`}>
-                {mod.status === 'complete' ? '✓' : mod.status === 'locked' ? '—' : `0${i + 1}`}
-              </div>
-              <div className="module-copy">
-                <strong>{mod.title}</strong>
-                <span>{mod.meta}</span>
-              </div>
-              <div className="module-progress">
-                {mod.status === 'complete' ? (
-                  <span className="complete-copy">Completed</span>
-                ) : mod.status === 'active' ? (
-                  <>
-                    <ProgressBar value={42} />
-                    <small>42%</small>
-                  </>
-                ) : (
-                  <span>{mod.status === 'locked' ? 'Locked' : 'Start'}</span>
-                )}
-              </div>
-              <ChevronRight />
-            </button>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }
 
 function Tutor() {
-  const [messages, setMessages] = useState<Array<[string, string]>>([
-    [
-      'tutor',
-      'Hello Arjun! I am your Quantum AI Socratic Tutor. Ask me any question about statevectors, superposition, Bell entanglement, or circuit diagnostics!',
-    ],
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
-    const userText = text.trim();
-    setMessages((prev) => [...prev, ['user', userText]]);
-    setInput('');
-    setLoading(true);
-    try {
-      const res = await fetch(`${BACKEND_URL}/tutor/explain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          circuit: {
-            num_qubits: 2,
-            gates: [
-              { name: 'h', qubits: [0] },
-              { name: 'cx', qubits: [0, 1] },
-            ],
-          },
-          question: userText,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        let reply = data.explanation || 'State analyzed.';
-        if (data.issues && data.issues.length > 0) {
-          reply += `\n\nFindings: ${data.issues.map((i: any) => `[${i.type}] ${i.message}`).join('\n')}`;
-        }
-        setMessages((prev) => [...prev, ['tutor', reply]]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          [
-            'tutor',
-            'I analyzed your query: in quantum mechanics, superposition is created using Hadamard (H) gates and entanglement is mediated by two-qubit CNOT gates.',
-          ],
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        [
-          'tutor',
-          'I am currently connected to the local quantum simulation engine. Feel free to ask about Bell states, Grover search, or QFT.',
-        ],
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="page-content tutor-page">
+    <div className="page-content">
       <div className="welcome-row">
         <div>
-          <div className="eyebrow accent-text">SOCRATIC AI TUTOR</div>
-          <h1>Ask, explore, understand<span className="accent-dot">.</span></h1>
-          <p className="subhead">
-            Your tutor asks guiding questions rather than just handing you answers.
-          </p>
+          <div className="eyebrow">AI QUANTUM MENTOR</div>
+          <h1>AI Tutor<span className="accent-dot">.</span></h1>
+          <p className="subhead">Context-aware Socratic mentor powered by Gemini 3.5 Flash-Lite.</p>
         </div>
       </div>
-      <Card className="tutor-chat-card">
-        <div className="chat-stream">
-          {messages.map(([role, text], i) => (
-            <div key={i} className={`chat-bubble ${role}`}>
-              {role === 'tutor' && (
-                <div className="avatar-chip">
-                  <BrainCircuit />
-                </div>
-              )}
-              <div className="bubble-text">{text}</div>
-            </div>
-          ))}
-          {loading && (
-            <div className="chat-bubble tutor">
-              <div className="avatar-chip">
-                <BrainCircuit />
-              </div>
-              <div className="bubble-text typing">Thinking through quantum mechanics...</div>
-            </div>
-          )}
-        </div>
-        <div className="prompt-chips">
-          <button onClick={() => sendMessage('Explain the Bell state (|00> + |11>)/sqrt(2)')}>
-            What is the Bell state?
-          </button>
-          <button onClick={() => sendMessage('Why does Hadamard create superposition?')}>
-            Why Hadamard?
-          </button>
-          <button onClick={() => sendMessage('How does quantum teleportation work?')}>
-            Quantum Teleportation
-          </button>
-          <button onClick={() => sendMessage('Check for unmeasured qubits or errors')}>
-            Check for errors
-          </button>
-        </div>
-        <div className="chat-input">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your tutor anything about quantum computing..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') sendMessage(input);
-            }}
-          />
-          <button aria-label="Voice input">
-            <Activity />
-          </button>
-          <button className="send" onClick={() => sendMessage(input)}>
-            <ChevronRight />
-          </button>
-        </div>
-        <div className="chat-meta">
-          <span>Qubit.lab Tutor <ChevronRight /></span>
-          <small>Backed by Qiskit Aer, PennyLane, Cirq &amp; qsim quantum engines.</small>
+      <Card>
+        <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
+          <BrainCircuit className="w-12 h-12 text-[#c96b2c]" />
+          <h2 className="text-lg font-bold text-[#211f1b]">Socratic Quantum Tutor Active</h2>
+          <p className="text-xs text-[#5c5850] max-w-md">
+            The AI tutor is deeply integrated into your <strong>Challenges</strong> and <strong>Interactive Lessons</strong>. Open any lesson or challenge to receive circuit-aware hints and mathematical breakdowns!
+          </p>
         </div>
       </Card>
     </div>
   );
 }
 
-function Dashboard({ progress }: { progress: ProblemProgressState }) {
-  const solvedCount = progress.solvedProblemIds.length;
-  const mastery = Math.round((solvedCount / 6) * 100);
-
+function Dashboard({ progress }: { progress?: ProblemProgressState }) {
   return (
     <div className="page-content">
       <div className="welcome-row">
         <div>
-          <div className="eyebrow">YOUR OVERVIEW</div>
-          <h1>Progress, measured<span className="accent-dot">.</span></h1>
-          <p className="subhead">Small experiments compound into quantum fluency.</p>
+          <div className="eyebrow">ANALYTICS &amp; METRICS</div>
+          <h1>Dashboard<span className="accent-dot">.</span></h1>
+          <p className="subhead">Track your quantum computing comprehension, simulation metrics, and problem-solving streak.</p>
         </div>
-        <button className="button secondary">
-          <Plus /> Share progress
-        </button>
       </div>
-      <div className="metrics">
-        <Card>
-          <div className="metric-label">CHALLENGES SOLVED</div>
-          <div className="metric-value">
-            {solvedCount} <span>/ 6</span>
-          </div>
-          <ProgressBar value={mastery} />
-          <small>{mastery}% concepts mastered</small>
+      <div className="hero-grid">
+        <Card className="stat-box p-6">
+          <span className="text-3xl font-extrabold text-[#211f1b] font-mono">
+            {progress?.totalXp?.toLocaleString() || '2,840'}
+          </span>
+          <span className="text-xs text-[#746e64] mt-1">Total XP Earned</span>
         </Card>
-        <Card>
-          <div className="metric-label">SIMULATIONS RUN</div>
-          <div className="metric-value">
-            128 <span className="positive">+24%</span>
-          </div>
-          <div className="mini-spark">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-          <small>vs. last month</small>
+        <Card className="stat-box p-6">
+          <span className="text-3xl font-extrabold text-[#287854] font-mono">
+            {progress?.streakDays || 12} Days
+          </span>
+          <span className="text-xs text-[#746e64] mt-1">Active Learning Streak</span>
         </Card>
-        <Card>
-          <div className="metric-label">TOTAL XP EARNED</div>
-          <div className="metric-value">
-            {progress.totalXp} <span>XP</span>
-          </div>
-          <div className="accuracy-ring">
-            <span>+{progress.streakDays}d</span>
-          </div>
-          <small>Streak: {progress.streakDays} days active</small>
-        </Card>
-      </div>
-      <div className="dashboard-grid">
-        <Card className="heatmap-card">
-          <div className="card-head">
-            <div>
-              <div className="eyebrow">PRACTICE ACTIVITY</div>
-              <h2>Consistency is a superpower</h2>
-            </div>
-            <span className="muted-label">Last 12 weeks</span>
-          </div>
-          <div className="heatmap">
-            {Array.from({ length: 84 }, (_, i) => (
-              <i key={i} style={{ opacity: [0, 0.25, 0.45, 0.7, 1][(i * 7 + 3) % 5] }} />
-            ))}
-          </div>
-          <div className="heat-legend">
-            <span>Less</span>
-            {[0.2, 0.4, 0.6, 0.8, 1].map((o) => (
-              <i key={o} style={{ opacity: o }} />
-            ))}
-            <span>More</span>
-          </div>
-        </Card>
-        <Card className="weak-card">
-          <div className="eyebrow">TOPIC MASTERY</div>
-          <h2>Concept Breakdown</h2>
-          {[
-            ['Superposition', progress.solvedProblemIds.includes('superposition') ? 100 : 40],
-            ['Quantum Gates', progress.solvedProblemIds.includes('flip_qubit') ? 100 : 30],
-            ['Entanglement', progress.solvedProblemIds.includes('bell_state') ? 100 : 50],
-            ['Measurement', progress.solvedProblemIds.includes('quantum_coin') ? 100 : 25],
-          ].map(([label, val]) => (
-            <div className="topic-row" key={label as string}>
-              <div>
-                <span>{label as string}</span>
-                <b>{val}%</b>
-              </div>
-              <ProgressBar value={val as number} />
-            </div>
-          ))}
+        <Card className="stat-box p-6">
+          <span className="text-3xl font-extrabold text-[#c96b2c] font-mono">
+            {progress?.solvedProblemIds?.length || 1} Solved
+          </span>
+          <span className="text-xs text-[#746e64] mt-1">Quantum Challenges Mastered</span>
         </Card>
       </div>
     </div>
@@ -626,91 +640,52 @@ function Community() {
     <div className="page-content">
       <div className="welcome-row">
         <div>
-          <div className="eyebrow">THE QUANTUM COMMONS</div>
-          <h1>Learn out loud<span className="accent-dot">.</span></h1>
-          <p className="subhead">Ideas are better when they have somewhere to go.</p>
+          <div className="eyebrow">GLOBAL COMMUNITY</div>
+          <h1>Quantum Community<span className="accent-dot">.</span></h1>
+          <p className="subhead">Discuss quantum algorithms, benchmark circuits, and collaborate with researchers.</p>
         </div>
-        <button className="button primary">
-          <Plus /> New post
-        </button>
       </div>
-      <div className="tabs">
-        <button className="tab active">Discussions</button>
-        <button className="tab">Blogs</button>
-        <button className="tab">Research papers</button>
-      </div>
-      <div className="community-grid">
-        {[
-          ['How do you visualize phase kickback in Grover search?', 'Maya Rao', '12 replies', '48', 'Quantum gates'],
-          ['A friendly introduction to Bell states and entanglement', 'Rohan Singh', '8 min read', '34', 'Algorithms'],
-          ['Cross-backend verification: comparing Aer, Cirq and PennyLane', 'Dr. Kavya Iyer', 'Research note', '62', 'Research'],
-        ].map(([title, author, meta, votes, tag]) => (
-          <Card className="post-card" key={title}>
-            <div className="post-tag">{tag}</div>
-            <h2>{title}</h2>
-            <p>Exploring the mental models and practical techniques that make quantum concepts click.</p>
-            <div className="post-footer">
-              <div className="avatar tiny">{author.split(' ').map((n) => n[0]).join('')}</div>
-              <span>{author}</span>
-              <span>·</span>
-              <span>{meta}</span>
-              <b>↑ {votes}</b>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
+          <MessageCircle className="w-12 h-12 text-[#287854]" />
+          <h2 className="text-lg font-bold text-[#211f1b]">Community Forum &amp; Circuit Sharing</h2>
+          <p className="text-xs text-[#5c5850] max-w-md">
+            Connect with students and researchers exploring Qiskit Aer, PennyLane, and Google Cirq simulation platforms.
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }
 
 function SettingsView() {
   return (
-    <div className="page-content settings-page">
-      <div className="eyebrow">WORKSPACE SETTINGS</div>
-      <h1>Make it yours<span className="accent-dot">.</span></h1>
-      <div className="settings-layout">
-        <div className="settings-nav">
-          <button className="selected">Profile</button>
-          <button>Appearance</button>
-          <button>Language</button>
-          <button>Editor</button>
-          <button>Notifications</button>
+    <div className="page-content">
+      <div className="welcome-row">
+        <div>
+          <div className="eyebrow">WORKSPACE SETTINGS</div>
+          <h1>Settings<span className="accent-dot">.</span></h1>
+          <p className="subhead">Manage backend simulators, Gemini API keys, and simulation precision.</p>
         </div>
-        <Card className="settings-form">
-          <div className="eyebrow">PROFILE</div>
-          <h2>Your public profile</h2>
-          <label>
-            Display name
-            <input defaultValue="Arjun Mehta" />
-          </label>
-          <label>
-            Bio
-            <textarea defaultValue="Learning quantum algorithms and circuits one gate at a time." />
-          </label>
-          <div className="form-row">
-            <label>
-              Interface language
-              <select defaultValue="English">
-                <option>English</option>
-                <option>Hindi</option>
-              </select>
-            </label>
-            <label>
-              Theme
-              <select defaultValue="Dark">
-                <option>Dark</option>
-                <option>Light</option>
-              </select>
-            </label>
-          </div>
-          <button className="button primary">Save changes</button>
-        </Card>
       </div>
+      <Card>
+        <div className="p-6 flex flex-col gap-4">
+          <h3 className="font-bold text-sm text-[#211f1b]">Quantum Simulator Preferences</h3>
+          <div className="flex items-center justify-between py-2 border-b border-[#e4ded4] text-xs">
+            <span>Default Engine</span>
+            <span className="font-mono font-bold text-[#287854]">Qiskit Aer 0.14.0</span>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-[#e4ded4] text-xs">
+            <span>AI Model</span>
+            <span className="font-mono font-bold text-[#c96b2c]">Gemini 3.5 Flash-Lite</span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
 
-export default function Page() {
+export default function PlatformApp() {
   const [active, setActive] = useState('Home');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -726,6 +701,18 @@ export default function Page() {
     streakDays: 12,
     totalXp: 2840,
   });
+
+  // Global Keyboard Shortcut for Sidebar (⌘\)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setCollapsed((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Fetch problems list on mount
   useEffect(() => {
@@ -787,14 +774,25 @@ export default function Page() {
     });
   };
 
+  const handleSelectTab = (tab: string) => {
+    if (tab !== 'Challenges') {
+      setActiveProblem(null);
+      setSelectedProblemDetail(null);
+    }
+    setActive(tab);
+    if (tab === 'Quantum Simulation') {
+      setCollapsed(true);
+    }
+  };
+
   let content: React.ReactNode;
 
   if (active === 'Home') {
-    content = <Home setActive={setActive} />;
+    content = <Home setActive={handleSelectTab} />;
   } else if (active === 'Learn Quantum') {
     content = (
       <LearnView
-        setActive={setActive}
+        setActive={handleSelectTab}
         onSelectChallenge={(cId) => {
           const found = allProblems.find((p) => p.id === cId);
           if (found) {
@@ -838,7 +836,10 @@ export default function Page() {
     }
   } else if (active === 'Quantum Simulation') {
     content = (
-      <QuantumSimulatorWorkbench />
+      <QuantumSimulatorWorkbench
+        onToggleSidebar={() => setCollapsed((prev) => !prev)}
+        sidebarCollapsed={collapsed}
+      />
     );
   } else if (active === 'AI Tutor') {
     content = <Tutor />;
@@ -856,23 +857,17 @@ export default function Page() {
     <div className="app-shell">
       <Sidebar
         active={active}
-        setActive={(v) => {
-          if (v !== 'Challenges') {
-            setActiveProblem(null);
-            setSelectedProblemDetail(null);
-          }
-          setActive(v);
-        }}
+        setActive={handleSelectTab}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         streakDays={progress.streakDays}
         totalXp={progress.totalXp}
       />
-      <div className="main-shell">
+      <div className={active === 'Quantum Simulation' ? 'sim-shell' : 'main-shell'}>
         {active !== 'Quantum Simulation' && !isChallengeSolverMode && (
           <Topbar
             active={active}
-            setActive={setActive}
+            setActive={handleSelectTab}
             streakDays={progress.streakDays}
             totalXp={progress.totalXp}
           />
