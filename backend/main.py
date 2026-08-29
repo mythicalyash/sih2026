@@ -9,6 +9,8 @@ from backend.schemas import (
     ExecutionResponse,
     ComparisonRequest,
     ComparisonResponse,
+    BackendInfo,
+    BackendsListResponse,
     BlochResponse,
     ProbabilitiesResponse,
     AmplitudesResponse,
@@ -18,8 +20,8 @@ from backend.schemas import (
     QuirkImportResponse,
     AlgorithmSummary,
 )
-from backend.converter import ir_to_qiskit, ir_to_qasm
-from backend.engine import run_circuit_qiskit
+from backend.converter import ir_to_qiskit, ir_to_qasm, ir_to_cirq
+from backend.engine import run_circuit, run_circuit_qiskit, get_available_backends
 from backend.comparator import compare_circuits
 from backend.state_analyzer import (
     compute_bloch_vectors,
@@ -51,33 +53,43 @@ def health_check():
     return {"status": "ok", "service": "quantum-backend"}
 
 
+@app.get("/backends", response_model=BackendsListResponse)
+def list_backends():
+    """List all available quantum simulation engines (Qiskit Aer, PennyLane, qBraid, qsim, Cirq)."""
+    backends = get_available_backends()
+    return BackendsListResponse(backends=backends, default="qiskit_aer")
+
+
 @app.post("/execute", response_model=ExecutionResponse)
 def execute_circuit(req: ExecutionRequest):
     """
-    Execute a Quantum Circuit IR on Qiskit Aer.
-    Returns statevector amplitudes, shot counts, and measurement probabilities.
+    Execute a Quantum Circuit IR on a specified backend (qiskit_aer, pennylane, qsim, qbraid, cirq).
+    Returns statevector amplitudes, shot counts, basis probabilities, and execution metrics.
     """
     try:
-        return run_circuit_qiskit(
+        backend_choice = req.backend or "qiskit_aer"
+        return run_circuit(
             circuit=req.circuit,
+            backend=backend_choice,
             shots=req.shots,
             include_statevector=req.include_statevector,
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Execution error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Execution error ({req.backend}): {str(e)}")
 
 
 @app.post("/execute/compare", response_model=ComparisonResponse)
 def compare_circuit_execution(req: ComparisonRequest):
     """
-    Execute circuit on both Qiskit Aer and PennyLane (via qBraid),
-    and verify numerical equivalence within tolerance.
+    Execute circuit across multiple quantum engines (Qiskit Aer, PennyLane, qsim, qBraid, Cirq),
+    and verify mathematical equivalence and state fidelity.
     """
     try:
         return compare_circuits(
             circuit=req.circuit,
             tolerance=req.tolerance,
             shots=req.shots,
+            backends=req.backends,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Comparison error: {str(e)}")

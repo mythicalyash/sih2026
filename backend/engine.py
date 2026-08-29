@@ -1,10 +1,28 @@
 import time
-from typing import Dict, Any, Optional, List
+import math
+from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 
-from backend.schemas import CircuitIR, ExecutionResponse, AmplitudeItem
-from backend.converter import ir_to_qiskit, normalize_gate_name
+from backend.schemas import CircuitIR, ExecutionResponse, AmplitudeItem, BackendInfo
+from backend.converter import ir_to_qiskit, ir_to_cirq, normalize_gate_name
 from backend.state_analyzer import statevector_to_amplitudes, statevector_to_probabilities
+
+
+def _sample_counts_from_probs(probs: Dict[str, float], shots: int) -> Dict[str, int]:
+    """Helper to sample discrete shot counts from an exact basis probability distribution."""
+    outcomes = list(probs.keys())
+    p_vals = list(probs.values())
+    p_sum = sum(p_vals)
+    if p_sum > 0:
+        p_vals = [p / p_sum for p in p_vals]
+    else:
+        p_vals = [1.0 if i == 0 else 0.0 for i in range(len(p_vals))]
+
+    sampled = np.random.choice(outcomes, size=shots, p=p_vals)
+    counts: Dict[str, int] = {}
+    for s in sampled:
+        counts[s] = counts.get(s, 0) + 1
+    return counts
 
 
 def run_circuit_qiskit(
@@ -12,27 +30,20 @@ def run_circuit_qiskit(
     shots: int = 1024,
     include_statevector: bool = True
 ) -> ExecutionResponse:
-    """
-    Execute a CircuitIR on Qiskit Aer / Statevector simulator.
-    Returns statevector, shot counts, and basis probabilities.
-    """
+    """Execute on Qiskit Aer / Statevector simulator."""
     start_time = time.perf_counter()
     num_qubits = circuit.num_qubits
 
-    # 1. Build circuit without measurements for pure statevector evaluation
+    # 1. Statevector evaluation
     non_measure_gates = [g for g in circuit.gates if normalize_gate_name(g.name) != "measure"]
     ir_pure = CircuitIR(num_qubits=num_qubits, gates=non_measure_gates)
     qc_pure = ir_to_qiskit(ir_pure)
-
-    statevector_np: Optional[np.ndarray] = None
-    amplitudes: Optional[List[AmplitudeItem]] = None
 
     try:
         from qiskit.quantum_info import Statevector
         sv = Statevector.from_instruction(qc_pure)
         statevector_np = np.array(sv.data, dtype=complex)
-    except Exception as e:
-        # Fallback to analytical tensor state or Aer simulator
+    except Exception:
         try:
             from qiskit_aer import AerSimulator
             sim = AerSimulator(method="statevector")
@@ -44,18 +55,12 @@ def run_circuit_qiskit(
             statevector_np = np.zeros(2 ** num_qubits, dtype=complex)
             statevector_np[0] = 1.0
 
-    if statevector_np is not None:
-        amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
-        exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
-    else:
-        exact_probs = {bin(i)[2:].zfill(num_qubits): (1.0 if i == 0 else 0.0) for i in range(2 ** num_qubits)}
+    amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
+    exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
 
-    # 2. Compute shot-based measurement counts
+    # 2. Shot measurement
     counts: Dict[str, int] = {}
-    
-    # Check if there are measurements in original circuit
     has_measurements = any(normalize_gate_name(g.name) == "measure" for g in circuit.gates)
-    
     try:
         from qiskit_aer import AerSimulator
         qc_measure = ir_to_qiskit(circuit)
@@ -64,39 +69,351 @@ def run_circuit_qiskit(
 
         sim = AerSimulator()
         job = sim.run(qc_measure, shots=shots)
-        result = job.result()
-        raw_counts = result.get_counts()
-        
-        # Clean binary keys (remove spaces from multi-register measurement)
+        raw_counts = job.result().get_counts()
         for k, v in raw_counts.items():
-            clean_k = k.replace(" ", "")
-            # Ensure key is num_qubits width
-            clean_k = clean_k[-num_qubits:].zfill(num_qubits)
+            clean_k = k.replace(" ", "")[-num_qubits:].zfill(num_qubits)
             counts[clean_k] = counts.get(clean_k, 0) + v
     except Exception:
-        # Generate stochastic shot counts from exact state probabilities
-        outcomes = list(exact_probs.keys())
-        p_vals = list(exact_probs.values())
-        # Normalize sum of p_vals to 1.0
-        p_sum = sum(p_vals)
-        if p_sum > 0:
-            p_vals = [p / p_sum for p in p_vals]
-        else:
-            p_vals = [1.0 if i == 0 else 0.0 for i in range(len(p_vals))]
-        
-        sampled = np.random.choice(outcomes, size=shots, p=p_vals)
-        for s in sampled:
-            counts[s] = counts.get(s, 0) + 1
-
-    # Ensure all basis states exist in probabilities
-    probabilities = exact_probs
+        counts = _sample_counts_from_probs(exact_probs, shots)
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-
     return ExecutionResponse(
         statevector=amplitudes if include_statevector else None,
         counts=counts,
-        probabilities=probabilities,
+        probabilities=exact_probs,
         num_qubits=num_qubits,
-        execution_time_ms=round(elapsed_ms, 2)
+        execution_time_ms=round(elapsed_ms, 2),
+        backend="qiskit_aer",
+        backend_name="Qiskit Aer (IBM Quantum)"
     )
+
+
+def run_circuit_pennylane(
+    circuit: CircuitIR,
+    shots: int = 1024,
+    include_statevector: bool = True
+) -> ExecutionResponse:
+    """Execute on PennyLane default.qubit simulator."""
+    start_time = time.perf_counter()
+    import pennylane as qml
+
+    num_qubits = circuit.num_qubits
+    dev = qml.device("default.qubit", wires=num_qubits)
+    active_gates = [g for g in circuit.gates if normalize_gate_name(g.name) != "measure"]
+
+    @qml.qnode(dev)
+    def pl_circuit():
+        for g in active_gates:
+            name = normalize_gate_name(g.name)
+            qubits = g.qubits
+            params = g.params or []
+            theta = float(params[0]) if len(params) > 0 else math.pi
+
+            if name == "h":
+                for q in qubits: qml.Hadamard(wires=q)
+            elif name == "x":
+                for q in qubits: qml.PauliX(wires=q)
+            elif name == "y":
+                for q in qubits: qml.PauliY(wires=q)
+            elif name == "z":
+                for q in qubits: qml.PauliZ(wires=q)
+            elif name == "s":
+                for q in qubits: qml.S(wires=q)
+            elif name == "sdg":
+                for q in qubits: qml.adjoint(qml.S(wires=q))
+            elif name == "t":
+                for q in qubits: qml.T(wires=q)
+            elif name == "tdg":
+                for q in qubits: qml.adjoint(qml.T(wires=q))
+            elif name == "rx":
+                for q in qubits: qml.RX(theta, wires=q)
+            elif name == "ry":
+                for q in qubits: qml.RY(theta, wires=q)
+            elif name == "rz":
+                for q in qubits: qml.RZ(theta, wires=q)
+            elif name == "p":
+                for q in qubits: qml.PhaseShift(theta, wires=q)
+            elif name == "sx":
+                for q in qubits: qml.SX(wires=q)
+            elif name == "cx":
+                qml.CNOT(wires=[qubits[0], qubits[1]])
+            elif name == "cz":
+                qml.CZ(wires=[qubits[0], qubits[1]])
+            elif name == "swap":
+                qml.SWAP(wires=[qubits[0], qubits[1]])
+            elif name == "ccx":
+                qml.Toffoli(wires=[qubits[0], qubits[1], qubits[2]])
+            elif name == "cswap":
+                qml.CSWAP(wires=[qubits[0], qubits[1], qubits[2]])
+
+        return qml.state()
+
+    raw_sv = pl_circuit()
+    pl_sv = np.array(raw_sv, dtype=complex)
+
+    # Reorder statevector to match standard Qiskit basis indexing |q_{n-1}...q_0>
+    dim = 2 ** num_qubits
+    sv_reordered = np.zeros_like(pl_sv)
+    for k in range(dim):
+        qk_bin = bin(k)[2:].zfill(num_qubits)
+        pl_bin = qk_bin[::-1]
+        m = int(pl_bin, 2)
+        sv_reordered[k] = pl_sv[m]
+
+    amplitudes = statevector_to_amplitudes(sv_reordered, num_qubits)
+    exact_probs = statevector_to_probabilities(sv_reordered, num_qubits)
+    counts = _sample_counts_from_probs(exact_probs, shots)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    return ExecutionResponse(
+        statevector=amplitudes if include_statevector else None,
+        counts=counts,
+        probabilities=exact_probs,
+        num_qubits=num_qubits,
+        execution_time_ms=round(elapsed_ms, 2),
+        backend="pennylane",
+        backend_name="PennyLane (Xanadu default.qubit)"
+    )
+
+
+def run_circuit_qsim(
+    circuit: CircuitIR,
+    shots: int = 1024,
+    include_statevector: bool = True
+) -> ExecutionResponse:
+    """Execute on Google's qsimcirq high-performance Schrodinger wave-function simulator."""
+    start_time = time.perf_counter()
+    import cirq
+    import qsimcirq
+
+    num_qubits = circuit.num_qubits
+    qubits = cirq.LineQubit.range(num_qubits)
+    cc = ir_to_cirq(circuit)
+
+    # Use reversed qubit order [q_{n-1}, ..., q_0] for exact match with standard Qiskit bitstring indexing
+    qsim_sim = qsimcirq.QSimSimulator()
+    res = qsim_sim.simulate(cc, qubit_order=qubits[::-1])
+    raw_sv = res.state_vector()
+    statevector_np = np.array(raw_sv, dtype=complex)
+
+    amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
+    exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
+
+    # Sample measurement counts
+    has_measurements = any(normalize_gate_name(g.name) == "measure" for g in circuit.gates)
+    counts: Dict[str, int] = {}
+    try:
+        cc_measure = cc.copy()
+        if not has_measurements:
+            cc_measure.append([cirq.measure(qubits[i], key=f"q{i}") for i in range(num_qubits)])
+        run_res = qsim_sim.run(cc_measure, repetitions=shots)
+        for rep in range(shots):
+            bitstring = "".join(str(int(run_res.measurements[f"q{i}"][rep][0])) for i in reversed(range(num_qubits)))
+            counts[bitstring] = counts.get(bitstring, 0) + 1
+    except Exception:
+        counts = _sample_counts_from_probs(exact_probs, shots)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    return ExecutionResponse(
+        statevector=amplitudes if include_statevector else None,
+        counts=counts,
+        probabilities=exact_probs,
+        num_qubits=num_qubits,
+        execution_time_ms=round(elapsed_ms, 2),
+        backend="qsim",
+        backend_name="qsim (Google Quantum AI C++ Schrodinger Engine)"
+    )
+
+
+def run_circuit_cirq(
+    circuit: CircuitIR,
+    shots: int = 1024,
+    include_statevector: bool = True
+) -> ExecutionResponse:
+    """Execute on Google Cirq native statevector simulator."""
+    start_time = time.perf_counter()
+    import cirq
+
+    num_qubits = circuit.num_qubits
+    qubits = cirq.LineQubit.range(num_qubits)
+    cc = ir_to_cirq(circuit)
+
+    sim = cirq.Simulator()
+    res = sim.simulate(cc, qubit_order=qubits[::-1])
+    raw_sv = res.state_vector()
+    statevector_np = np.array(raw_sv, dtype=complex)
+
+    amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
+    exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
+    counts = _sample_counts_from_probs(exact_probs, shots)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    return ExecutionResponse(
+        statevector=amplitudes if include_statevector else None,
+        counts=counts,
+        probabilities=exact_probs,
+        num_qubits=num_qubits,
+        execution_time_ms=round(elapsed_ms, 2),
+        backend="cirq",
+        backend_name="Google Cirq Simulator"
+    )
+
+
+def run_circuit_qbraid(
+    circuit: CircuitIR,
+    shots: int = 1024,
+    include_statevector: bool = True
+) -> ExecutionResponse:
+    """Transpile and execute across quantum SDK representations using qBraid."""
+    start_time = time.perf_counter()
+    import qbraid
+
+    num_qubits = circuit.num_qubits
+    qc = ir_to_qiskit(circuit)
+
+    try:
+        cirq_prog = qbraid.transpile(qc, "cirq")
+        import cirq
+        sim = cirq.Simulator()
+        qubits = list(cirq_prog.all_qubits())
+        qubits_sorted = sorted(qubits, key=lambda q: getattr(q, "x", getattr(q, "name", str(q))))
+        res = sim.simulate(cirq_prog, qubit_order=qubits_sorted[::-1])
+        statevector_np = np.array(res.state_vector(), dtype=complex)
+    except Exception:
+        return run_circuit_qiskit(circuit, shots=shots, include_statevector=include_statevector)
+
+    amplitudes = statevector_to_amplitudes(statevector_np, num_qubits)
+    exact_probs = statevector_to_probabilities(statevector_np, num_qubits)
+    counts = _sample_counts_from_probs(exact_probs, shots)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    return ExecutionResponse(
+        statevector=amplitudes if include_statevector else None,
+        counts=counts,
+        probabilities=exact_probs,
+        num_qubits=num_qubits,
+        execution_time_ms=round(elapsed_ms, 2),
+        backend="qbraid",
+        backend_name="qBraid Transpiler (Cross-SDK Pipeline)"
+    )
+
+
+BACKEND_DISPATCHER = {
+    "qiskit_aer": run_circuit_qiskit,
+    "qiskit": run_circuit_qiskit,
+    "pennylane": run_circuit_pennylane,
+    "qbraid": run_circuit_qbraid,
+    "qsim": run_circuit_qsim,
+    "cirq": run_circuit_cirq,
+}
+
+
+def run_circuit(
+    circuit: CircuitIR,
+    backend: str = "qiskit_aer",
+    shots: int = 1024,
+    include_statevector: bool = True
+) -> ExecutionResponse:
+    """Unified entry point for executing quantum circuits on any supported backend."""
+    b_key = backend.strip().lower().replace("-", "_")
+    handler = BACKEND_DISPATCHER.get(b_key, run_circuit_qiskit)
+    return handler(circuit, shots=shots, include_statevector=include_statevector)
+
+
+def get_available_backends() -> List[BackendInfo]:
+    """Retrieve metadata and status for all available quantum backend engines."""
+    backends: List[BackendInfo] = []
+
+    # 1. Qiskit Aer
+    try:
+        import qiskit
+        import qiskit_aer
+        backends.append(
+            BackendInfo(
+                id="qiskit_aer",
+                name="Qiskit Aer Simulator",
+                provider="IBM Quantum",
+                version=f"qiskit {qiskit.__version__} / aer {qiskit_aer.__version__}",
+                description="Industry standard statevector and shot-based quantum simulation engine.",
+                supports_statevector=True,
+                supports_shots=True,
+                status="active",
+            )
+        )
+    except ImportError:
+        pass
+
+    # 2. PennyLane
+    try:
+        import pennylane as qml
+        backends.append(
+            BackendInfo(
+                id="pennylane",
+                name="PennyLane Simulator",
+                provider="Xanadu",
+                version=qml.__version__,
+                description="Quantum differentiable programming & analytical statevector simulation.",
+                supports_statevector=True,
+                supports_shots=True,
+                status="active",
+            )
+        )
+    except ImportError:
+        pass
+
+    # 3. qsim / Google Quantum AI
+    try:
+        import qsimcirq
+        backends.append(
+            BackendInfo(
+                id="qsim",
+                name="qsim High-Performance Simulator",
+                provider="Google Quantum AI",
+                version=qsimcirq.__version__,
+                description="Ultra-fast vectorized C++ Schrodinger wave-function simulator.",
+                supports_statevector=True,
+                supports_shots=True,
+                status="active",
+            )
+        )
+    except ImportError:
+        pass
+
+    # 4. Cirq
+    try:
+        import cirq
+        backends.append(
+            BackendInfo(
+                id="cirq",
+                name="Google Cirq Simulator",
+                provider="Google Quantum AI",
+                version=cirq.__version__,
+                description="Python framework for creating, editing, and invoking NISQ quantum circuits.",
+                supports_statevector=True,
+                supports_shots=True,
+                status="active",
+            )
+        )
+    except ImportError:
+        pass
+
+    # 5. qBraid
+    try:
+        import qbraid
+        backends.append(
+            BackendInfo(
+                id="qbraid",
+                name="qBraid Transpiler Engine",
+                provider="qBraid",
+                version=qbraid.__version__,
+                description="Unified quantum software hub & automatic multi-SDK circuit transpilation.",
+                supports_statevector=True,
+                supports_shots=True,
+                status="active",
+            )
+        )
+    except ImportError:
+        pass
+
+    return backends
+

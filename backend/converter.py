@@ -244,3 +244,64 @@ def ir_to_qasm(circuit: CircuitIR) -> str:
 
     return "\n".join(lines)
 
+
+def ir_to_cirq(ir: CircuitIR) -> Any:
+    """Convert CircuitIR JSON model to a Google Cirq Circuit."""
+    import cirq
+
+    num_qubits = ir.num_qubits
+    qubits = cirq.LineQubit.range(num_qubits)
+    ops = []
+
+    for gate_idx, gate in enumerate(ir.gates):
+        name = normalize_gate_name(gate.name)
+        qs = [qubits[q] for q in gate.qubits if 0 <= q < num_qubits]
+        params = gate.params or []
+        theta = float(params[0]) if len(params) > 0 else math.pi
+
+        if name == "h":
+            for q in qs: ops.append(cirq.H(q))
+        elif name == "x":
+            for q in qs: ops.append(cirq.X(q))
+        elif name == "y":
+            for q in qs: ops.append(cirq.Y(q))
+        elif name == "z":
+            for q in qs: ops.append(cirq.Z(q))
+        elif name == "s":
+            for q in qs: ops.append(cirq.S(q))
+        elif name == "sdg":
+            for q in qs: ops.append(cirq.ZPowGate(exponent=-0.5)(q))
+        elif name == "t":
+            for q in qs: ops.append(cirq.T(q))
+        elif name == "tdg":
+            for q in qs: ops.append(cirq.ZPowGate(exponent=-0.25)(q))
+        elif name == "id":
+            for q in qs: ops.append(cirq.I(q))
+        elif name == "rx":
+            for q in qs: ops.append(cirq.rx(theta)(q))
+        elif name == "ry":
+            for q in qs: ops.append(cirq.ry(theta)(q))
+        elif name == "rz":
+            for q in qs: ops.append(cirq.rz(theta)(q))
+        elif name == "p":
+            for q in qs: ops.append(cirq.ZPowGate(exponent=theta / math.pi)(q))
+        elif name == "sx":
+            for q in qs: ops.append(cirq.XPowGate(exponent=0.5)(q))
+        elif name == "cx":
+            if len(qs) >= 2: ops.append(cirq.CNOT(qs[0], qs[1]))
+        elif name == "cz":
+            if len(qs) >= 2: ops.append(cirq.CZ(qs[0], qs[1]))
+        elif name == "swap":
+            if len(qs) >= 2: ops.append(cirq.SWAP(qs[0], qs[1]))
+        elif name == "ccx":
+            if len(qs) >= 3: ops.append(cirq.CCX(qs[0], qs[1], qs[2]))
+        elif name == "cswap":
+            if len(qs) >= 3: ops.append(cirq.CSWAP(qs[0], qs[1], qs[2]))
+        elif name == "reset":
+            for q in qs: ops.append(cirq.reset(q))
+        elif name == "measure":
+            for q in qs: ops.append(cirq.measure(q, key=f"m_{q.x}"))
+
+    return cirq.Circuit(ops)
+
+

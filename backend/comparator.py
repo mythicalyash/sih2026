@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, List
 import math
 import numpy as np
 
@@ -125,86 +125,107 @@ def run_circuit_pennylane(circuit: CircuitIR) -> Tuple[np.ndarray, Dict[str, flo
 def compare_circuits(
     circuit: CircuitIR,
     tolerance: float = 1e-4,
-    shots: int = 1024
+    shots: int = 1024,
+    backends: Optional[List[str]] = None
 ) -> ComparisonResponse:
     """
-    Execute circuit on both Qiskit Aer and PennyLane (via qBraid).
-    Calculate probability difference and state fidelity.
+    Execute circuit across multiple quantum backends (Qiskit Aer, PennyLane, qsim, qBraid, Cirq),
+    compute basis probability differences and state fidelities, and verify mathematical equivalence.
     """
-    # 1. Run on Qiskit Aer
-    qk_res = run_circuit_qiskit(circuit, shots=shots, include_statevector=True)
-    qk_probs = qk_res.probabilities
+    from backend.engine import run_circuit
 
-    # 2. Run on PennyLane default.qubit
-    try:
-        pl_sv, pl_probs = run_circuit_pennylane(circuit)
-    except Exception as e:
-        # If PennyLane encounters execution issue, report diff
+    if not backends or len(backends) == 0:
+        backends = ["qiskit_aer", "pennylane"]
+
+    results_map: Dict[str, Any] = {}
+    sv_map: Dict[str, np.ndarray] = {}
+    probs_map: Dict[str, Dict[str, float]] = {}
+
+    num_qubits = circuit.num_qubits
+    dim = 2 ** num_qubits
+
+    for b_id in backends:
+        try:
+            exec_res = run_circuit(circuit, backend=b_id, shots=shots, include_statevector=True)
+            results_map[b_id] = {
+                "backend": exec_res.backend,
+                "backend_name": exec_res.backend_name,
+                "probabilities": exec_res.probabilities,
+                "counts": exec_res.counts,
+                "execution_time_ms": exec_res.execution_time_ms,
+                "status": "success",
+            }
+            probs_map[b_id] = exec_res.probabilities
+            if exec_res.statevector:
+                sv_map[b_id] = np.array([complex(a.real, a.imag) for a in exec_res.statevector], dtype=complex)
+        except Exception as e:
+            results_map[b_id] = {
+                "backend": b_id,
+                "status": "error",
+                "error": str(e),
+            }
+
+    # If fewer than 2 backends succeeded, return failure
+    successful_backends = list(probs_map.keys())
+    if len(successful_backends) < 2:
         return ComparisonResponse(
             match=False,
             max_diff=1.0,
             tolerance=tolerance,
             fidelity=0.0,
-            qiskit_result={"probabilities": qk_probs, "counts": qk_res.counts},
-            pennylane_result={"error": str(e)},
-            details=f"PennyLane execution error: {str(e)}"
+            qiskit_result=results_map.get("qiskit_aer", {}),
+            pennylane_result=results_map.get("pennylane", {}),
+            results=results_map,
+            details=f"Comparison failed: Only {len(successful_backends)} backend(s) succeeded."
         )
 
-    # 3. Calculate max probability diff across all computational basis states
-    num_qubits = circuit.num_qubits
-    dim = 2 ** num_qubits
-    max_prob_diff = 0.0
+    # Compute maximum probability difference across all pairs and basis states
     all_states = [bin(i)[2:].zfill(num_qubits) for i in range(dim)]
+    global_max_diff = 0.0
 
-    for state in all_states:
-        p_qk = qk_probs.get(state, 0.0)
-        p_pl = pl_probs.get(state, 0.0)
-        diff = abs(p_qk - p_pl)
-        if diff > max_prob_diff:
-            max_prob_diff = diff
+    for i in range(len(successful_backends)):
+        for j in range(i + 1, len(successful_backends)):
+            b1 = successful_backends[i]
+            b2 = successful_backends[j]
+            p1 = probs_map[b1]
+            p2 = probs_map[b2]
+            for state in all_states:
+                diff = abs(p1.get(state, 0.0) - p2.get(state, 0.0))
+                if diff > global_max_diff:
+                    global_max_diff = diff
 
-    # 4. Calculate fidelity between statevectors
-    # Re-order PennyLane statevector to match Qiskit basis indexing
-    # Qiskit index k: sum(q_j * 2^j), PennyLane index m: sum(q_j * 2^(n-1-j))
-    pl_sv_reordered = np.zeros_like(pl_sv)
-    for k in range(dim):
-        # binary of k is q_{n-1}...q_0
-        qk_bin = bin(k)[2:].zfill(num_qubits)
-        # in PennyLane wires order: q_0...q_{n-1}
-        pl_bin = qk_bin[::-1]
-        m = int(pl_bin, 2)
-        pl_sv_reordered[k] = pl_sv[m]
+    # Compute state fidelity across pairs
+    min_fidelity = 1.0
+    sv_backends = list(sv_map.keys())
+    for i in range(len(sv_backends)):
+        for j in range(i + 1, len(sv_backends)):
+            b1 = sv_backends[i]
+            b2 = sv_backends[j]
+            sv1 = sv_map[b1]
+            sv2 = sv_map[b2]
+            overlap = np.vdot(sv1, sv2)
+            fid = float(abs(overlap) ** 2)
+            if fid < min_fidelity:
+                min_fidelity = fid
 
-    # Qiskit statevector
-    if qk_res.statevector:
-        qk_sv = np.array([complex(item.real, item.imag) for item in qk_res.statevector], dtype=complex)
-        overlap = np.vdot(qk_sv, pl_sv_reordered)
-        fidelity = float(abs(overlap) ** 2)
-    else:
-        fidelity = 1.0 if max_prob_diff < tolerance else float(1.0 - max_prob_diff)
+    min_fidelity = round(max(0.0, min(1.0, min_fidelity)), 6)
+    global_max_diff = round(global_max_diff, 6)
+    is_match = bool(global_max_diff <= tolerance and min_fidelity >= (1.0 - max(tolerance, 1e-3)))
 
-    fidelity = round(max(0.0, min(1.0, fidelity)), 6)
-    max_prob_diff = round(max_prob_diff, 6)
-    is_match = bool(max_prob_diff <= tolerance and fidelity >= (1.0 - max(tolerance, 1e-3)))
-
+    b_names = [results_map[b].get("backend_name", b) for b in successful_backends]
     details = (
-        f"Verified across Qiskit Aer and PennyLane default.qubit. "
-        f"Max probability diff: {max_prob_diff:.6f} (tolerance: {tolerance}), "
-        f"State Fidelity: {fidelity:.6f}."
+        f"Verified across {len(successful_backends)} backends ({', '.join(b_names)}). "
+        f"Max probability diff: {global_max_diff:.6f} (tolerance: {tolerance}), "
+        f"Minimum State Fidelity: {min_fidelity:.6f}."
     )
 
     return ComparisonResponse(
         match=is_match,
-        max_diff=max_prob_diff,
+        max_diff=global_max_diff,
         tolerance=tolerance,
-        fidelity=fidelity,
-        qiskit_result={
-            "probabilities": qk_probs,
-            "counts": qk_res.counts,
-            "execution_time_ms": qk_res.execution_time_ms
-        },
-        pennylane_result={
-            "probabilities": pl_probs,
-        },
+        fidelity=min_fidelity,
+        qiskit_result=results_map.get("qiskit_aer", results_map.get(successful_backends[0], {})),
+        pennylane_result=results_map.get("pennylane", results_map.get(successful_backends[-1], {})),
+        results=results_map,
         details=details
     )

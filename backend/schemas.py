@@ -17,6 +17,10 @@ class ExecutionRequest(BaseModel):
     circuit: CircuitIR
     shots: int = Field(default=1024, ge=1, le=100000, description="Number of measurement shots")
     include_statevector: bool = Field(default=True, description="Whether to compute statevector")
+    backend: Optional[str] = Field(
+        default="qiskit_aer",
+        description="Quantum simulator backend: 'qiskit_aer', 'pennylane', 'qbraid', 'qsim', 'cirq'"
+    )
 
 
 class AmplitudeItem(BaseModel):
@@ -29,18 +33,41 @@ class AmplitudeItem(BaseModel):
     phase_deg: float
 
 
+class BackendInfo(BaseModel):
+    id: str
+    name: str
+    provider: str
+    version: str
+    description: str
+    supports_statevector: bool
+    supports_shots: bool
+    supports_gpu: bool = False
+    status: str = "active"
+
+
+class BackendsListResponse(BaseModel):
+    backends: List[BackendInfo]
+    default: str = "qiskit_aer"
+
+
 class ExecutionResponse(BaseModel):
     statevector: Optional[List[AmplitudeItem]] = None
     counts: Dict[str, int] = Field(default_factory=dict)
     probabilities: Dict[str, float] = Field(default_factory=dict)
     num_qubits: int
     execution_time_ms: float = 0.0
+    backend: str = "qiskit_aer"
+    backend_name: str = "Qiskit Aer (Statevector & Qasm)"
 
 
 class ComparisonRequest(BaseModel):
     circuit: CircuitIR
     tolerance: float = Field(default=1e-4, ge=1e-7, le=0.5, description="Comparison absolute tolerance")
     shots: int = Field(default=1024, ge=1, le=100000)
+    backends: Optional[List[str]] = Field(
+        default_factory=lambda: ["qiskit_aer", "pennylane"],
+        description="List of backends to compare: 'qiskit_aer', 'pennylane', 'qsim', 'qbraid', 'cirq'"
+    )
 
 
 class ComparisonResponse(BaseModel):
@@ -48,8 +75,9 @@ class ComparisonResponse(BaseModel):
     max_diff: float
     tolerance: float
     fidelity: float
-    qiskit_result: Dict[str, Any]
-    pennylane_result: Dict[str, Any]
+    qiskit_result: Optional[Dict[str, Any]] = None
+    pennylane_result: Optional[Dict[str, Any]] = None
+    results: Dict[str, Any] = Field(default_factory=dict)
     details: str
 
 
