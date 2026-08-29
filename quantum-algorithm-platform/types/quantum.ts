@@ -1,96 +1,72 @@
+export type SupportedBackend =
+  | 'qiskit_aer'
+  | 'pennylane'
+  | 'cirq'
+  | 'qsim'
+  | 'qbraid';
+
 export interface GateIR {
   name: string;
   qubits: number[];
   params?: number[];
+  condition?: {
+    classical_bit: number;
+    value: number;
+  };
 }
 
 export interface CircuitIR {
   num_qubits: number;
   gates: GateIR[];
+  metadata?: Record<string, any>;
 }
 
-export interface AmplitudeItem {
-  state: string;
-  index: number;
-  real: number;
-  imag: number;
-  magnitude: number;
-  phase_rad: number;
-  phase_deg: number;
-}
-
-export type StatevectorAmplitude = AmplitudeItem;
-
-export type BackendId = 'qiskit_aer' | 'pennylane' | 'qsim' | 'cirq' | 'qbraid';
-
-export interface BackendInfo {
-  id: BackendId;
-  name: string;
-  provider: string;
-  version: string;
-  description: string;
-  supports_statevector: boolean;
-  supports_shots: boolean;
-  status: string;
+export interface ExecutionRequest {
+  circuit: CircuitIR;
+  shots?: number;
+  backend?: SupportedBackend;
+  include_statevector?: boolean;
+  noise_model?: Record<string, any>;
 }
 
 export interface ExecutionResponse {
-  statevector?: AmplitudeItem[];
   counts: Record<string, number>;
   probabilities: Record<string, number>;
-  num_qubits: number;
+  statevector?: number[][];
   execution_time_ms: number;
-  backend?: string;
-  backend_name?: string;
-}
-
-export interface ComparisonResponse {
-  match: boolean;
-  max_diff: number;
-  tolerance: number;
-  fidelity: number;
-  qiskit_result?: {
-    probabilities?: Record<string, number>;
-    counts?: Record<string, number>;
-    execution_time_ms?: number;
-  };
-  pennylane_result?: {
-    probabilities?: Record<string, number>;
-    error?: string;
-  };
-  results?: Record<string, any>;
-  details: string;
-}
-
-export interface BlochVector {
-  qubit: number;
-  x: number;
-  y: number;
-  z: number;
-  r: number;
-  theta: number;
-  phi: number;
-}
-
-export interface BlochResponse {
+  backend_used: string;
   num_qubits: number;
-  bloch_vectors: BlochVector[];
+  raw_output?: Record<string, any>;
 }
 
-export interface DiagnosticIssue {
-  type: string;
-  severity: 'error' | 'warning' | 'info';
-  message: string;
-  qubits?: number[] | null;
-  gate_indices?: number[] | null;
+export interface BackendStatus {
+  backend: SupportedBackend;
+  available: boolean;
+  version?: string;
+  device_name?: string;
+  supports_statevector: boolean;
+  supports_noise: boolean;
+  error_message?: string;
 }
 
-export interface TutorResponse {
-  status: string;
-  issues: DiagnosticIssue[];
-  explanation: string;
-  circuit_summary: Record<string, any>;
-  suggestions: string[];
+export interface CompareRequest {
+  circuit: CircuitIR;
+  backends: SupportedBackend[];
+  shots?: number;
+}
+
+export interface CompareResponse {
+  results: Record<string, ExecutionResponse>;
+  total_time_ms: number;
+}
+
+export interface AlgorithmSummary {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  default_params: Record<string, any>;
+  circuit: CircuitIR;
 }
 
 export interface PlacedGate {
@@ -104,7 +80,19 @@ export interface PlacedGate {
   isTarget?: boolean;
 }
 
-<<<<<<< HEAD
+export interface ExecutionStatus {
+  id: number;
+  description: string;
+}
+
+export interface CodeExecutionResult {
+  stdout: string;
+  stderr: string;
+  execution_time_ms: number;
+  status: string;
+  source?: string;
+}
+
 export interface QuantumProblem {
   id: string;
   title: string;
@@ -162,18 +150,3 @@ export interface ProblemProgressState {
   streakDays: number;
   totalXp: number;
 }
-=======
-export interface ExecutionStatus {
-  id: number;
-  description: string;
-}
-
-export interface CodeExecutionResult {
-  stdout?: string | null;
-  stderr?: string | null;
-  status: ExecutionStatus;
-  time?: string;
-  source?: string;
-}
-
->>>>>>> origin/main
