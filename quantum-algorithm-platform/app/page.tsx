@@ -113,12 +113,320 @@ function ProgressBar({ value }: { value: number }) { return <div className="prog
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <section className={`card ${className}`}>{children}</section> }
 
 function Home({ setActive }: { setActive: (v: string) => void }) {
-  return <div className="page-content"><div className="welcome-row"><div><div className="eyebrow">Thursday, August 29, 2024</div><h1>Good morning, Arjun<span className="accent-dot">.</span></h1><p className="subhead">Your quantum journey is picking up momentum.</p></div><button className="button primary" onClick={() => setActive('Learn Quantum')}><Play /> Continue learning</button></div>
-    <div className="hero-grid"><Card className="lecture-card"><div className="card-head"><div><div className="eyebrow accent-text">CURRENT COURSE</div><h2>Quantum foundations</h2></div><span className="status-badge">In progress</span></div><div className="lecture-body"><div className="lecture-art"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="core">|ψ⟩</div><span className="particle p1" /><span className="particle p2" /><span className="particle p3" /></div><div className="lecture-info"><div className="eyebrow">UP NEXT · MODULE 02</div><h3>Superposition & the Bloch sphere</h3><p>Understand how a qubit can be in multiple states at once.</p><div className="progress-row"><span>4 of 6 lessons</span><strong>68%</strong></div><ProgressBar value={68} /><button className="text-button" onClick={() => setActive('Learn Quantum')}>Continue lecture <ChevronRight /></button></div></div></Card>
-    <Card className="simulation-card"><div className="card-head"><div><div className="eyebrow">LAST SIMULATION</div><h2>Bell state experiment</h2></div><button className="more">•••</button></div><div className="circuit-mini"><div className="ruler"><span>01</span><span>02</span><span>03</span><span>04</span></div><div className="wire"><label>q[0]</label><i /><b className="gate hadamard">H</b><i /><b className="gate cnot">⊕</b><i /><i /></div><div className="wire"><label>q[1]</label><i /><i /><b className="gate control">●</b><i /><i /></div><div className="wire classical"><label>c[0]</label><i /><i /><i /><i /><b>▣</b></div></div><div className="sim-footer"><div><span className="live-dot" /> Aer simulator <small>· 0.004s</small></div><button className="text-button" onClick={() => setActive('Quantum Simulation')}>Reopen <ChevronRight /></button></div></Card></div>
-    <Card className="recommend-card"><div className="recommend-icon"><Sparkles /></div><div className="recommend-copy"><div className="eyebrow accent-text">RECOMMENDED BY YOUR AI TUTOR</div><h2>Strengthen your intuition for superposition</h2><p>You&apos;re getting the right answers, but your confidence dipped on the last quiz. Try this focused 5-minute drill.</p></div><button className="button secondary" onClick={() => setActive('AI Tutor')}>Start drill <ChevronRight /></button></Card>
-    <div className="lower-grid"><Card className="streak-card"><div className="card-head"><div><div className="eyebrow">LEARNING STREAK</div><h2>12 days <span className="flame-word"><Flame /> on fire</span></h2></div><Trophy className="muted-icon" /></div><div className="week">{['M','T','W','T','F','S','S'].map((day, i) => <div key={`${day}${i}`} className={`day ${i < 5 ? 'done' : i === 5 ? 'today' : ''}`}><span>{day}</span><i>{i < 5 ? '✓' : ''}</i></div>)}</div><p className="small-copy">Keep going — 3 more days to beat your personal best.</p></Card><Card className="activity-card"><div className="card-head"><div><div className="eyebrow">RECENT ACTIVITY</div><h2>Your latest wins</h2></div><button className="text-button">View all <ChevronRight /></button></div><div className="activity-list">{activity.map(([type, title, date, xp, tone]) => <div className="activity-item" key={title}><div className={`activity-icon ${tone}`}><Activity /></div><div><strong>{title}</strong><span>{type} · {date}</span></div><b>{xp}</b></div>)}</div></Card></div>
-  </div>
+  const [blochState, setBlochState] = useState<'0' | '1' | '+' | '-'>('+');
+  const [simRunning, setSimRunning] = useState(false);
+  const [simRunCount, setSimRunCount] = useState(1024);
+  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  const blochDetails = {
+    '0': { label: '|0⟩', desc: 'Ground state (North pole)', math: '|ψ⟩ = 1|0⟩ + 0|1⟩', rot: 'rotate(0deg)' },
+    '1': { label: '|1⟩', desc: 'Excited state (South pole)', math: '|ψ⟩ = 0|0⟩ + 1|1⟩', rot: 'rotate(180deg)' },
+    '+': { label: '|+⟩', desc: 'Equal superposition (X-axis)', math: '|ψ⟩ = (|0⟩ + |1⟩)/√2', rot: 'rotate(45deg)' },
+    '-': { label: '|-⟩', desc: 'Phase superposition (-X axis)', math: '|ψ⟩ = (|0⟩ - |1⟩)/√2', rot: 'rotate(-45deg)' },
+  };
+
+  const handleQuickRun = () => {
+    setSimRunning(true);
+    setTimeout(() => {
+      setSimRunning(false);
+      setSimRunCount((prev) => prev + 1024);
+    }, 300);
+  };
+
+  const quizOptions = [
+    { text: 'Pauli-X Gate', isCorrect: false },
+    { text: 'Hadamard (H) Gate', isCorrect: true },
+    { text: 'Phase (S) Gate', isCorrect: false },
+    { text: 'Pauli-Z Gate', isCorrect: false },
+  ];
+
+  const quickLabs = [
+    {
+      title: 'Bell State Generator',
+      qubits: '2 Qubits',
+      category: 'Entanglement',
+      formula: '|Φ⁺⟩ = (|00⟩ + |11⟩)/√2',
+      desc: 'Create maximally entangled Einstein-Podolsky-Rosen (EPR) pairs.',
+      color: 'border-l-[#c96b2c]',
+      badge: 'bg-[#fff5eb] text-[#c96b2c]',
+    },
+    {
+      title: "Grover's Search Oracle",
+      qubits: '2 Qubits',
+      category: 'Search Algorithm',
+      formula: 'O(√N) Speedup',
+      desc: 'Amplify the probability amplitude of target search states.',
+      color: 'border-l-[#0f62fe]',
+      badge: 'bg-[#edf5ff] text-[#0f62fe]',
+    },
+    {
+      title: 'Quantum Fourier Transform',
+      qubits: '3 Qubits',
+      category: 'Phase Subroutine',
+      formula: 'F_N = (1/√N) ∑ ω^(jk)',
+      desc: 'The mathematical backbone for Shor’s and Phase Estimation.',
+      color: 'border-l-[#007d79]',
+      badge: 'bg-[#e6f6f6] text-[#007d79]',
+    },
+    {
+      title: 'True Quantum RNG',
+      qubits: '1 Qubit',
+      category: 'Superposition',
+      formula: 'P(0) = 50%, P(1) = 50%',
+      desc: 'Generate truly non-deterministic random bits via measurement.',
+      color: 'border-l-[#d12771]',
+      badge: 'bg-[#fdf0f6] text-[#d12771]',
+    },
+  ];
+
+  const backends = [
+    { name: 'IBM Quantum Eagle', qubits: '127 Qubits', status: 'Online', latency: '99.85% fidelity', queue: '14 jobs' },
+    { name: 'PennyLane Lightning', qubits: 'Statevector Sim', status: 'Online', latency: '0.002s latency', queue: '0 jobs' },
+    { name: 'Google Cirq Engine', qubits: 'Density Matrix', status: 'Online', latency: '0.003s latency', queue: '0 jobs' },
+    { name: 'IonQ Forte', qubits: '32 Qubits Trapped-Ion', status: 'Calibrating', latency: 'T₂ = 10s coherence', queue: 'Paused' },
+  ];
+
+  return (
+    <div className="page-content flex flex-col gap-5 py-6">
+      {/* 1. Top Header & Quick Overview */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#ded7cb]/60">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#c96b2c] tracking-wider uppercase mb-0.5">
+            <span>Thursday, August 29, 2024</span>
+            <span>·</span>
+            <span className="bg-[#fff5eb] border border-[#c96b2c]/30 px-2 py-0.2 rounded-full text-[10px]">
+              Level 08 Quantum Explorer
+            </span>
+          </div>
+          <h1 className="font-bold tracking-tight text-[#211f1b]" style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, letterSpacing: '-0.02em', fontSize: '56px', lineHeight: 1.05 }}>
+            Good morning, Arjun<span className="text-[#c96b2c]">.</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            className="button primary px-3.5 py-2 text-xs shadow-xs hover:scale-[1.02] transition-transform cursor-pointer"
+            onClick={() => setActive('Learn Quantum')}
+          >
+            <Play className="w-3.5 h-3.5 fill-current" /> Continue learning
+          </button>
+          <button
+            className="button bg-[#fffdf9] border border-[#ded7cb] text-[#211f1b] hover:bg-[#eee9df] px-3.5 py-2 text-xs transition-colors cursor-pointer"
+            onClick={() => setActive('Quantum Simulation')}
+          >
+            <Terminal className="w-3.5 h-3.5 text-[#c96b2c]" /> Simulator
+          </button>
+          <button
+            className="button bg-[#282522] border border-[#423d38] text-white hover:bg-[#38332d] px-3.5 py-2 text-xs transition-colors cursor-pointer"
+            onClick={() => setActive('AI Tutor')}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#c96b2c]" /> AI Tutor
+          </button>
+        </div>
+      </div>
+
+
+      {/* 3. Horizontal Course Track & Last Experiment (2 Horizontal Cards) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left: My Courses — placeholder, will be wired to Learn page */}
+        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 lg:col-span-7 flex flex-col shadow-xs min-h-[380px]">
+          <div className="flex items-center justify-between pb-2.5 border-b border-[#ded7cb]/60 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-[#c96b2c] uppercase tracking-wider">MY COURSES</span>
+            </div>
+            <button
+              className="text-xs font-bold text-[#c96b2c] hover:underline flex items-center gap-1 cursor-pointer"
+              onClick={() => setActive('Learn Quantum')}
+            >
+              View All <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Placeholder — courses from Learn will be listed here */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center py-6">
+            <div className="w-12 h-12 rounded-xl bg-[#fff5eb] border border-[#c96b2c]/30 flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-[#c96b2c]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#211f1b]">Course list coming soon</p>
+              <p className="text-[11px] text-[#746e64] mt-1 max-w-[260px]">
+                Your enrolled courses from <strong>Learn Quantum</strong> will appear here — progress, current module, and quick-resume.
+              </p>
+            </div>
+            <button
+              onClick={() => setActive('Learn Quantum')}
+              className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#c96b2c] text-white hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Browse Courses →
+            </button>
+          </div>
+        </div>
+
+        {/* Horizontal Mini-Sim Card (5 cols) */}
+        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 lg:col-span-5 flex flex-col justify-between shadow-xs min-h-[380px]">
+          <div>
+            <div className="flex items-center justify-between pb-2.5 border-b border-[#ded7cb]/60 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#746e64] uppercase tracking-wider">RECENT CIRCUIT</span>
+                <span className="text-xs font-bold text-[#211f1b]">Bell State Experiment</span>
+              </div>
+              <button
+                onClick={handleQuickRun}
+                disabled={simRunning}
+                className="text-[10.5px] px-2 py-0.5 rounded bg-[#fff5eb] border border-[#c96b2c] text-[#c96b2c] font-semibold hover:bg-[#c96b2c] hover:text-white transition-all cursor-pointer flex items-center gap-1"
+              >
+                <Zap className={`w-3 h-3 ${simRunning ? 'animate-spin text-amber-500' : ''}`} />
+                {simRunning ? 'Running...' : 'Quick Run'}
+              </button>
+            </div>
+
+            {/* Mini Circuit */}
+            <div className="bg-[#f7f4ee] p-2 rounded border border-[#ded7cb] font-mono text-[11px] mb-2">
+              <div className="flex items-center h-6 relative">
+                <label className="w-7 text-[10px] text-[#746e64] font-bold">q[0]</label>
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+                <b className="w-4 h-4 rounded bg-[#da1e28] text-white text-[9px] flex items-center justify-center mx-1.5">H</b>
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+                <b className="w-3.5 h-3.5 rounded-full bg-[#0f62fe] text-white text-[8px] flex items-center justify-center mx-1.5">●</b>
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+              </div>
+              <div className="flex items-center h-6 relative">
+                <label className="w-7 text-[10px] text-[#746e64] font-bold">q[1]</label>
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+                <span className="w-4 mx-1.5" />
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+                <b className="w-4 h-4 rounded-full bg-[#0f62fe] text-white text-[10px] flex items-center justify-center mx-1.5 font-bold">⊕</b>
+                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
+              </div>
+            </div>
+
+            {/* Live horizontal probability bar */}
+            <div className="flex items-center gap-2 text-[10.5px] font-mono">
+              <span className="font-bold">|00⟩ 50%</span>
+              <div className="flex-1 h-3 bg-[#f0ece4] rounded overflow-hidden flex">
+                <div className="h-full bg-[#0f62fe]" style={{ width: '50%' }} />
+                <div className="h-full bg-[#c96b2c]" style={{ width: '50%' }} />
+              </div>
+              <span className="font-bold">|11⟩ 50%</span>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-[#ded7cb]/60 flex items-center justify-between text-xs text-[#746e64]">
+            <span className="text-[11px]">Aer Simulator · {simRunCount} shots</span>
+            <button
+              className="text-xs font-bold text-[#c96b2c] hover:underline flex items-center gap-1 cursor-pointer"
+              onClick={() => setActive('Quantum Simulation')}
+            >
+              Open Workbench <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      {/* 5. Horizontal Pair: Daily Challenge (50%) & AI Tutor Insight (50%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Daily Challenge Box */}
+        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 flex flex-col justify-between shadow-xs">
+          <div>
+            <div className="flex items-center justify-between pb-2 border-b border-[#ded7cb]/60 mb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#c96b2c] uppercase tracking-wider">DAILY CHALLENGE</span>
+                <span className="bg-[#fff5eb] border border-[#c96b2c]/30 text-[#c96b2c] text-[9.5px] px-1.5 py-0.2 rounded-full font-bold">
+                  +50 XP
+                </span>
+              </div>
+              {quizSubmitted && (
+                <button
+                  onClick={() => {
+                    setSelectedQuizAnswer(null);
+                    setQuizSubmitted(false);
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded border border-[#ded7cb] text-[#746e64] hover:bg-[#eee9df] cursor-pointer"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            <h3 className="text-xs sm:text-sm font-bold text-[#211f1b] mb-2.5">
+              Which gate transforms state |0⟩ into equal superposition (|0⟩ + |1⟩)/√2?
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              {quizOptions.map((opt, idx) => {
+                const isSelected = selectedQuizAnswer === idx;
+                const showFeedback = quizSubmitted;
+                return (
+                  <button
+                    key={opt.text}
+                    onClick={() => {
+                      if (!quizSubmitted) {
+                        setSelectedQuizAnswer(idx);
+                        setQuizSubmitted(true);
+                      }
+                    }}
+                    disabled={quizSubmitted}
+                    className={`p-2.5 rounded border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
+                      showFeedback && opt.isCorrect
+                        ? 'bg-[#edf7ed] border-[#4f806d] text-[#1e4620] font-bold'
+                        : showFeedback && isSelected && !opt.isCorrect
+                        ? 'bg-[#fdeeed] border-[#d32f2f] text-[#5f2120]'
+                        : isSelected
+                        ? 'bg-[#fff5eb] border-[#c96b2c] text-[#c96b2c]'
+                        : 'bg-[#f7f4ee] border-[#ded7cb] text-[#211f1b] hover:bg-[#eee9df]'
+                    }`}
+                  >
+                    <span className="truncate">{opt.text}</span>
+                    {showFeedback && opt.isCorrect && <span className="text-[#4f806d] font-bold ml-1">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {quizSubmitted && (
+            <div className="mt-2.5 p-2 rounded bg-[#f7f4ee] border border-[#ded7cb] text-[11px] text-[#211f1b]">
+              <strong className="text-[#c96b2c]">Explanation:</strong> Hadamard (H) rotates statevector by π radians around the (X+Z)/√2 diagonal axis, mapping |0⟩ → |+⟩.
+            </div>
+          )}
+        </div>
+
+        {/* AI Tutor Insight Box */}
+        <div className="bg-[#182434] border border-[#2d4260] rounded-lg p-4 flex flex-col justify-between text-white shadow-xs">
+          <div>
+            <div className="flex items-center justify-between pb-2 border-b border-[#2d4260] mb-2.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#f59e0b] animate-pulse" />
+                <span className="text-[10px] font-bold text-[#f59e0b] uppercase tracking-wider">AI TUTOR INSIGHT</span>
+              </div>
+              <span className="text-[10px] text-gray-300 font-mono">Socratic Mode</span>
+            </div>
+
+            <h3 className="text-sm font-bold text-white mb-1">
+              Strengthen intuition for Phase Kickback & Interference
+            </h3>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              You mastered Hadamard superposition! Next, explore how controlled gates kick phases back into the control qubit to power quantum search algorithms.
+            </p>
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-[#2d4260] flex items-center justify-between">
+            <span className="text-[11px] text-gray-400">Estimated drill time: 5 mins</span>
+            <button
+              className="button bg-[#c96b2c] hover:bg-[#b05a20] text-white border-0 px-3 py-1.5 font-bold text-xs rounded shadow-sm cursor-pointer transition-transform active:scale-95 flex items-center gap-1"
+              onClick={() => setActive('AI Tutor')}
+            >
+              Start 5-min drill <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+    
+    </div>
+  );
 }
 
 function Learn({ setActive }: { setActive: (v: string) => void }) { return <div className="page-content"><div className="welcome-row"><div><div className="eyebrow">LEARNING PATH</div><h1>Learn quantum<span className="accent-dot">.</span></h1><p className="subhead">Build intuition, then make it executable.</p></div><button className="button primary" onClick={() => setActive('Quantum Simulation')}><Terminal /> Open simulator</button></div><div className="tabs"><button className="tab active">Courses</button><button className="tab">Code practice</button><button className="tab">Problems</button><button className="tab">Quiz</button></div><Card className="roadmap"><div className="card-head"><div><div className="eyebrow">QUANTUM FOUNDATIONS</div><h2>Your skill tree</h2></div><span className="muted-label">18 / 42 lessons</span></div><div className="module-list">{modules.map((mod, i) => <button key={mod.title} className={`module-row ${mod.status}`} onClick={() => mod.status !== 'locked' && setActive('AI Tutor')}><div className={`module-node ${mod.tone}`}>{mod.status === 'complete' ? '✓' : mod.status === 'locked' ? '—' : `0${i + 1}`}</div><div className="module-copy"><strong>{mod.title}</strong><span>{mod.meta}</span></div><div className="module-progress">{mod.status === 'complete' ? <span className="complete-copy">Completed</span> : mod.status === 'active' ? <><ProgressBar value={42} /><small>42%</small></> : <span>{mod.status === 'locked' ? 'Locked' : 'Start'}</span>}</div><ChevronRight /></button>)}</div></Card></div> }
@@ -282,7 +590,7 @@ export default function Page() {
         collapsed={collapsed}
         setCollapsed={setCollapsed}
       />
-      <div className="main-shell">
+      <div className={active === 'Quantum Simulation' ? 'sim-shell' : 'main-shell'}>
         {active !== 'Quantum Simulation' && <Topbar active={active} setActive={handleSelectTab} />}
         {content}
       </div>
