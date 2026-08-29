@@ -104,6 +104,7 @@ export interface PlacedGate {
   isTarget?: boolean;
 }
 
+<<<<<<< HEAD
 export interface QuantumProblem {
   id: string;
   title: string;
@@ -161,7 +162,7 @@ export interface ProblemProgressState {
   streakDays: number;
   totalXp: number;
 }
-
+=======
 export interface ExecutionStatus {
   id: number;
   description: string;
@@ -175,3 +176,4 @@ export interface CodeExecutionResult {
   source?: string;
 }
 
+>>>>>>> origin/main

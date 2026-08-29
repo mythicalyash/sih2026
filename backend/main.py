@@ -345,138 +345,133 @@ def _build_problem_definition(p_data: Dict[str, Any]) -> ProblemDefinition:
             ))
         elif isinstance(g, GateIR):
             starter_gates.append(g)
-    
-    starter_ir = CircuitIR(
-        num_qubits=starter_dict.get("num_qubits", 1),
+
+    starter_circuit = CircuitIR(
+        num_qubits=starter_dict.get("num_qubits", p_data.get("num_qubits", 2)),
         gates=starter_gates,
     )
-    
+
     return ProblemDefinition(
         id=p_data["id"],
         title=p_data["title"],
+        short_description=p_data["short_description"],
         difficulty=p_data["difficulty"],
-        category=p_data["category"],
+        topic=p_data["topic"],
         xp=p_data["xp"],
-        tags=p_data.get("tags", []),
+        num_qubits=p_data["num_qubits"],
+        estimated_minutes=p_data["estimated_minutes"],
+        starter_circuit=starter_circuit,
         goal=p_data["goal"],
-        description=p_data["description"],
-        hints=p_data.get("hints", []),
-        math_target=p_data.get("math_target", ""),
-        num_qubits=p_data.get("num_qubits", 1),
-        allowed_gates=p_data.get("allowed_gates", []),
-        starter_circuit=starter_ir,
-        expected_output=p_data.get("expected_output", {}),
-        learning_notes=p_data.get("learning_notes", ""),
+        expected_behavior=p_data["expected_behavior"],
+        suggested_concept=p_data["suggested_concept"],
+        hints=p_data["hints"],
+        concept_explanation=p_data["concept_explanation"],
+        available_gates=p_data.get("available_gates", ["h", "x", "y", "z", "cx", "measure"]),
+        requirements=p_data.get("requirements", []),
+        example_distribution=p_data.get("example_distribution", {}),
     )
 
 
 @app.get("/problems", response_model=List[ProblemDefinition])
-def list_problems_endpoint():
-    """Retrieve all quantum algorithm and circuit challenge problems."""
-    return [_build_problem_definition(p) for p in PROBLEMS_REGISTRY.values()]
+def list_problems():
+    """List all available quantum learning challenges & problems."""
+    return [_build_problem_definition(p_data) for p_data in PROBLEMS_REGISTRY.values()]
 
 
 @app.get("/problems/{problem_id}", response_model=ProblemDefinition)
-def get_problem_endpoint(problem_id: str):
-    """Retrieve details and starter configuration for a specific problem."""
+def get_problem(problem_id: str):
+    """Get details for a specific quantum challenge."""
     if problem_id not in PROBLEMS_REGISTRY:
         raise HTTPException(status_code=404, detail=f"Problem '{problem_id}' not found.")
+    
     return _build_problem_definition(PROBLEMS_REGISTRY[problem_id])
 
 
 @app.post("/problem/hint", response_model=ProblemHintResponse)
 def get_problem_hint_endpoint(req: ProblemHintRequest):
-    """Generate adaptive hints for a problem using Gemini Flash-Lite."""
+    """Provide progressive tier hints for a problem using Gemini Flash-Lite with deterministic fallback."""
     if req.problem_id not in PROBLEMS_REGISTRY:
         raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
     
     p_data = PROBLEMS_REGISTRY[req.problem_id]
+    total = len(p_data.get("hints", []))
+    circuit = req.circuit or CircuitIR(num_qubits=p_data.get("num_qubits", 2), gates=[])
     
-    # Try Gemini 2.5 Flash-Lite first
-    gemini_hint = generate_gemini_problem_hint(
+    # 1. Deterministic baseline hint
+    fallback_hint = generate_problem_hint(req.problem_id, circuit, req.hint_level)
+    
+    # 2. Gemini Flash-Lite enhanced Socratic hint
+    final_hint = generate_gemini_problem_hint(
         problem_id=req.problem_id,
         problem_title=p_data["title"],
         problem_goal=p_data["goal"],
-        hints=p_data.get("hints", []),
+        problem_concept=p_data.get("suggested_concept", "Quantum Circuit"),
+        circuit=circuit,
         hint_level=req.hint_level,
-        circuit=req.circuit,
+        deterministic_fallback=fallback_hint,
     )
     
-    if gemini_hint:
-        hint_text = gemini_hint
-    else:
-        hint_text, _ = generate_problem_hint(req.problem_id, req.hint_level)
-
-    total_hints = len(p_data.get("hints", []))
     return ProblemHintResponse(
         problem_id=req.problem_id,
         hint_level=req.hint_level,
-        hint=hint_text,
-        total_hints_available=total_hints,
-        has_more=(req.hint_level < total_hints),
+        hint=final_hint,
+        total_hints=total,
     )
 
 
 @app.post("/problem/review", response_model=ProblemReviewResponse)
-def review_problem_circuit_endpoint(req: ProblemReviewRequest):
-    """Analyze and review the user's current circuit attempt using Gemini Flash-Lite."""
+def review_problem_endpoint(req: ProblemReviewRequest):
+    """AI review of user's circuit against problem goal using Gemini Flash-Lite."""
     if req.problem_id not in PROBLEMS_REGISTRY:
         raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
     
     p_data = PROBLEMS_REGISTRY[req.problem_id]
+    status, base_positives, base_guidance = review_problem_circuit(req.problem_id, req.circuit)
     
-    gemini_review = review_gemini_problem_circuit(
+    # Gemini Flash-Lite circuit critique
+    final_status, final_positives, final_guidance = review_gemini_problem_circuit(
         problem_id=req.problem_id,
         problem_title=p_data["title"],
         problem_goal=p_data["goal"],
         circuit=req.circuit,
-        allowed_gates=p_data.get("allowed_gates", []),
+        fallback_positives=base_positives,
+        fallback_guidance=base_guidance,
     )
     
-    if gemini_review:
-        return ProblemReviewResponse(
-            problem_id=req.problem_id,
-            is_valid=gemini_review.get("is_valid", True),
-            gate_count=gemini_review.get("gate_count", len(req.circuit.gates)),
-            feedback=gemini_review.get("feedback", ""),
-            suggestions=gemini_review.get("suggestions", []),
-        )
+    qasm_str = ir_to_qasm(req.circuit)
     
-    is_valid, gate_count, feedback, suggestions = review_problem_circuit(req.problem_id, req.circuit)
     return ProblemReviewResponse(
         problem_id=req.problem_id,
-        is_valid=is_valid,
-        gate_count=gate_count,
-        feedback=feedback,
-        suggestions=suggestions,
+        status=final_status or status,
+        positives=final_positives or base_positives,
+        guidance=final_guidance or base_guidance,
+        qasm=qasm_str,
     )
 
 
 @app.post("/problem/explain", response_model=ProblemExplainResponse)
 def explain_problem_concept_endpoint(req: ProblemExplainRequest):
-    """Provide concept explanation and physics breakdown for a problem using Gemini Flash-Lite."""
+    """Explain the underlying physics concept using Gemini Flash-Lite."""
     if req.problem_id not in PROBLEMS_REGISTRY:
         raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
     
     p_data = PROBLEMS_REGISTRY[req.problem_id]
+    base_explanation = p_data["concept_explanation"]
+    concept_name = p_data.get("suggested_concept", "Quantum Concept")
     
-    gemini_explanation = explain_gemini_problem_concept(
+    gemini_exp = explain_gemini_problem_concept(
         problem_id=req.problem_id,
         problem_title=p_data["title"],
-        problem_goal=p_data["goal"],
-        math_target=p_data.get("math_target", ""),
-        learning_notes=p_data.get("learning_notes", ""),
+        concept_name=concept_name,
+        fallback_explanation=base_explanation,
         circuit=req.circuit,
     )
-    
-    explanation = gemini_explanation or p_data.get("learning_notes", p_data["description"])
     
     return ProblemExplainResponse(
         problem_id=req.problem_id,
         title=p_data["title"],
-        concept=p_data["category"],
-        explanation=explanation,
-        math_representation=p_data.get("math_target", ""),
+        concept_explanation=gemini_exp or base_explanation,
+        suggested_concept=concept_name,
     )
 
 
@@ -557,3 +552,4 @@ def execute_code_endpoint(req: CodeExecuteRequest):
         return execute_python_code(req)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Code execution failed: {str(e)}")
+
