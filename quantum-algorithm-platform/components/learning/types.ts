@@ -19,6 +19,18 @@ export interface Lesson {
   completed: boolean;
   conceptHeading: string;
   conceptBody: string[];
+  keyInsight?: string;
+  realWorldApplication?: string;
+  historicalNote?: string;
+  illustrationUrl?: string;
+  illustrationCaption?: string;
+  showBlochSphere?: boolean;
+  predictionCheckpoint?: {
+    question: string;
+    options: string[];
+    correctIndex: number;
+    explanation: string;
+  };
   calloutComparison?: {
     leftTitle: string;
     leftContent: string;
