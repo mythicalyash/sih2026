@@ -281,7 +281,7 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
   ];
 
   return (
-    <div className="page-content flex flex-col gap-5 py-6">
+    <div className="page-content w-full max-w-6xl mx-auto flex flex-col gap-6 py-8 px-4 sm:px-8">
       {/* 1. Top Header & Quick Overview */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#ded7cb]/60">
         <div>
