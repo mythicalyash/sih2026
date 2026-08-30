@@ -7,6 +7,13 @@ import {
   Moon, Play, Plus, Search, Settings, Sparkles, Terminal, Trophy, X, Zap,
   PanelLeftClose, PanelLeftOpen, PanelLeft
 } from 'lucide-react'
+import { QuantumSimulatorWorkbench } from '@/components/simulator/QuantumSimulatorWorkbench'
+import { ProblemsListView } from '@/components/problems/ProblemsListView'
+import { ProblemDetailView } from '@/components/problems/ProblemDetailView'
+import { ChallengeSolverView } from '@/components/problems/ChallengeSolverView'
+import { LearnView } from '@/components/learning/LearnView'
+import type { QuantumProblem, ProblemProgressState } from '@/types/quantum'
+import { BACKEND_URL } from '@/config'
 
 const navItems = [
   { label: 'Home', icon: HomeIcon },
@@ -38,9 +45,7 @@ function Brand() {
 function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: string; setActive: (v: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void }) {
   const handleNavClick = (label: string) => {
     setActive(label);
-    if (label === 'Quantum Simulation') {
-      setCollapsed(true);
-    }
+    setCollapsed(true);
   };
 
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -89,11 +94,11 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: strin
           <span style={{ width: '88%' }} />
         </div>
       </div>
-      <button className="nav-item">
+      <button className="nav-item" onClick={() => { setActive('Settings'); setCollapsed(true); }}>
         <Settings />
         <span>Settings</span>
       </button>
-      <div className="profile">
+      <div className="profile cursor-pointer" onClick={() => { setActive('Settings'); setCollapsed(true); }}>
         <div className="avatar">AM</div>
         <div className="profile-copy">
           <strong>Arjun Mehta</strong>
@@ -105,8 +110,105 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: strin
   </aside>
 }
 
-function Topbar({ active, setActive }: { active: string; setActive: (v: string) => void }) {
-  return <header className="topbar"><div className="crumb"><span>Workspace</span><ChevronRight /><strong>{active}</strong></div><div className="top-actions"><div className="search"><Search /><input aria-label="Search" placeholder="Search workspace" /></div><div className="top-stat"><Flame /><strong>12</strong><span>day streak</span></div><div className="top-stat xp"><Zap /><strong>2,840</strong><span>XP</span></div><button className="icon-button"><Bell /><i className="notification" /></button><button className="avatar small" onClick={() => setActive('Settings')}>AM</button></div></header>
+function Topbar({
+  active,
+  setActive,
+  collapsed,
+  setCollapsed,
+  learnSubTab,
+  setLearnSubTab,
+}: {
+  active: string;
+  setActive: (v: string) => void;
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+  learnSubTab: 'courses' | 'problems';
+  setLearnSubTab: (v: 'courses' | 'problems') => void;
+}) {
+  const isCoursesActive = active === 'Learn Quantum' && learnSubTab === 'courses';
+  const isProblemsActive = active === 'Learn Quantum' && learnSubTab === 'problems';
+  const isSimulatorActive = active === 'Quantum Simulation';
+  const isTutorActive = active === 'AI Tutor';
+
+  return (
+    <header className="topbar flex items-center justify-between px-6 py-2 border-b border-[#ded7cb] bg-[#f7f4ee]">
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => {
+            setActive('Learn Quantum');
+            setLearnSubTab('courses');
+          }}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isCoursesActive
+              ? 'bg-white text-[#211f1b] border-[#c96b2c] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <BookOpen className={`w-3.5 h-3.5 ${isCoursesActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
+          <span>Courses</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActive('Learn Quantum');
+            setLearnSubTab('problems');
+          }}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isProblemsActive
+              ? 'bg-white text-[#211f1b] border-[#c96b2c] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <Trophy className={`w-3.5 h-3.5 ${isProblemsActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
+          <span>Problems & Challenges</span>
+        </button>
+
+        <button
+          onClick={() => setActive('Quantum Simulation')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isSimulatorActive
+              ? 'bg-white text-[#211f1b] border-[#0f62fe] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <GitBranch className={`w-3.5 h-3.5 ${isSimulatorActive ? 'text-[#0f62fe]' : 'text-[#746e64]'}`} />
+          <span>Quantum Simulator</span>
+        </button>
+
+        <button
+          onClick={() => setActive('AI Tutor')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isTutorActive
+              ? 'bg-white text-[#211f1b] border-[#287854] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <BrainCircuit className={`w-3.5 h-3.5 ${isTutorActive ? 'text-[#287854]' : 'text-[#746e64]'}`} />
+          <span>AI Quantum Tutor</span>
+        </button>
+      </div>
+
+      <div className="top-actions flex items-center gap-3">
+        <div className="search flex items-center gap-2 bg-[#fffdf9] border border-[#ded7cb] rounded-lg px-3 py-1.5 w-44 text-xs">
+          <Search className="w-3.5 h-3.5 text-[#746e64]" />
+          <input aria-label="Search" placeholder="Search workspace" className="bg-transparent border-0 outline-none w-full text-xs" />
+        </div>
+        <button className="icon-button relative p-1.5 text-[#746e64] hover:text-[#211f1b] rounded-lg transition-colors cursor-pointer" title="Notifications">
+          <Bell className="w-4 h-4" />
+          <i className="notification" />
+        </button>
+        <button
+          className="avatar small cursor-pointer"
+          onClick={() => {
+            setActive('Settings');
+            setCollapsed(true);
+          }}
+        >
+          AM
+        </button>
+      </div>
+    </header>
+  );
 }
 
 function ProgressBar({ value }: { value: number }) { return <div className="progress-track"><span style={{ width: `${value}%` }} /></div> }
@@ -422,17 +524,9 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
           </div>
         </div>
       </div>
-
-
-    
     </div>
   );
 }
-
-function Learn({ setActive }: { setActive: (v: string) => void }) { return <div className="page-content"><div className="welcome-row"><div><div className="eyebrow">LEARNING PATH</div><h1>Learn quantum<span className="accent-dot">.</span></h1><p className="subhead">Build intuition, then make it executable.</p></div><button className="button primary" onClick={() => setActive('Quantum Simulation')}><Terminal /> Open simulator</button></div><div className="tabs"><button className="tab active">Courses</button><button className="tab">Code practice</button><button className="tab">Problems</button><button className="tab">Quiz</button></div><Card className="roadmap"><div className="card-head"><div><div className="eyebrow">QUANTUM FOUNDATIONS</div><h2>Your skill tree</h2></div><span className="muted-label">18 / 42 lessons</span></div><div className="module-list">{modules.map((mod, i) => <button key={mod.title} className={`module-row ${mod.status}`} onClick={() => mod.status !== 'locked' && setActive('AI Tutor')}><div className={`module-node ${mod.tone}`}>{mod.status === 'complete' ? '✓' : mod.status === 'locked' ? '—' : `0${i + 1}`}</div><div className="module-copy"><strong>{mod.title}</strong><span>{mod.meta}</span></div><div className="module-progress">{mod.status === 'complete' ? <span className="complete-copy">Completed</span> : mod.status === 'active' ? <><ProgressBar value={42} /><small>42%</small></> : <span>{mod.status === 'locked' ? 'Locked' : 'Start'}</span>}</div><ChevronRight /></button>)}</div></Card></div> }
-
-import { QuantumSimulatorWorkbench } from '@/components/simulator/QuantumSimulatorWorkbench'
-import { BACKEND_URL } from '@/config'
 
 function Tutor() {
   const [messages, setMessages] = useState<Array<[string, string]>>([
@@ -541,8 +635,22 @@ function Community() { return <div className="page-content"><div className="welc
 function SettingsView() { return <div className="page-content settings-page"><div className="eyebrow">WORKSPACE SETTINGS</div><h1>Make it yours<span className="accent-dot">.</span></h1><div className="settings-layout"><div className="settings-nav"><button className="selected">Profile</button><button>Appearance</button><button>Language</button><button>Editor</button><button>Notifications</button></div><Card className="settings-form"><div className="eyebrow">PROFILE</div><h2>Your public profile</h2><label>Display name<input defaultValue="Arjun Mehta" /></label><label>Bio<textarea defaultValue="Learning quantum algorithms one circuit at a time." /></label><div className="form-row"><label>Interface language<select defaultValue="English"><option>English</option><option>Hindi</option></select></label><label>Theme<select defaultValue="Dark"><option>Dark</option><option>Light</option></select></label></div><button className="button primary">Save changes</button></Card></div></div> }
 
 export default function Page() {
-  const [active, setActive] = useState('Home');
+  const [active, setActive] = useState('Learn Quantum');
   const [collapsed, setCollapsed] = useState(false);
+  const [learnSubTab, setLearnSubTab] = useState<'courses' | 'problems'>('courses');
+
+  // Problem State
+  const [allProblems, setAllProblems] = useState<QuantumProblem[]>([]);
+  const [activeProblem, setActiveProblem] = useState<QuantumProblem | null>(null);
+  const [selectedProblemDetail, setSelectedProblemDetail] = useState<QuantumProblem | null>(null);
+
+  // Problem Progress State (localStorage backed)
+  const [progress, setProgress] = useState<ProblemProgressState>({
+    solvedProblemIds: ['superposition'],
+    attemptedProblemIds: ['superposition', 'bell_state'],
+    streakDays: 12,
+    totalXp: 2840,
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -555,32 +663,135 @@ export default function Page() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleSelectTab = (tab: string) => {
-    setActive(tab);
-    if (tab === 'Quantum Simulation') {
-      setCollapsed(true);
+  // Fetch problems list on mount
+  useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/problems`);
+        if (res.ok) {
+          const data = await res.json();
+          setAllProblems(data);
+        }
+      } catch (e) {
+        console.warn('Backend API offline or unreachable, using fallback problem data:', e);
+      }
+    };
+    fetchProblems();
+  }, []);
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('qubit_lab_problem_progress');
+      if (saved) {
+        setProgress(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load progress from localStorage:', e);
     }
+  }, []);
+
+  const handleOpenInSimulator = (problem: QuantumProblem) => {
+    setActiveProblem(problem);
+    setSelectedProblemDetail(null);
+    setActive('Challenges');
+
+    setProgress((prev) => {
+      const nextAttempted = prev.attemptedProblemIds.includes(problem.id)
+        ? prev.attemptedProblemIds
+        : [...prev.attemptedProblemIds, problem.id];
+      const nextProg = { ...prev, attemptedProblemIds: nextAttempted };
+      try {
+        localStorage.setItem('qubit_lab_problem_progress', JSON.stringify(nextProg));
+      } catch (e) {}
+      return nextProg;
+    });
   };
 
-  const content =
-    active === 'Home' ? (
-      <Home setActive={handleSelectTab} />
-    ) : active === 'Learn Quantum' ? (
-      <Learn setActive={handleSelectTab} />
-    ) : active === 'Quantum Simulation' ? (
+  const handleProblemSolved = (problemId: string) => {
+    setProgress((prev) => {
+      const nextSolved = prev.solvedProblemIds.includes(problemId)
+        ? prev.solvedProblemIds
+        : [...prev.solvedProblemIds, problemId];
+      const nextXp = prev.solvedProblemIds.includes(problemId) ? prev.totalXp : prev.totalXp + 150;
+      const nextProg = { ...prev, solvedProblemIds: nextSolved, totalXp: nextXp };
+      try {
+        localStorage.setItem('qubit_lab_problem_progress', JSON.stringify(nextProg));
+      } catch (e) {}
+      return nextProg;
+    });
+  };
+
+  const handleSelectTab = (tab: string) => {
+    if (tab !== 'Challenges') {
+      setActiveProblem(null);
+      setSelectedProblemDetail(null);
+    }
+    setActive(tab);
+    setCollapsed(true);
+  };
+
+  let content: React.ReactNode;
+
+  if (active === 'Home') {
+    content = <Home setActive={handleSelectTab} />;
+  } else if (active === 'Learn Quantum') {
+    content = (
+      <LearnView
+        setActive={handleSelectTab}
+        learnSubTab={learnSubTab}
+        setLearnSubTab={setLearnSubTab}
+        allProblems={allProblems}
+        progress={progress}
+        onProblemSolved={handleProblemSolved}
+      />
+    );
+  } else if (active === 'Challenges') {
+    if (activeProblem) {
+      content = (
+        <ChallengeSolverView
+          problem={activeProblem}
+          allProblems={allProblems}
+          onSelectProblem={(p) => setActiveProblem(p)}
+          onBackToCatalog={() => setActiveProblem(null)}
+          onProblemSolved={handleProblemSolved}
+          isSolved={progress.solvedProblemIds.includes(activeProblem.id)}
+        />
+      );
+    } else if (selectedProblemDetail) {
+      content = (
+        <ProblemDetailView
+          problem={selectedProblemDetail}
+          isSolved={progress.solvedProblemIds.includes(selectedProblemDetail.id)}
+          onBack={() => setSelectedProblemDetail(null)}
+          onOpenInSimulator={handleOpenInSimulator}
+        />
+      );
+    } else {
+      content = (
+        <ProblemsListView
+          onSelectProblem={(p) => setSelectedProblemDetail(p)}
+          onOpenInSimulator={handleOpenInSimulator}
+          progress={progress}
+        />
+      );
+    }
+  } else if (active === 'Quantum Simulation') {
+    content = (
       <QuantumSimulatorWorkbench
         onToggleSidebar={() => setCollapsed((prev) => !prev)}
         sidebarCollapsed={collapsed}
       />
-    ) : active === 'AI Tutor' ? (
-      <Tutor />
-    ) : active === 'Dashboard' ? (
-      <Dashboard />
-    ) : active === 'Community' ? (
-      <Community />
-    ) : (
-      <SettingsView />
     );
+  } else if (active === 'AI Tutor') {
+    content = <Tutor />;
+  } else if (active === 'Dashboard') {
+    content = <Dashboard />;
+  } else if (active === 'Community') {
+    content = <Community />;
+  } else {
+    content = <SettingsView />;
+  }
 
   return (
     <div className="app-shell">
@@ -591,7 +802,16 @@ export default function Page() {
         setCollapsed={setCollapsed}
       />
       <div className={active === 'Quantum Simulation' ? 'sim-shell' : 'main-shell'}>
-        {active !== 'Quantum Simulation' && <Topbar active={active} setActive={handleSelectTab} />}
+        {active !== 'Quantum Simulation' && (
+          <Topbar
+            active={active}
+            setActive={handleSelectTab}
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            learnSubTab={learnSubTab}
+            setLearnSubTab={setLearnSubTab}
+          />
+        )}
         {content}
       </div>
     </div>
