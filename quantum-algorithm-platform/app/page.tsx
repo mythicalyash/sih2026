@@ -740,7 +740,7 @@ export default function Page() {
         setCollapsed={setCollapsed}
       />
       <div className={active === 'Quantum Simulation' || (active === 'Problems' && activeProblem !== null) ? 'sim-shell' : 'main-shell'}>
-        {active !== 'Quantum Simulation' && !(active === 'Problems' && activeProblem !== null) && (
+        {active === 'Learn Quantum' && (
           <Topbar
             active={active}
             setActive={handleSelectTab}

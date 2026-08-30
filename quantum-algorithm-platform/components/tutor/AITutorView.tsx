@@ -43,14 +43,6 @@ interface SessionSummary {
   message_count: number
 }
 
-const STARTER_TOPIC_CHIPS = [
-  { label: 'How does Superposition work?', prompt: 'Explain how quantum superposition works with an intuitive physical model.' },
-  { label: 'How does Entanglement work?', prompt: 'How does Entanglement create instant correlation in a Bell state?' },
-  { label: 'What is a Hadamard gate?', prompt: 'What physical and mathematical transformation does the Hadamard (H) gate perform?' },
-  { label: 'Explain Quantum Teleportation', prompt: 'Explain the Quantum Teleportation protocol step-by-step.' },
-  { label: 'Why is measurement irreversible?', prompt: 'Why does projective quantum measurement collapse the statevector irreversibly?' },
-]
-
 const PRACTICE_TOPICS = [
   'Superposition',
   'Entanglement',
@@ -637,22 +629,6 @@ export function AITutorView({ initialQuestion }: AITutorViewProps) {
           </div>
         </div>
 
-        {/* Quick Topic Starter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 no-scrollbar">
-          <span className="text-[10px] font-mono font-bold text-[#746e64] uppercase tracking-wider shrink-0 mr-1">
-            Try asking:
-          </span>
-          {STARTER_TOPIC_CHIPS.map((chip, idx) => (
-            <button
-              key={idx}
-              disabled={loading}
-              onClick={() => handleSendMessage(chip.prompt)}
-              className="px-3 py-1.5 rounded-xl bg-[#fffdf9] hover:bg-[#f4eee4] hover:border-[#c96b2c] border border-[#ded7cb] text-[#211f1b] text-xs font-medium shrink-0 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 2. Main Chat Area — Full Width */}
