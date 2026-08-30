@@ -1,4 +1,4 @@
-#!/Users/architadarsh/sih2026/.venv/bin/python3.12
+#!/Users/kabir/sih2026/.venv/bin/python3
 import sys
 from numpy.f2py.f2py2e import main
 if __name__ == '__main__':

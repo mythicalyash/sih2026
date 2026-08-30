@@ -12,6 +12,7 @@ import { ProblemsListView } from '@/components/problems/ProblemsListView'
 import { ProblemDetailView } from '@/components/problems/ProblemDetailView'
 import { ChallengeSolverView } from '@/components/problems/ChallengeSolverView'
 import { LearnView } from '@/components/learning/LearnView'
+import { AITutorView } from '@/components/tutor/AITutorView'
 import type { QuantumProblem, ProblemProgressState } from '@/types/quantum'
 import { BACKEND_URL } from '@/config'
 
@@ -528,105 +529,6 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
   );
 }
 
-function Tutor() {
-  const [messages, setMessages] = useState<Array<[string, string]>>([
-    [
-      'tutor',
-      'You are exploring quantum circuits and algorithms. Ask any question about statevectors, superposition, entanglement, or circuit diagnostics!',
-    ],
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
-    const userText = text.trim();
-    setMessages((prev) => [...prev, ['user', userText]]);
-    setInput('');
-    setLoading(true);
-    try {
-      const res = await fetch(`${BACKEND_URL}/tutor/explain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          circuit: {
-            num_qubits: 2,
-            gates: [
-              { name: 'h', qubits: [0] },
-              { name: 'cx', qubits: [0, 1] },
-            ],
-          },
-          question: userText,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        let reply = data.explanation || 'State analyzed.';
-        if (data.suggestions && data.suggestions.length > 0) {
-          reply += '<br/><br/><strong>Suggestions:</strong><ul class="list-disc pl-4 mt-1">' + data.suggestions.map((s: string) => `<li>${s}</li>`).join('') + '</ul>';
-        }
-        setMessages((prev) => [...prev, ['tutor', reply]]);
-      } else {
-        setMessages((prev) => [...prev, ['tutor', 'Could not reach quantum tutor backend.']]);
-      }
-    } catch {
-      setMessages((prev) => [...prev, ['tutor', 'Could not reach quantum tutor backend.']]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="page-content tutor-page">
-      <div className="tutor-header">
-        <div>
-          <div className="eyebrow accent-text">AI TUTOR · SOCRATIC MODE</div>
-          <h1>Let&apos;s figure it out<span className="accent-dot">.</span></h1>
-          <p className="subhead">Deterministic analysis &amp; quantum physics explanations.</p>
-        </div>
-        <div className="context-chip"><BrainCircuit /> Anchored to <strong>Superposition &amp; Entanglement</strong><X /></div>
-      </div>
-      <Card className="chat-card">
-        <div className="chat-messages">
-          {messages.map(([who, msg], i) => (
-            <div className={`message ${who}`} key={i}>
-              <div className="message-avatar">{who === 'tutor' ? <Sparkles /> : 'AM'}</div>
-              <div className="message-copy" dangerouslySetInnerHTML={{ __html: msg }} />
-            </div>
-          ))}
-          {loading && (
-            <div className="message tutor">
-              <div className="message-avatar"><Sparkles className="animate-spin" /></div>
-              <div className="message-copy text-gray-400 font-mono text-xs">Analyzing circuit statevector...</div>
-            </div>
-          )}
-        </div>
-        <div className="prompt-chips">
-          <button onClick={() => sendMessage('Explain this circuit')}>Explain this circuit</button>
-          <button onClick={() => sendMessage('What is the Bell state (|00> + |11>)/sqrt(2)?')}>What is the Bell state?</button>
-          <button onClick={() => sendMessage('Why does Hadamard create superposition?')}>Why Hadamard?</button>
-          <button onClick={() => sendMessage('Check for unmeasured qubits or errors')}>Check for errors</button>
-        </div>
-        <div className="chat-input">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your tutor anything..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') sendMessage(input);
-            }}
-          />
-          <button aria-label="Voice input"><Activity /></button>
-          <button className="send" onClick={() => sendMessage(input)}><ChevronRight /></button>
-        </div>
-        <div className="chat-meta">
-          <span>English <ChevronRight /></span>
-          <small>AI tutor backed by Aer &amp; PennyLane quantum engines.</small>
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 function Dashboard() { return <div className="page-content"><div className="welcome-row"><div><div className="eyebrow">YOUR OVERVIEW</div><h1>Progress, measured<span className="accent-dot">.</span></h1><p className="subhead">Small experiments compound into fluency.</p></div><button className="button secondary"><Plus /> Share progress</button></div><div className="metrics"><Card><div className="metric-label">COURSES COMPLETED</div><div className="metric-value">4 <span>/ 12</span></div><ProgressBar value={34} /><small>+1 this month</small></Card><Card><div className="metric-label">SIMULATIONS RUN</div><div className="metric-value">128 <span className="positive">+24%</span></div><div className="mini-spark"><i /><i /><i /><i /><i /><i /><i /></div><small>vs. last month</small></Card><Card><div className="metric-label">QUIZ ACCURACY</div><div className="metric-value">86<span>%</span></div><div className="accuracy-ring"><span>+8%</span></div><small>Top 12% of learners</small></Card></div><div className="dashboard-grid"><Card className="heatmap-card"><div className="card-head"><div><div className="eyebrow">PRACTICE ACTIVITY</div><h2>Consistency is a superpower</h2></div><span className="muted-label">Last 12 weeks</span></div><div className="heatmap">{Array.from({ length: 84 }, (_, i) => <i key={i} style={{ opacity: [0, .25, .45, .7, 1][(i * 7 + 3) % 5] }} />)}</div><div className="heat-legend"><span>Less</span>{[.2,.4,.6,.8,1].map(o => <i key={o} style={{ opacity: o }} />)}<span>More</span></div></Card><Card className="weak-card"><div className="eyebrow">TOPICS TO REVISIT</div><h2>Personalized focus</h2>{[['Phase estimation', 42],['Quantum Fourier transform', 58],['Measurement', 71],['Qubits', 89]].map(([label, val]) => <div className="topic-row" key={label as string}><div><span>{label as string}</span><b>{val}%</b></div><ProgressBar value={val as number} /></div>)}</Card></div></div> }
 
@@ -784,7 +686,7 @@ export default function Page() {
       />
     );
   } else if (active === 'AI Tutor') {
-    content = <Tutor />;
+    content = <AITutorView />
   } else if (active === 'Dashboard') {
     content = <Dashboard />;
   } else if (active === 'Community') {

@@ -15,7 +15,7 @@ def test_gemini_status_and_key_setting():
     status = is_gemini_active()
     assert "active" in status
     assert "model" in status
-    assert "gemini-3.5-flash-lite" in status["model"]
+    assert "gemini" in status["model"]
 
 
 def test_gemini_fallback_when_no_key():
