@@ -136,16 +136,6 @@ export function ProblemsListView({
     { name: 'Quantum Reasoning', count: 1 },
   ];
 
-  const topTags = [
-    { name: 'Superposition', count: '2238' },
-    { name: 'Bell States', count: '893' },
-    { name: 'Phase Kickback', count: '832' },
-    { name: 'Grover Search', count: '702' },
-    { name: 'QFT', count: '678' },
-    { name: 'QAOA', count: '534' },
-    { name: 'Teleportation', count: '481' },
-  ];
-
   const filteredProblems = problems.filter((p) => {
     const matchSearch =
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -184,137 +174,10 @@ export function ProblemsListView({
 
   return (
     <div className="w-full min-h-screen bg-[#faf8f5] text-[#211f1b] font-sans p-4 sm:p-8 flex flex-col gap-6 selection:bg-[#c96b2c] selection:text-white animate-fadeIn pb-16">
-      {/* ========================================================================= */}
-      {/* 1. TOP PROMO / STUDY PLAN CARDS (LeetCode Carousel Banner)                */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Study Plan */}
-        <div
-          onClick={() => problems[0] && onOpenInSimulator(problems[0])}
-          className="bg-[#1f2023] text-white rounded-2xl p-4 shadow-sm border border-gray-800 flex flex-col justify-between min-h-[135px] cursor-pointer hover:border-gray-600 transition-all group relative overflow-hidden"
-        >
-          <div className="flex items-center justify-between z-10">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#c96b2c] font-bold">
-              QUANTUM 75 STUDY PLAN
-            </span>
-            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-gray-300 font-mono">
-              ENDS SEP 30
-            </span>
-          </div>
 
-          <div className="z-10 flex flex-col gap-0.5">
-            <h3 className="font-extrabold text-base text-white group-hover:text-[#c96b2c] transition-colors">
-              Quantum Circuit Foundations
-            </h3>
-            <p className="text-xs text-gray-400">
-              Master the essential 75 quantum circuit patterns &amp; algorithms.
-            </p>
-          </div>
+      {/* 1. TOPIC FILTER BUTTONS ROW                                               */}
 
-          <div className="flex items-center justify-between z-10 pt-2 border-t border-white/10 text-xs">
-            <span className="text-[11px] font-mono text-gray-400">{solvedCount} / {totalCount} Solved</span>
-            <span className="font-bold text-[#c96b2c] flex items-center gap-1">
-              Start Drill <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Quantum Pro Hardware */}
-        <div
-          onClick={() => onOpenInSimulator(problems[2] || problems[0])}
-          className="bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border border-[#fed7aa] rounded-2xl p-4 shadow-sm flex flex-col justify-between min-h-[135px] cursor-pointer hover:border-[#c96b2c] transition-all group relative overflow-hidden"
-        >
-          <div className="flex items-center justify-between z-10">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#c96b2c] font-bold flex items-center gap-1">
-              <Sparkles className="w-3 h-3 fill-current" /> REAL QUANTUM HARDWARE
-            </span>
-            <span className="text-[10px] bg-[#c96b2c]/10 text-[#c96b2c] font-bold px-2 py-0.5 rounded-full border border-[#c96b2c]/20">
-              127 QUBITS
-            </span>
-          </div>
-
-          <div className="z-10 flex flex-col gap-0.5">
-            <h3 className="font-extrabold text-base text-[#211f1b] group-hover:text-[#c96b2c] transition-colors">
-              Run on IBM Quantum &amp; Aer
-            </h3>
-            <p className="text-xs text-[#5c5850]">
-              Execute your solutions with statevector verification &amp; Socratic AI.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between z-10 pt-2 border-t border-[#fed7aa]/60 text-xs">
-            <span className="text-[11px] font-mono font-bold text-[#287854]">● Online &amp; Ready</span>
-            <span className="font-bold text-[#c96b2c] flex items-center gap-1">
-              Explore <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Interactive Sandbox */}
-        <div
-          onClick={() => onOpenInSimulator(problems[1] || problems[0])}
-          className="bg-[#182434] text-white rounded-2xl p-4 shadow-sm border border-[#2d4260] flex flex-col justify-between min-h-[135px] cursor-pointer hover:border-blue-500 transition-all group relative overflow-hidden"
-        >
-          <div className="flex items-center justify-between z-10">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#38bdf8] font-bold">
-              LEETCODE FOR QUANTUM
-            </span>
-            <span className="text-[10px] bg-blue-500/20 text-[#38bdf8] px-2 py-0.5 rounded-full border border-blue-500/30">
-              SOCRATIC AI
-            </span>
-          </div>
-
-          <div className="z-10 flex flex-col gap-0.5">
-            <h3 className="font-extrabold text-base text-white group-hover:text-[#38bdf8] transition-colors">
-              Quantum Problemset
-            </h3>
-            <p className="text-xs text-gray-300">
-              Interactive drag-and-drop circuit canvas with instant OpenQASM grading.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between z-10 pt-2 border-t border-white/10 text-xs">
-            <span className="text-[11px] font-mono text-gray-400">Gemini 3.5 Flash-Lite</span>
-            <span className="font-bold text-[#38bdf8] flex items-center gap-1">
-              Solve Challenges <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 2. TAGS & TOPIC BUTTONS ROW (Matching LeetCode Pill Bar)                  */}
-      {/* ========================================================================= */}
       <div className="flex flex-col gap-3">
-        {/* Top Tag Counts */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-          {topTags.map((tag) => {
-            const isTagActive = selectedTopic === tag.name;
-            return (
-              <button
-                key={tag.name}
-                onClick={() => setSelectedTopic(tag.name === selectedTopic ? 'All Topics' : tag.name)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border ${
-                  isTagActive
-                    ? 'bg-[#c96b2c] text-white border-[#c96b2c] shadow-xs'
-                    : 'bg-[#f0ece4] text-[#2b2721] border-[#e4ded4] hover:bg-[#e4ded4] hover:text-[#000000]'
-                }`}
-                style={{ color: isTagActive ? '#ffffff' : '#2b2721' }}
-              >
-                <span style={{ color: isTagActive ? '#ffffff' : '#2b2721' }}>{tag.name}</span>
-                <span
-                  className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
-                    isTagActive ? 'bg-white/25 text-white' : 'bg-white text-[#211f1b] border border-[#ded7cb]'
-                  }`}
-                  style={{ color: isTagActive ? '#ffffff' : '#211f1b' }}
-                >
-                  {tag.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {topics.map((t) => {
@@ -354,9 +217,8 @@ export function ProblemsListView({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* 3. MAIN CONTENT: PROBLEMS TABLE (Left 8 Cols) + WIDGETS (Right 4 Cols)    */}
-      {/* ========================================================================= */}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT 8/9 COLS: LEETCODE PROBLEMS TABLE */}
         <div className="lg:col-span-8 flex flex-col gap-3">
@@ -589,18 +451,17 @@ export function ProblemsListView({
             </div>
           </div>
 
-          {/* Trending Quantum Tags Widget */}
+          {/* Trending Quantum Concepts Widget */}
           <div className="bg-[#fffdfa] border border-[#e4ded4] rounded-2xl p-4 shadow-2xs flex flex-col gap-2.5">
             <span className="text-xs font-extrabold text-[#211f1b]">Trending Concepts</span>
             <div className="flex flex-wrap gap-1.5">
-              {topTags.map((tag) => (
+              {['Superposition', 'Bell States', 'Phase Kickback', 'Grover Search', 'QFT', 'QAOA', 'Teleportation'].map((concept) => (
                 <button
-                  key={tag.name}
-                  onClick={() => setSearchQuery(tag.name)}
+                  key={concept}
+                  onClick={() => setSearchQuery(concept)}
                   className="px-2.5 py-1 rounded-lg bg-[#faf7f2] hover:bg-[#eee9df] border border-[#e4ded4] text-xs font-semibold text-[#211f1b] transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <span>{tag.name}</span>
-                  <span className="text-[10px] font-mono text-[#c96b2c] font-bold">{tag.count}</span>
+                  <span>{concept}</span>
                 </button>
               ))}
             </div>

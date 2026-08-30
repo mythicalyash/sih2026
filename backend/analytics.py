@@ -17,93 +17,58 @@ STORE_FILE = STORE_DIR / "analytics_store.json"
 
 _lock = threading.Lock()
 
-
 def _get_default_baseline() -> Dict[str, Any]:
-    """Generate realistic initial baseline state so the dashboard has historical context on first launch."""
+    """Clean zero baseline state for fresh user tracking starting from 0."""
     now = datetime.now(timezone.utc)
     
-    # 6 concept radar baseline scores
+    # 6 concept radar baseline scores starting at 0
     concepts = {
-        "Phase Kickback": {"score": 42, "category": "Gates & Oracles", "attempts": 12, "correct": 5},
-        "Quantum Superposition": {"score": 94, "category": "Foundations", "attempts": 28, "correct": 26},
-        "Entanglement & Bell States": {"score": 88, "category": "Foundations", "attempts": 25, "correct": 22},
-        "Quantum Gates & Circuits": {"score": 85, "category": "Circuits", "attempts": 34, "correct": 29},
-        "Quantum Algorithms": {"score": 70, "category": "Algorithms", "attempts": 20, "correct": 14},
-        "Measurement & Protocols": {"score": 65, "category": "Protocols", "attempts": 17, "correct": 11},
+        "Phase Kickback": {"score": 0, "category": "Gates & Oracles", "attempts": 0, "correct": 0},
+        "Quantum Superposition": {"score": 0, "category": "Foundations", "attempts": 0, "correct": 0},
+        "Entanglement & Bell States": {"score": 0, "category": "Foundations", "attempts": 0, "correct": 0},
+        "Quantum Gates & Circuits": {"score": 0, "category": "Circuits", "attempts": 0, "correct": 0},
+        "Quantum Algorithms": {"score": 0, "category": "Algorithms", "attempts": 0, "correct": 0},
+        "Measurement & Protocols": {"score": 0, "category": "Protocols", "attempts": 0, "correct": 0},
     }
-    
-    # Pre-generate 6-month historical activity events for rich heatmap
-    events: List[Dict[str, Any]] = []
-    
-    # Seed historical days (168 days = 24 weeks)
-    for day_offset in range(168, 0, -1):
-        dt = now - timedelta(days=day_offset)
-        iso_date = dt.strftime("%Y-%m-%d")
-        
-        # Deterministic pseudo-random pattern based on date
-        day_hash = int(math.sin(day_offset * 4.3 + 17) * 10000) % 100
-        count = 0
-        if day_hash > 60:
-            count = (day_hash % 4) + 1
-        elif day_hash > 85:
-            count = (day_hash % 6) + 4
-            
-        for i in range(count):
-            ev_type = "simulation_run" if (i % 2 == 0) else "problem_solved"
-            events.append({
-                "id": f"seed_{day_offset}_{i}",
-                "timestamp": dt.isoformat(),
-                "date": iso_date,
-                "type": ev_type,
-                "xp": 20 if ev_type == "simulation_run" else 150,
-                "metadata": {"seeded": True}
-            })
-            
-    # Solved problem IDs (initial baseline)
-    solved_problems = [
-        "superposition", "flip_qubit", "bell_state", "ghz_state",
-        "deutsch_oracle", "phase_flip", "teleportation_alice", "cnot_cascade",
-        "hadamard_sandwich", "phase_kickback_intro", "grover_oracle_2q", "qft_2qubit",
-        "dense_coding", "toffoli_decomp", "swap_test", "bernstein_vazirani",
-        "simon_oracle", "w_state", "quantum_error_bit_flip"
-    ]
-    
-    # Completed lesson IDs
-    completed_lessons = [
-        "qubits-intro", "superposition-bloch", "single-qubit-gates", "multi-qubit-entanglement",
-        "bell-states", "measurement-born-rule", "deutsch-jozsa-algorithm", "grover-search-intro"
-    ]
 
     return {
         "user_profile": {
-            "name": "Aarav Sharma",
-            "email": "aarav.sharma@iitd.ac.in",
-            "role": "IIT Delhi — Quantum Information Group",
-            "level": 7,
-            "level_title": "Quantum Vanguard",
-            "xp": 3450,
-            "max_xp": 5000,
-            "weekly_xp": 420,
-            "streak_days": 14,
+            "name": "Quantum Learner",
+            "email": "learner@qubitlab.io",
+            "role": "Quantum Research Track",
+            "level": 1,
+            "level_title": "Quantum Initiate",
+            "xp": 0,
+            "max_xp": 1000,
+            "weekly_xp": 0,
+            "streak_days": 0,
             "last_active_date": now.strftime("%Y-%m-%d"),
         },
         "stats": {
-            "simulations_count": 87,
-            "simulations_weekly_delta_pct": 18,
-            "quizzes_taken": 43,
-            "quizzes_correct": 38,
-            "quiz_accuracy_pct": 88.4,
-            "percentile": "Top 8%",
+            "simulations_count": 0,
+            "simulations_weekly_delta_pct": 0,
+            "quizzes_taken": 0,
+            "quizzes_correct": 0,
+            "quiz_accuracy_pct": 0.0,
+            "percentile": "New Learner",
             "total_problems_in_bank": 32,
         },
-        "completed_lessons": completed_lessons,
-        "total_lessons_count": 17,
-        "solved_problems": solved_problems,
-        "attempted_problems": solved_problems + ["shor_period_finding", "quantum_phase_estimation"],
+        "completed_courses": [],
+        "completed_lessons": [],
+        "total_lessons_count": 44,
+        "solved_problems": [],
+        "attempted_problems": [],
         "concept_mastery": concepts,
-        "events": events,
+        "events": [],
     }
 
+COURSE_LESSONS_MAP: Dict[str, List[str]] = {
+    "course-zero-interactive": [f"c0_m{i}" for i in range(1, 14)],
+    "qubits-states": [f"q{i}" for i in range(1, 14)],
+    "superposition-gates": [f"s{i}" for i in range(1, 7)],
+    "entanglement-bell": [f"e{i}" for i in range(1, 6)],
+    "grover-search": [f"g{i}" for i in range(1, 8)],
+}
 
 class AnalyticsStore:
     def __init__(self):
@@ -188,68 +153,72 @@ class AnalyticsStore:
             
             self._data["events"].append(event_entry)
             self._update_streak()
-            
             if xp > 0:
                 self._award_xp(xp)
-                
             self._save_unsafe()
             return event_entry
 
-    def record_simulation(self, backend: str, qubits: int, gates: int):
-        """Record simulation execution."""
+    def record_simulation(self, qubits_count: int = 2, backend_name: str = "qiskit_aer", **kwargs):
+        """Record circuit simulation run."""
+        backend = kwargs.get("backend", backend_name)
+        qubits = kwargs.get("qubits", qubits_count)
         with _lock:
-            self._data["stats"]["simulations_count"] += 1
+            stats = self._data["stats"]
+            stats["simulations_count"] = stats.get("simulations_count", 0) + 1
+
             now = datetime.now(timezone.utc)
             self._data["events"].append({
                 "id": f"sim_{int(now.timestamp() * 1000)}",
                 "timestamp": now.isoformat(),
                 "date": now.strftime("%Y-%m-%d"),
                 "type": "simulation_run",
-                "xp": 10,
-                "metadata": {"backend": backend, "qubits": qubits, "gates": gates},
+                "xp": 20,
+                "metadata": {"qubits": qubits, "backend": backend},
             })
             self._update_streak()
-            self._award_xp(10)
+            self._award_xp(20)
             self._save_unsafe()
 
-    def record_problem_result(self, problem_id: str, passed: bool, xp: int = 150):
-        """Record problem check evaluation."""
+    def record_problem_result(self, problem_id: str, is_solved: bool, xp_reward: int = 150):
+        """Record problem solver completion."""
         with _lock:
             solved = self._data["solved_problems"]
             attempted = self._data["attempted_problems"]
-            
+
             if problem_id not in attempted:
                 attempted.append(problem_id)
-                
-            now = datetime.now(timezone.utc)
-            if passed and problem_id not in solved:
+
+            if is_solved and problem_id not in solved:
                 solved.append(problem_id)
-                self._award_xp(xp)
-                
+                self._award_xp(xp_reward)
+
+            now = datetime.now(timezone.utc)
             self._data["events"].append({
                 "id": f"prob_{int(now.timestamp() * 1000)}",
                 "timestamp": now.isoformat(),
                 "date": now.strftime("%Y-%m-%d"),
-                "type": "problem_solved" if passed else "problem_attempted",
-                "xp": xp if (passed and problem_id not in solved) else 0,
-                "metadata": {"problem_id": problem_id, "passed": passed},
+                "type": "problem_solved" if is_solved else "problem_attempted",
+                "xp": xp_reward if is_solved else 15,
+                "metadata": {"problem_id": problem_id, "is_solved": is_solved},
             })
             self._update_streak()
+            if not is_solved:
+                self._award_xp(15)
             self._save_unsafe()
 
-    def record_quiz_submission(self, lesson_id: str, is_correct: bool, topic: str = "Quantum Foundations"):
-        """Record lesson quiz assessment result and update concept mastery."""
+    def record_quiz_submission(self, lesson_id: str, is_correct: bool, topic: str = "General"):
+        """Record quiz assessment question attempt."""
         with _lock:
             stats = self._data["stats"]
-            stats["quizzes_taken"] += 1
+            stats["quizzes_taken"] = stats.get("quizzes_taken", 0) + 1
             if is_correct:
-                stats["quizzes_correct"] += 1
-            
+                stats["quizzes_correct"] = stats.get("quizzes_correct", 0) + 1
+
             if stats["quizzes_taken"] > 0:
                 stats["quiz_accuracy_pct"] = round(
                     (stats["quizzes_correct"] / stats["quizzes_taken"]) * 100, 1
                 )
-                
+
             # Update topic mastery score
             mastery = self._data.get("concept_mastery", {})
             matched_key = None
@@ -259,16 +228,15 @@ class AnalyticsStore:
                     break
             if not matched_key and mastery:
                 matched_key = list(mastery.keys())[0]
-                
+
             if matched_key:
                 m_entry = mastery[matched_key]
                 m_entry["attempts"] = m_entry.get("attempts", 0) + 1
                 if is_correct:
                     m_entry["correct"] = m_entry.get("correct", 0) + 1
-                # Smooth update
                 calc_score = round((m_entry["correct"] / m_entry["attempts"]) * 100)
-                m_entry["score"] = max(20, min(100, calc_score))
-                
+                m_entry["score"] = max(0, min(100, calc_score))
+
             now = datetime.now(timezone.utc)
             self._data["events"].append({
                 "id": f"quiz_{int(now.timestamp() * 1000)}",
@@ -283,13 +251,21 @@ class AnalyticsStore:
             self._save_unsafe()
 
     def record_lesson_completion(self, course_id: str, lesson_id: str, xp: int = 120):
-        """Record lesson module completion."""
+        """Record lesson module completion and check course completion."""
         with _lock:
-            completed = self._data["completed_lessons"]
+            completed = self._data.setdefault("completed_lessons", [])
             if lesson_id not in completed:
                 completed.append(lesson_id)
                 self._award_xp(xp)
-                
+
+            # Check if entire course is completed
+            completed_courses = self._data.setdefault("completed_courses", [])
+            expected_lessons = COURSE_LESSONS_MAP.get(course_id, [])
+            if expected_lessons and all(l in completed for l in expected_lessons):
+                if course_id not in completed_courses:
+                    completed_courses.append(course_id)
+                    self._award_xp(250)  # 250 XP bonus for completing entire course
+
             now = datetime.now(timezone.utc)
             self._data["events"].append({
                 "id": f"less_{int(now.timestamp() * 1000)}",
@@ -309,9 +285,21 @@ class AnalyticsStore:
             stats = self._data["stats"]
             solved = self._data["solved_problems"]
             total_prob = stats.get("total_problems_in_bank", 32)
-            completed_lessons = self._data["completed_lessons"]
-            total_lessons = self._data.get("total_lessons_count", 17)
-            
+            completed_lessons = self._data.get("completed_lessons", [])
+            completed_courses = self._data.get("completed_courses", [])
+            total_lessons = self._data.get("total_lessons_count", 44)
+
+            # Compute per-course progress
+            courses_progress = {}
+            for c_id, l_ids in COURSE_LESSONS_MAP.items():
+                done_count = sum(1 for l in l_ids if l in completed_lessons)
+                courses_progress[c_id] = {
+                    "completed_count": done_count,
+                    "total_count": len(l_ids),
+                    "percentage": round((done_count / len(l_ids)) * 100) if l_ids else 0,
+                    "is_completed": c_id in completed_courses or (done_count == len(l_ids) and len(l_ids) > 0),
+                }
+
             # 1. KPI Cards
             kpis = [
                 {
@@ -324,10 +312,19 @@ class AnalyticsStore:
                     "icon": "book-open",
                 },
                 {
+                    "id": "courses_completed",
+                    "title": "COURSES COMPLETED",
+                    "value": f"{len(completed_courses)}/5",
+                    "subtitle": f"{len(completed_courses)} Finished",
+                    "footer": "Foundational Quantum Tracks",
+                    "tone": "blue",
+                    "icon": "award",
+                },
+                {
                     "id": "simulations_run",
                     "title": "SIMULATIONS RUN",
                     "value": str(stats["simulations_count"]),
-                    "subtitle": f"+{stats.get('simulations_weekly_delta_pct', 18)}% this week",
+                    "subtitle": f"+{stats.get('simulations_weekly_delta_pct', 0)}% this week",
                     "footer": "Aer / PennyLane local statevectors",
                     "tone": "neutral",
                     "icon": "cpu",
@@ -336,7 +333,7 @@ class AnalyticsStore:
                     "id": "quiz_accuracy",
                     "title": "QUIZ ACCURACY",
                     "value": f"{stats['quiz_accuracy_pct']}%",
-                    "subtitle": stats.get("percentile", "Top 8%"),
+                    "subtitle": stats.get("percentile", "New Learner"),
                     "footer": "Across foundational assessments",
                     "tone": "green",
                     "icon": "target",
@@ -455,10 +452,15 @@ class AnalyticsStore:
                 "kpis": kpis,
                 "heatmap": heatmap,
                 "total_events_6m": total_logged_events,
-                "current_streak_days": profile.get("streak_days", 14),
+                "current_streak_days": profile.get("streak_days", 0),
                 "radar_data": radar_points,
                 "focus_area": focus_area,
                 "recent_activity": recent_events,
+                "completed_courses_count": len(completed_courses),
+                "completed_lessons_count": len(completed_lessons),
+                "total_courses_count": 5,
+                "total_lessons_count": 44,
+                "courses_progress": courses_progress,
             }
 
     def reset_to_baseline(self):
@@ -466,7 +468,6 @@ class AnalyticsStore:
         with _lock:
             self._data = _get_default_baseline()
             self._save_unsafe()
-
 
 # Global singleton instance
 analytics_store = AnalyticsStore()

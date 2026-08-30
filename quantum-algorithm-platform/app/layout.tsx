@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   },
 }
 
+import { AuthProvider } from '@/context/AuthContext'
+
 export const viewport: Viewport = {
   colorScheme: 'light',
   themeColor: '#f7f4ee',
@@ -35,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-background">
       <body className="antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

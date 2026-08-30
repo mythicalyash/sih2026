@@ -9,10 +9,10 @@ import {
   RefreshCw, Award, MoveRight, Eye, ShieldCheck, Share2, X, Info,
   Sliders, ToggleLeft, ToggleRight, Sparkle
 } from 'lucide-react'
-import { addXP, markLessonComplete } from '@/lib/storage'
 
 interface CourseZeroInteractiveProps {
   onClose: () => void;
+  onLessonComplete?: (courseId: string, lessonId: string, xp: number) => void;
   onComplete?: () => void;
 }
 
@@ -39,7 +39,7 @@ const MODULES_LIST: ModuleMeta[] = [
   { id: 13, title: 'Final Challenge & Socratic Verification', shortTitle: '13. Final Challenge', tag: 'Mastery' },
 ]
 
-export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInteractiveProps) {
+export function CourseZeroInteractive({ onClose, onLessonComplete, onComplete }: CourseZeroInteractiveProps) {
   const [currentModule, setCurrentModule] = useState<number>(1)
   const [completedModules, setCompletedModules] = useState<number[]>([1])
 
@@ -105,7 +105,9 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
   const markModuleDone = (modId: number) => {
     if (!completedModules.includes(modId)) {
       setCompletedModules((prev) => [...prev, modId])
-      addXP(25, `Completed Module ${modId}`)
+    }
+    if (onLessonComplete) {
+      onLessonComplete('course-zero-interactive', `c0_m${modId}`, 25)
     }
   }
 
@@ -160,12 +162,20 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
       setM13ExplanationFeedback('Excellent explanation! The Hadamard gate is unitary and self-inverse (H² = I), so applying H twice perfectly undoes the superposition and restores |0⟩ with 100% fidelity.')
       setCourseFinished(true)
       markModuleDone(13)
-      addXP(250, 'Mastered Course 01: From Bit to H Gate')
-      markLessonComplete('course-01-complete')
+      // Mark all 13 modules completed
+      for (let i = 1; i <= 13; i++) {
+        onLessonComplete?.('course-zero-interactive', `c0_m${i}`, 25)
+      }
+      if (onComplete) onComplete()
     } else {
       setM13ExplanationFeedback('Good effort! Remember: The Hadamard gate is its own inverse (H * H = I), meaning the second H coherently reverses the first transformation back to |0⟩.')
       setCourseFinished(true)
       markModuleDone(13)
+      // Mark all 13 modules completed
+      for (let i = 1; i <= 13; i++) {
+        onLessonComplete?.('course-zero-interactive', `c0_m${i}`, 25)
+      }
+      if (onComplete) onComplete()
     }
   }
 
@@ -173,7 +183,11 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
     markModuleDone(currentModule)
     if (currentModule < MODULES_LIST.length) {
       setCurrentModule((prev) => prev + 1)
-    } else if (courseFinished) {
+    } else {
+      // Mark all 13 modules completed
+      for (let i = 1; i <= 13; i++) {
+        onLessonComplete?.('course-zero-interactive', `c0_m${i}`, 25)
+      }
       if (onComplete) onComplete()
       onClose()
     }
@@ -187,12 +201,22 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
 
   return (
     <div className="fixed inset-0 z-50 bg-[#fdfcf9] w-screen h-screen flex flex-col select-none font-sans overflow-hidden text-[#211f1b]">
-      
-      {/* ================================================================= */}
+
       {/* 1. TOP NAVIGATION HEADER (Clean, Minimalist Borderless Feel) */}
-      {/* ================================================================= */}
+
       <header className="px-6 py-3 bg-[#fdfcf9] border-b border-[#eee8dd] flex items-center justify-between shrink-0 h-14">
         <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#ded7cb] bg-white hover:bg-[#f5f1e8] text-[#746e64] hover:text-[#211f1b] font-semibold text-xs transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Back to Courses catalog"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-[#c96b2c]" />
+            <span>Courses</span>
+          </button>
+
+          <span className="text-[#ded7cb] hidden sm:inline">/</span>
+
           <div className="w-8 h-8 rounded-lg bg-[#fff5eb] flex items-center justify-center text-[#c96b2c] font-mono font-bold text-xs shrink-0">
             01
           </div>
@@ -234,9 +258,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
         </div>
       </header>
 
-      {/* ================================================================= */}
       {/* 2. UNIFIED CLEAN READING WORKSPACE (Zero Clutter / Box Fatigue) */}
-      {/* ================================================================= */}
+
       <div className="flex-1 min-h-0 flex overflow-hidden">
         
         {/* ----------------- Clean Left Sidebar: Minimalist Table of Contents ----------------- */}
@@ -297,9 +320,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </h2>
             </div>
 
-            {/* ========================================================================= */}
             {/* MODULE 01: What is Quantum Computing? */}
-            {/* ========================================================================= */}
+
             {currentModule === 1 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <p>
@@ -384,9 +406,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 02: Classical Bits & Multi-Bit Combinations */}
-            {/* ========================================================================= */}
+
             {currentModule === 2 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Binary Digit (Bit)</h3>
@@ -461,9 +482,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 03: From Bit to Qubit */}
-            {/* ========================================================================= */}
+
             {currentModule === 3 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The General Single-Qubit State Equation</h3>
@@ -540,9 +560,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 04: What Exactly is a Qubit? */}
-            {/* ========================================================================= */}
+
             {currentModule === 4 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">Physical Implementations of Qubits</h3>
@@ -617,9 +636,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 05: Quantum States & Normalization */}
-            {/* ========================================================================= */}
+
             {currentModule === 5 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Normalization Condition: |α|² + |β|² = 1</h3>
@@ -687,9 +705,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 06: Measurement & Collapse */}
-            {/* ========================================================================= */}
+
             {currentModule === 6 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">Single Measurement vs Statistical Shots</h3>
@@ -771,9 +788,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 07: Superposition */}
-            {/* ========================================================================= */}
+
             {currentModule === 7 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Canonical Plus State (|+⟩)</h3>
@@ -862,9 +878,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 08: Quantum Gates */}
-            {/* ========================================================================= */}
+
             {currentModule === 8 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">What is a Quantum Gate?</h3>
@@ -922,9 +937,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 09: The Hadamard Gate */}
-            {/* ========================================================================= */}
+
             {currentModule === 9 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Hadamard Gate (H) &amp; Relative Phase</h3>
@@ -987,9 +1001,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 10: H Simulator */}
-            {/* ========================================================================= */}
+
             {currentModule === 10 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Born Rule &amp; Finite Sampling Statistics</h3>
@@ -1065,9 +1078,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 11: H + H Reversal */}
-            {/* ========================================================================= */}
+
             {currentModule === 11 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">The Self-Inverse Property (H² = I) &amp; Quantum Interference</h3>
@@ -1129,9 +1141,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 12: Circuit Lab */}
-            {/* ========================================================================= */}
+
             {currentModule === 12 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <div className="flex gap-2">
@@ -1249,9 +1260,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* MODULE 13: Final Challenge */}
-            {/* ========================================================================= */}
+
             {currentModule === 13 && (
               <div className="flex flex-col gap-6 text-base sm:text-lg text-[#332f2a] leading-relaxed animate-fade-in">
                 <h3 className="font-extrabold text-xl text-[#1d1a16]">Final Mastery Mission</h3>
@@ -1373,9 +1383,8 @@ export function CourseZeroInteractive({ onClose, onComplete }: CourseZeroInterac
 
       </div>
 
-      {/* ================================================================= */}
       {/* 3. BOTTOM CONTROL BAR (Clean, Single Line) */}
-      {/* ================================================================= */}
+
       <footer className="px-8 py-3 bg-[#fdfcf9] border-t border-[#eee8dd] flex items-center justify-between shrink-0 h-14">
         <button
           onClick={handleBack}

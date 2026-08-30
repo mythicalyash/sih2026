@@ -19,7 +19,6 @@ from backend.state_analyzer import (
     format_dirac_latex,
 )
 
-
 def _sample_counts_from_probs(probs: Dict[str, float], shots: int) -> Dict[str, int]:
     """Helper to sample discrete shot counts from an exact basis probability distribution."""
     outcomes = list(probs.keys())
@@ -35,7 +34,6 @@ def _sample_counts_from_probs(probs: Dict[str, float], shots: int) -> Dict[str, 
     for s in sampled:
         counts[s] = counts.get(s, 0) + 1
     return counts
-
 
 def run_circuit_qiskit(
     circuit: CircuitIR,
@@ -98,7 +96,6 @@ def run_circuit_qiskit(
         backend="qiskit_aer",
         backend_name="Qiskit Aer (IBM Quantum)"
     )
-
 
 def run_circuit_pennylane(
     circuit: CircuitIR,
@@ -293,7 +290,6 @@ def run_circuit_pennylane(
         backend_name="PennyLane (Xanadu default.qubit)"
     )
 
-
 def run_circuit_qsim(
     circuit: CircuitIR,
     shots: int = 1024,
@@ -345,7 +341,6 @@ def run_circuit_qsim(
         backend="qsim",
         backend_name="qsim (Google Quantum AI C++ Schrodinger Engine)"
     )
-
 
 def run_circuit_cirq(
     circuit: CircuitIR,
@@ -403,7 +398,6 @@ def run_circuit_cirq(
         backend_name="Google Cirq Simulator"
     )
 
-
 def run_circuit_qbraid(
     circuit: CircuitIR,
     shots: int = 1024,
@@ -456,7 +450,6 @@ def run_circuit_qbraid(
         backend_name="qBraid Transpiler (Cross-SDK Pipeline)"
     )
 
-
 BACKEND_DISPATCHER = {
     "qiskit_aer": run_circuit_qiskit,
     "qiskit": run_circuit_qiskit,
@@ -465,7 +458,6 @@ BACKEND_DISPATCHER = {
     "qsim": run_circuit_qsim,
     "cirq": run_circuit_cirq,
 }
-
 
 def run_circuit(
     circuit: CircuitIR,
@@ -477,7 +469,6 @@ def run_circuit(
     b_key = backend.strip().lower().replace("-", "_")
     handler = BACKEND_DISPATCHER.get(b_key, run_circuit_qiskit)
     return handler(circuit, shots=shots, include_statevector=include_statevector)
-
 
 def get_available_backends() -> List[BackendInfo]:
     """Retrieve metadata and status for all available quantum backend engines."""
@@ -575,7 +566,6 @@ def get_available_backends() -> List[BackendInfo]:
         pass
 
     return backends
-
 
 def run_circuit_step_by_step(circuit: CircuitIR) -> StepEvolutionResponse:
     """
@@ -677,5 +667,4 @@ def run_circuit_step_by_step(circuit: CircuitIR) -> StepEvolutionResponse:
         total_steps=len(steps),
         steps=steps,
     )
-
 

@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { BACKEND_URL } from '@/config';
 
+import { generateAllQuantumSnippets } from '@/lib/quantumCodeGenerators';
+
 interface CodePanelProps {
   circuitIR: CircuitIR;
   onApplyIR: (ir: CircuitIR) => void;
@@ -29,9 +31,11 @@ interface CodePanelProps {
   onToggleMaximize?: () => void;
   onToggleCollapse?: () => void;
   onSetWidthPreset?: (preset: 'compact' | 'standard' | 'wide') => void;
+  onActiveCodeChange?: (code: string, mode: CodeMode) => void;
+  appliedCode?: string | null;
 }
 
-type CodeMode = 'qasm' | 'qiskit' | 'cirq' | 'pennylane' | 'ir' | 'custom';
+export type CodeMode = 'qasm' | 'qiskit' | 'cirq' | 'pennylane' | 'ir' | 'custom';
 
 export const CodePanel: React.FC<CodePanelProps> = ({
   circuitIR,
@@ -40,28 +44,25 @@ export const CodePanel: React.FC<CodePanelProps> = ({
   onToggleMaximize,
   onToggleCollapse,
   onSetWidthPreset,
+  onActiveCodeChange,
+  appliedCode,
 }) => {
   const [viewMode, setViewMode] = useState<CodeMode>('qiskit');
   const [copied, setCopied] = useState<boolean>(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
+  // Initialize with instant local snippets
+  const initialSnippets = generateAllQuantumSnippets(circuitIR);
+
   // Generated code cache from backend
   const [generatedCode, setGeneratedCode] = useState<Record<CodeMode, string>>({
-    qiskit: '',
-    cirq: '',
-    pennylane: '',
-    qasm: '',
-    ir: '',
+    ...initialSnippets,
     custom: 'import numpy as np\nprint("Executing custom quantum code...")\n',
   });
 
   // User edited live code per mode
   const [liveCode, setLiveCode] = useState<Record<CodeMode, string>>({
-    qiskit: '',
-    cirq: '',
-    pennylane: '',
-    qasm: '',
-    ir: '',
+    ...initialSnippets,
     custom: 'import numpy as np\nprint("Executing custom quantum code...")\n',
   });
 
@@ -81,24 +82,25 @@ export const CodePanel: React.FC<CodePanelProps> = ({
   const [showConsole, setShowConsole] = useState<boolean>(false);
   const [outputCopied, setOutputCopied] = useState<boolean>(false);
 
-  // Fetch / Generate snippets when circuitIR changes
+  // Instantly generate and update snippets when circuitIR changes (0ms client latency)
   useEffect(() => {
-    const fetchCodeSnippets = async () => {
-      // 1. QASM
-      try {
-        const res = await fetch(`${BACKEND_URL}/export/qasm`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(circuitIR),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGeneratedCode((prev) => ({ ...prev, qasm: data.qasm }));
-          setLiveCode((prev) => (isCustomized.qasm ? prev : { ...prev, qasm: data.qasm }));
-        }
-      } catch {}
+    const instant = generateAllQuantumSnippets(circuitIR);
+    setGeneratedCode((prev) => ({
+      ...prev,
+      ...instant,
+    }));
 
-      // 2. Qiskit
+    setLiveCode((prev) => ({
+      ...prev,
+      qiskit: isCustomized.qiskit ? prev.qiskit : instant.qiskit,
+      qasm: isCustomized.qasm ? prev.qasm : instant.qasm,
+      cirq: isCustomized.cirq ? prev.cirq : instant.cirq,
+      pennylane: isCustomized.pennylane ? prev.pennylane : instant.pennylane,
+      ir: isCustomized.ir ? prev.ir : instant.ir,
+    }));
+
+    // Async backend fetch for deep Qiskit transpiler parity
+    const syncBackendSnippets = async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/export/qiskit`, {
           method: 'POST',
@@ -107,50 +109,31 @@ export const CodePanel: React.FC<CodePanelProps> = ({
         });
         if (res.ok) {
           const data = await res.json();
-          setGeneratedCode((prev) => ({ ...prev, qiskit: data.code }));
-          setLiveCode((prev) => (isCustomized.qiskit ? prev : { ...prev, qiskit: data.code }));
+          if (data.code) {
+            setGeneratedCode((prev) => ({ ...prev, qiskit: data.code }));
+            setLiveCode((prev) => (isCustomized.qiskit ? prev : { ...prev, qiskit: data.code }));
+          }
         }
       } catch {}
-
-      // 3. Cirq
-      try {
-        const res = await fetch(`${BACKEND_URL}/export/cirq`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(circuitIR),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGeneratedCode((prev) => ({ ...prev, cirq: data.code }));
-          setLiveCode((prev) => (isCustomized.cirq ? prev : { ...prev, cirq: data.code }));
-        }
-      } catch {}
-
-      // 4. PennyLane
-      try {
-        const res = await fetch(`${BACKEND_URL}/export/pennylane`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(circuitIR),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGeneratedCode((prev) => ({ ...prev, pennylane: data.code }));
-          setLiveCode((prev) => (isCustomized.pennylane ? prev : { ...prev, pennylane: data.code }));
-        }
-      } catch {}
-
-      // 5. Circuit IR
-      const irStr = JSON.stringify(circuitIR, null, 2);
-      setGeneratedCode((prev) => ({ ...prev, ir: irStr }));
-      setLiveCode((prev) => (isCustomized.ir ? prev : { ...prev, ir: irStr }));
     };
-
-    fetchCodeSnippets();
-  }, [circuitIR, isCustomized]);
+    syncBackendSnippets();
+  }, [circuitIR]);
 
   // Current active live code content
   const activeContent = liveCode[viewMode] || '';
+
+  // Notify parent of active code changes
+  useEffect(() => {
+    onActiveCodeChange?.(activeContent, viewMode);
+  }, [activeContent, viewMode, onActiveCodeChange]);
+
+  // Apply code fix from AI debugger if passed
+  useEffect(() => {
+    if (appliedCode) {
+      setLiveCode((prev) => ({ ...prev, [viewMode]: appliedCode }));
+      setIsCustomized((prev) => ({ ...prev, [viewMode]: true }));
+    }
+  }, [appliedCode]);
 
   // Handle live typing in editor
   const handleCodeChange = (newCode: string) => {
@@ -185,7 +168,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({
     } catch {}
   };
 
-  const handleApplyIR = () => {
+  const handleApplyIR = async () => {
     try {
       if (viewMode === 'ir') {
         const parsed = JSON.parse(activeContent);
@@ -194,10 +177,22 @@ export const CodePanel: React.FC<CodePanelProps> = ({
         }
         onApplyIR(parsed);
         setIsCustomized((prev) => ({ ...prev, ir: false }));
+      } else if (viewMode === 'qasm') {
+        const res = await fetch(`${BACKEND_URL}/import/qasm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qasm: activeContent }),
+        });
+        if (!res.ok) {
+          throw new Error('Could not parse OpenQASM code into Circuit.');
+        }
+        const parsedIR = await res.json();
+        onApplyIR(parsedIR);
+        setIsCustomized((prev) => ({ ...prev, qasm: false }));
       }
       setParseError(null);
     } catch (err: any) {
-      setParseError(err.message || 'JSON Parse Error in Circuit IR.');
+      setParseError(err.message || 'Error syncing code to Circuit Canvas.');
     }
   };
 
@@ -345,15 +340,15 @@ export const CodePanel: React.FC<CodePanelProps> = ({
             </button>
           )}
 
-          {/* Apply IR Button */}
-          {viewMode === 'ir' && (
+          {/* Apply IR / QASM to Circuit Canvas Button */}
+          {(viewMode === 'ir' || viewMode === 'qasm') && (
             <button
               onClick={handleApplyIR}
-              className="px-2.5 py-1 rounded bg-[#c96b2c] hover:bg-[#b55e24] text-white flex items-center gap-1.5 text-[11px] font-sans font-semibold cursor-pointer shadow-sm transition-all active:scale-95"
-              title="Apply JSON IR back to Circuit Canvas"
+              className="px-2.5 py-1 rounded bg-[#0f62fe] hover:bg-[#0043ce] text-white flex items-center gap-1.5 text-[11px] font-sans font-semibold cursor-pointer shadow-sm transition-all active:scale-95"
+              title="Parse and apply code back to Circuit Canvas"
             >
               <Play className="w-3 h-3 fill-current" />
-              <span>Apply</span>
+              <span>Apply to Canvas</span>
             </button>
           )}
 

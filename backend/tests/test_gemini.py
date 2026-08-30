@@ -10,13 +10,11 @@ from backend.gemini_service import (
     ask_gemini_socratic_tutor,
 )
 
-
 def test_gemini_status_and_key_setting():
     status = is_gemini_active()
     assert "active" in status
     assert "model" in status
     assert "gemini" in status["model"]
-
 
 def test_gemini_fallback_when_no_key():
     circuit = CircuitIR(num_qubits=2, gates=[GateIR(name="h", qubits=[0])])

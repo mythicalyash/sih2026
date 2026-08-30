@@ -13,7 +13,6 @@ from backend.algorithms import (
 from backend.engine import run_circuit_qiskit
 from backend.state_analyzer import compute_bloch_vectors
 
-
 def test_deutsch_jozsa_constant():
     # Constant oracle: input qubits must measure to all zeros |00>
     ir = build_deutsch_jozsa(oracle_type="constant", num_input_qubits=2)
@@ -25,7 +24,6 @@ def test_deutsch_jozsa_constant():
     total_zero_prob = sum(res.probabilities[k] for k in zero_outcomes)
     assert math.isclose(total_zero_prob, 1.0, abs_tol=1e-4)
 
-
 def test_deutsch_jozsa_balanced():
     # Balanced oracle: input qubits q1 q0 must NOT measure to |00>
     ir = build_deutsch_jozsa(oracle_type="balanced", num_input_qubits=2)
@@ -34,7 +32,6 @@ def test_deutsch_jozsa_balanced():
     zero_outcomes = [k for k in res.probabilities if k[1:] == "00"]
     total_zero_prob = sum(res.probabilities[k] for k in zero_outcomes)
     assert math.isclose(total_zero_prob, 0.0, abs_tol=1e-4)
-
 
 def test_bernstein_vazirani_101():
     secret = "101"
@@ -47,7 +44,6 @@ def test_bernstein_vazirani_101():
     total_secret_prob = sum(res.probabilities[k] for k in matching_outcomes)
     assert math.isclose(total_secret_prob, 1.0, abs_tol=1e-4)
 
-
 def test_bernstein_vazirani_1100():
     secret = "1100"
     ir = build_bernstein_vazirani(secret)
@@ -57,7 +53,6 @@ def test_bernstein_vazirani_1100():
     total_secret_prob = sum(res.probabilities[k] for k in matching_outcomes)
     assert math.isclose(total_secret_prob, 1.0, abs_tol=1e-4)
 
-
 def test_grovers_search_2qubit():
     target = "11"
     ir = build_grovers_search(target)
@@ -66,13 +61,11 @@ def test_grovers_search_2qubit():
     # 2-qubit Grover with 1 iteration finds target with 100% probability
     assert math.isclose(res.probabilities[target], 1.0, abs_tol=1e-4)
 
-
 def test_grovers_search_01():
     target = "01"
     ir = build_grovers_search(target)
     res = run_circuit_qiskit(ir, shots=1000)
     assert math.isclose(res.probabilities[target], 1.0, abs_tol=1e-4)
-
 
 def test_qft_equal_superposition():
     # QFT on |000> produces equal superposition across all 8 basis states
@@ -81,7 +74,6 @@ def test_qft_equal_superposition():
     
     for state, prob in res.probabilities.items():
         assert math.isclose(prob, 1.0 / 8.0, abs_tol=1e-4)
-
 
 def test_quantum_teleportation_fidelity():
     # Teleport state with theta=1.2, phi=0.5
@@ -108,7 +100,6 @@ def test_quantum_teleportation_fidelity():
     assert math.isclose(bob_bloch.x, target_bloch_x, abs_tol=1e-3)
     assert math.isclose(bob_bloch.y, target_bloch_y, abs_tol=1e-3)
     assert math.isclose(bob_bloch.z, target_bloch_z, abs_tol=1e-3)
-
 
 @pytest.mark.parametrize("message", ["00", "01", "10", "11"])
 def test_superdense_coding_all_messages(message):

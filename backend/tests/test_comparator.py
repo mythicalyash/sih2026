@@ -2,7 +2,6 @@ import pytest
 from backend.schemas import CircuitIR, GateIR
 from backend.comparator import compare_circuits
 
-
 def test_compare_bell_state():
     ir = CircuitIR(
         num_qubits=2,
@@ -15,7 +14,6 @@ def test_compare_bell_state():
     assert comp.match is True
     assert comp.max_diff < 1e-4
     assert comp.fidelity >= 0.999
-
 
 def test_compare_rotations():
     ir = CircuitIR(
@@ -30,7 +28,6 @@ def test_compare_rotations():
     assert comp.match is True
     assert comp.max_diff < 1e-4
     assert comp.fidelity >= 0.999
-
 
 def test_compare_ghz_state():
     ir = CircuitIR(

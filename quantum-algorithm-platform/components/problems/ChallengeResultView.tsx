@@ -158,9 +158,9 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
 
   return (
     <div className="w-full h-full min-h-screen bg-[#faf8f5] text-[#211f1b] font-sans flex flex-col justify-between p-4 sm:p-6 select-none selection:bg-[#c96b2c] selection:text-white">
-      {/* ========================================================================= */}
+
       {/* 1. TOP BAR NAVIGATION                                                     */}
-      {/* ========================================================================= */}
+
       <div className="w-full flex items-center justify-between pb-3 shrink-0">
         <button
           onClick={onBackToCatalog}
@@ -189,9 +189,8 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* 2. TOP HERO SUCCESS CARD                                                  */}
-      {/* ========================================================================= */}
+
       <div className="w-full bg-[#f4f9f6] border border-[#bad8cb] rounded-2xl p-4 sm:p-5 shadow-2xs shrink-0 flex items-center justify-between flex-wrap gap-4 relative overflow-hidden">
         {/* Left: Check Icon + Success Text */}
         <div className="flex items-center gap-4 z-10">
@@ -253,13 +252,12 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* 3. TWO-COLUMN DASHBOARD                                                   */}
-      {/* ========================================================================= */}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 my-3 flex-1 min-h-0">
-        {/* ======================================================================= */}
+
         {/* LEFT COLUMN: YOUR SOLUTION (Circuit + OpenQASM)                         */}
-        {/* ======================================================================= */}
+
         <div className="lg:col-span-7 bg-[#fffdfa] border border-[#e4ded4] rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3">
           {/* Header */}
           <div className="flex items-center justify-between pb-1">
@@ -394,9 +392,8 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
           </div>
         </div>
 
-        {/* ======================================================================= */}
         {/* RIGHT COLUMN: SIMULATION RESULT & AI MENTOR                             */}
-        {/* ======================================================================= */}
+
         <div className="lg:col-span-5 flex flex-col gap-3 justify-between">
           {/* SIMULATION RESULT CARD */}
           <div className="bg-[#fffdfa] border border-[#e4ded4] rounded-2xl p-4 shadow-2xs flex flex-col gap-3">
@@ -533,9 +530,8 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* 4. BOTTOM NEXT CHALLENGE BANNER (Mint/Greenish Card)                      */}
-      {/* ========================================================================= */}
+
       <div className="w-full bg-[#f4f9f6] border border-[#bad8cb] rounded-2xl px-5 py-3.5 shadow-2xs shrink-0 flex items-center justify-between gap-4">
         {nextProblem ? (
           <>
@@ -589,9 +585,8 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
         )}
       </div>
 
-      {/* ========================================================================= */}
       {/* 5. LIGHTWEIGHT AI TUTOR CHAT MODAL                                        */}
-      {/* ========================================================================= */}
+
       {showAiModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-text">
           <div className="bg-[#fffdfa] border border-[#d8d2c6] rounded-2xl max-w-lg w-full p-5 shadow-2xl flex flex-col gap-3.5 text-[#211f1b] animate-fadeIn max-h-[85vh]">

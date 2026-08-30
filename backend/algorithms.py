@@ -2,7 +2,6 @@ from typing import Dict, Any, List, Optional
 import math
 from backend.schemas import CircuitIR, GateIR
 
-
 def build_deutsch_jozsa(oracle_type: str = "balanced", num_input_qubits: int = 2) -> CircuitIR:
     """
     Build Deutsch-Jozsa algorithm circuit IR.
@@ -39,7 +38,6 @@ def build_deutsch_jozsa(oracle_type: str = "balanced", num_input_qubits: int = 2
         gates.append(GateIR(name="measure", qubits=[i]))
 
     return CircuitIR(num_qubits=total_qubits, gates=gates)
-
 
 def build_bernstein_vazirani(secret_bitstring: str = "101") -> CircuitIR:
     """
@@ -80,7 +78,6 @@ def build_bernstein_vazirani(secret_bitstring: str = "101") -> CircuitIR:
         gates.append(GateIR(name="measure", qubits=[i]))
 
     return CircuitIR(num_qubits=total_qubits, gates=gates)
-
 
 def build_grovers_search(target_bitstring: str = "11") -> CircuitIR:
     """
@@ -149,7 +146,6 @@ def build_grovers_search(target_bitstring: str = "11") -> CircuitIR:
 
     return CircuitIR(num_qubits=n, gates=gates)
 
-
 def build_qft(num_qubits: int = 3, input_state: Optional[str] = "001") -> CircuitIR:
     """
     Build Quantum Fourier Transform (QFT) circuit IR.
@@ -178,7 +174,6 @@ def build_qft(num_qubits: int = 3, input_state: Optional[str] = "001") -> Circui
         gates.append(GateIR(name="swap", qubits=[i, n - 1 - i]))
 
     return CircuitIR(num_qubits=n, gates=gates)
-
 
 def build_quantum_teleportation(theta: float = 1.2, phi: float = 0.5) -> CircuitIR:
     """
@@ -209,7 +204,6 @@ def build_quantum_teleportation(theta: float = 1.2, phi: float = 0.5) -> Circuit
     gates.append(GateIR(name="measure", qubits=[2]))
 
     return CircuitIR(num_qubits=3, gates=gates)
-
 
 def build_superdense_coding(message: str = "10") -> CircuitIR:
     """
@@ -243,7 +237,6 @@ def build_superdense_coding(message: str = "10") -> CircuitIR:
     gates.append(GateIR(name="measure", qubits=[1]))
 
     return CircuitIR(num_qubits=2, gates=gates)
-
 
 ALGORITHMS_REGISTRY = {
     "deutsch_jozsa": {

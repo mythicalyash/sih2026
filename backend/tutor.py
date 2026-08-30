@@ -14,7 +14,6 @@ from backend.converter import normalize_gate_name
 from backend.engine import run_circuit_qiskit, run_circuit_step_by_step
 from backend.state_analyzer import format_dirac_latex
 
-
 def analyze_circuit_diagnostics(circuit: CircuitIR) -> List[DiagnosticIssue]:
     """Perform deterministic checks on the quantum circuit."""
     issues: List[DiagnosticIssue] = []
@@ -107,7 +106,6 @@ def analyze_circuit_diagnostics(circuit: CircuitIR) -> List[DiagnosticIssue]:
                 )
 
     return issues
-
 
 def detect_quantum_misconceptions(circuit: CircuitIR, question: str = "") -> List[MisconceptionItem]:
     """Identify common student quantum mechanics misconceptions based on circuit layout and question text."""
@@ -223,7 +221,6 @@ def detect_quantum_misconceptions(circuit: CircuitIR, question: str = "") -> Lis
         )
 
     return misconceptions
-
 
 def generate_circuit_explanation(
     circuit: CircuitIR,
@@ -353,10 +350,7 @@ def generate_circuit_explanation(
         latex_math=latex_math_str,
     )
 
-
-# ==============================================================================
 # Quantum Quests Automated Grader
-# ==============================================================================
 
 QUEST_CONFIGS: Dict[str, Dict[str, Any]] = {
     "superposition": {
@@ -388,7 +382,6 @@ QUEST_CONFIGS: Dict[str, Dict[str, Any]] = {
         "check": lambda sv: len(sv) == 4 and abs(abs(sv[3]) - 1.0) < 1e-3,
     },
 }
-
 
 def grade_quantum_quest(quest_id: str, circuit: CircuitIR) -> QuestGradeResponse:
     """Automated grader for progressive Quantum Quests."""
@@ -460,10 +453,7 @@ def grade_quantum_quest(quest_id: str, circuit: CircuitIR) -> QuestGradeResponse
             current_state_latex="Error",
         )
 
-
-# ==============================================================================
 # Voice-to-Circuit Natural Language Parser
-# ==============================================================================
 
 def parse_voice_circuit_command(transcript: str, circuit: CircuitIR) -> VoiceCommandResponse:
     """

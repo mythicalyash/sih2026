@@ -6,7 +6,6 @@ from backend.schemas import CircuitIR, ComparisonResponse
 from backend.converter import ir_to_qiskit, normalize_gate_name
 from backend.engine import run_circuit_qiskit
 
-
 def run_circuit_pennylane(circuit: CircuitIR) -> Tuple[np.ndarray, Dict[str, float]]:
     """
     Run circuit on PennyLane default.qubit device.
@@ -120,7 +119,6 @@ def run_circuit_pennylane(circuit: CircuitIR) -> Tuple[np.ndarray, Dict[str, flo
         pl_probs[qiskit_format_str] = round(float(probs_array[m]), 6)
 
     return sv_array, pl_probs
-
 
 def compare_circuits(
     circuit: CircuitIR,

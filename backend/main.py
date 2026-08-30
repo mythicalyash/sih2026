@@ -57,11 +57,20 @@ from backend.schemas import (
     CreateSessionRequest,
     SaveMessageRequest,
     UpdateSessionTitleRequest,
+    DailyChallengeRequest,
+    DailyChallengeResponse,
+    EvaluateTheoreticalChallengeRequest,
+    EvaluateTheoreticalChallengeResponse,
+    RecentSimulationData,
+    SaveRecentSimulationRequest,
+    QuickRunSimulationResponse,
 )
 from backend.analytics import analytics_store
+from backend.recent_simulation import recent_sim_store
 from backend.converter import (
     ir_to_qiskit,
     ir_to_qasm,
+    qasm_to_ir,
     ir_to_cirq,
     ir_to_qiskit_code,
     ir_to_cirq_code,
@@ -109,6 +118,8 @@ from backend.gemini_service import (
     generate_brilliant_socratic_step,
     answer_socratic_chat,
     generate_micro_quiz,
+    generate_daily_challenge,
+    evaluate_theoretical_challenge,
 )
 from backend.chat_store import (
     init_db as init_chat_db,
@@ -143,18 +154,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "quantum-backend"}
-
 
 @app.get("/backends", response_model=BackendsListResponse)
 def list_backends():
     """List all available quantum simulation engines (Qiskit Aer, PennyLane, qBraid, qsim, Cirq)."""
     backends = get_available_backends()
     return BackendsListResponse(backends=backends, default="qiskit_aer")
-
 
 @app.post("/execute", response_model=ExecutionResponse)
 def execute_circuit(req: ExecutionRequest):
@@ -174,13 +182,47 @@ def execute_circuit(req: ExecutionRequest):
         logger.info(f"✅ [SIMULATION COMPLETE] {backend_choice} executed in {res.execution_time_ms}ms | Measured {len(res.counts)} distinct states")
         try:
             analytics_store.record_simulation(backend=backend_choice, qubits=req.circuit.num_qubits, gates=len(req.circuit.gates))
-        except Exception:
-            pass
+            backend_name_str = "Aer Simulator" if "aer" in backend_choice else backend_choice.capitalize()
+            recent_sim_store.record_simulation(
+                circuit=req.circuit,
+                probabilities=res.probabilities,
+                counts=res.counts,
+                shots=req.shots,
+                backend_name=backend_name_str,
+                execution_time_ms=res.execution_time_ms,
+            )
+        except Exception as sim_rec_err:
+            logger.warning(f"Could not record recent simulation: {sim_rec_err}")
         return res
     except Exception as e:
         logger.error(f"❌ [SIMULATION ERROR] ({backend_choice}): {str(e)}")
         raise HTTPException(status_code=400, detail=f"Execution error ({req.backend}): {str(e)}")
 
+@app.get("/api/simulation/latest", response_model=RecentSimulationData)
+def api_get_latest_simulation():
+    """Get the latest simulated circuit and measurement distribution for the Home dashboard."""
+    return recent_sim_store.get_latest()
+
+@app.post("/api/simulation/latest", response_model=RecentSimulationData)
+def api_save_latest_simulation(req: SaveRecentSimulationRequest):
+    """Save or update the latest simulated circuit."""
+    return recent_sim_store.record_simulation(
+        circuit=req.circuit,
+        probabilities=req.probabilities,
+        counts=req.counts,
+        shots=req.shots or 1024,
+        backend_name=req.backend_name or "Aer Simulator",
+        name=req.name,
+    )
+
+@app.post("/api/simulation/quick-run", response_model=QuickRunSimulationResponse)
+def api_quick_run_simulation(shots: int = Query(1024)):
+    """Quickly execute the latest circuit on Aer Simulator with new shot statistics."""
+    try:
+        return recent_sim_store.quick_run(shots=shots)
+    except Exception as e:
+        logger.error(f"Error during quick run simulation: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/execute/compare", response_model=ComparisonResponse)
 def compare_circuit_execution(req: ComparisonRequest):
@@ -206,7 +248,6 @@ def compare_circuit_execution(req: ComparisonRequest):
         logger.error(f"❌ [COMPARE ERROR]: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Comparison error: {str(e)}")
 
-
 @app.post("/state/bloch", response_model=BlochResponse)
 def get_bloch_vectors_post(circuit: CircuitIR):
     """
@@ -225,7 +266,6 @@ def get_bloch_vectors_post(circuit: CircuitIR):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Bloch computation error: {str(e)}")
 
-
 @app.get("/state/bloch", response_model=BlochResponse)
 def get_bloch_vectors_get(preset: Optional[str] = Query(None)):
     """GET version for Bloch vectors of a preset algorithm or ground state."""
@@ -234,7 +274,6 @@ def get_bloch_vectors_get(preset: Optional[str] = Query(None)):
     else:
         circuit = CircuitIR(num_qubits=2, gates=[])
     return get_bloch_vectors_post(circuit)
-
 
 @app.post("/state/probabilities", response_model=ProbabilitiesResponse)
 def get_probabilities_post(circuit: CircuitIR):
@@ -248,7 +287,6 @@ def get_probabilities_post(circuit: CircuitIR):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Probabilities computation error: {str(e)}")
 
-
 @app.get("/state/probabilities", response_model=ProbabilitiesResponse)
 def get_probabilities_get(preset: Optional[str] = Query(None)):
     if preset and preset in ALGORITHMS_REGISTRY:
@@ -256,7 +294,6 @@ def get_probabilities_get(preset: Optional[str] = Query(None)):
     else:
         circuit = CircuitIR(num_qubits=2, gates=[])
     return get_probabilities_post(circuit)
-
 
 @app.post("/state/amplitudes", response_model=AmplitudesResponse)
 def get_amplitudes_post(circuit: CircuitIR):
@@ -270,7 +307,6 @@ def get_amplitudes_post(circuit: CircuitIR):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Amplitudes computation error: {str(e)}")
 
-
 @app.get("/state/amplitudes", response_model=AmplitudesResponse)
 def get_amplitudes_get(preset: Optional[str] = Query(None)):
     if preset and preset in ALGORITHMS_REGISTRY:
@@ -278,7 +314,6 @@ def get_amplitudes_get(preset: Optional[str] = Query(None)):
     else:
         circuit = CircuitIR(num_qubits=2, gates=[])
     return get_amplitudes_post(circuit)
-
 
 @app.get("/algorithms", response_model=List[AlgorithmSummary])
 def list_algorithms():
@@ -297,7 +332,6 @@ def list_algorithms():
         )
     return results
 
-
 @app.get("/algorithms/{name}", response_model=AlgorithmSummary)
 def get_algorithm(name: str):
     """Get IR and description for a specific quantum algorithm."""
@@ -313,7 +347,6 @@ def get_algorithm(name: str):
         default_params=info["default_params"],
         circuit=circuit,
     )
-
 
 @app.post("/import/quirk", response_model=QuirkImportResponse)
 def import_quirk_circuit(req: QuirkImportRequest):
@@ -332,7 +365,6 @@ def import_quirk_circuit(req: QuirkImportRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Quirk import failed: {str(e)}")
 
-
 @app.post("/state/step-by-step", response_model=StepEvolutionResponse)
 def get_step_by_step_evolution(circuit: CircuitIR):
     """
@@ -345,7 +377,6 @@ def get_step_by_step_evolution(circuit: CircuitIR):
     except Exception as e:
         logger.error(f"Step-by-step simulation error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Step evolution error: {str(e)}")
-
 
 @app.post("/tutor/explain", response_model=TutorResponse)
 def tutor_explain_circuit(req: TutorRequest):
@@ -370,7 +401,6 @@ def tutor_explain_circuit(req: TutorRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Tutor analysis failed: {str(e)}")
 
-
 @app.post("/api/chat", response_model=TutorChatResponse)
 @app.post("/tutor/chat", response_model=TutorChatResponse)
 def tutor_socratic_chat_endpoint(req: TutorChatRequest):
@@ -384,7 +414,6 @@ def tutor_socratic_chat_endpoint(req: TutorChatRequest):
     except Exception as e:
         logger.error(f"Socratic chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Socratic chat generation error: {str(e)}")
-
 
 @app.post("/api/tutor/quiz", response_model=QuizResponse)
 @app.post("/tutor/quiz", response_model=QuizResponse)
@@ -400,7 +429,6 @@ def tutor_micro_quiz_endpoint(req: QuizRequest):
         logger.error(f"Micro quiz generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Micro quiz error: {str(e)}")
 
-
 @app.post("/tutor/socratic-step", response_model=SocraticStepItem)
 def get_socratic_step_endpoint(req: SocraticStepRequest):
     """
@@ -412,7 +440,6 @@ def get_socratic_step_endpoint(req: SocraticStepRequest):
     except Exception as e:
         logger.error(f"Socratic step error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Socratic step generation failed: {str(e)}")
-
 
 @app.post("/tutor/grade-quest", response_model=QuestGradeResponse)
 def tutor_grade_quest_endpoint(req: QuestGradeRequest):
@@ -426,7 +453,6 @@ def tutor_grade_quest_endpoint(req: QuestGradeRequest):
         logger.error(f"Quest grading failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Quest grading error: {str(e)}")
 
-
 @app.post("/tutor/voice-command", response_model=VoiceCommandResponse)
 def tutor_voice_command_endpoint(req: VoiceCommandRequest):
     """
@@ -439,7 +465,6 @@ def tutor_voice_command_endpoint(req: VoiceCommandRequest):
         logger.error(f"Voice command error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Voice parsing error: {str(e)}")
 
-
 @app.post("/tutor/fix-code", response_model=CodeFixResponse)
 def tutor_fix_quantum_code_endpoint(req: CodeFixRequest):
     """
@@ -451,7 +476,6 @@ def tutor_fix_quantum_code_endpoint(req: CodeFixRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Code fix error: {str(e)}")
 
-
 @app.post("/export/qasm")
 def export_qasm_endpoint(circuit: CircuitIR):
     """Export CircuitIR to OpenQASM 3.0 code."""
@@ -461,16 +485,21 @@ def export_qasm_endpoint(circuit: CircuitIR):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"QASM export error: {str(e)}")
 
+@app.post("/import/qasm", response_model=CircuitIR)
+def import_qasm_endpoint(body: Dict[str, str] = Body(...)):
+    """Parse and import OpenQASM 2.0/3.0 code into visual CircuitIR."""
+    qasm_str = body.get("qasm", "")
+    try:
+        return qasm_to_ir(qasm_str)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"QASM parsing error: {str(e)}")
 
-# ==============================================================================
 # Gemini AI Configuration & Status APIs
-# ==============================================================================
 
 @app.get("/api/gemini/status")
 def get_gemini_status():
     """Get status of Gemini 2.5 Flash-Lite AI service."""
     return is_gemini_active()
-
 
 @app.post("/api/gemini/key")
 def set_gemini_key_endpoint(payload: Dict[str, str] = Body(...)):
@@ -486,10 +515,7 @@ def set_gemini_key_endpoint(payload: Dict[str, str] = Body(...)):
         "status": is_gemini_active(),
     }
 
-
-# ==============================================================================
 # Quantum Problems & Challenges API (Gemini Flash-Lite Powered)
-# ==============================================================================
 
 def _build_problem_definition(p_data: Dict[str, Any]) -> ProblemDefinition:
     """Helper to cleanly parse and instantiate ProblemDefinition with typed GateIR objects."""
@@ -531,12 +557,10 @@ def _build_problem_definition(p_data: Dict[str, Any]) -> ProblemDefinition:
         example_distribution=p_data.get("example_distribution", {}),
     )
 
-
 @app.get("/problems", response_model=List[ProblemDefinition])
 def list_problems():
     """List all available quantum learning challenges & problems."""
     return [_build_problem_definition(p_data) for p_data in PROBLEMS_REGISTRY.values()]
-
 
 @app.get("/problems/{problem_id}", response_model=ProblemDefinition)
 def get_problem(problem_id: str):
@@ -545,7 +569,6 @@ def get_problem(problem_id: str):
         raise HTTPException(status_code=404, detail=f"Problem '{problem_id}' not found.")
     
     return _build_problem_definition(PROBLEMS_REGISTRY[problem_id])
-
 
 @app.post("/problem/hint", response_model=ProblemHintResponse)
 def get_problem_hint_endpoint(req: ProblemHintRequest):
@@ -578,7 +601,6 @@ def get_problem_hint_endpoint(req: ProblemHintRequest):
         total_hints=total,
     )
 
-
 @app.post("/problem/review", response_model=ProblemReviewResponse)
 def review_problem_endpoint(req: ProblemReviewRequest):
     """AI review of user's circuit against problem goal using Gemini Flash-Lite."""
@@ -608,7 +630,6 @@ def review_problem_endpoint(req: ProblemReviewRequest):
         qasm=qasm_str,
     )
 
-
 @app.post("/problem/explain", response_model=ProblemExplainResponse)
 def explain_problem_concept_endpoint(req: ProblemExplainRequest):
     """Explain the underlying physics concept using Gemini Flash-Lite."""
@@ -633,7 +654,6 @@ def explain_problem_concept_endpoint(req: ProblemExplainRequest):
         concept_explanation=gemini_exp or base_explanation,
         suggested_concept=concept_name,
     )
-
 
 @app.post("/problem/check", response_model=ProblemCheckResponse)
 def check_problem_endpoint(req: ProblemCheckRequest):
@@ -680,7 +700,6 @@ def check_problem_endpoint(req: ProblemCheckRequest):
         next_problem_id=next_id,
     )
 
-
 @app.post("/export/qiskit")
 def export_qiskit_endpoint(circuit: CircuitIR):
     """Export CircuitIR to executable Qiskit Python code."""
@@ -689,7 +708,6 @@ def export_qiskit_endpoint(circuit: CircuitIR):
         return {"code": code_str, "num_qubits": circuit.num_qubits, "language": "python"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Qiskit code generation error: {str(e)}")
-
 
 @app.post("/export/cirq")
 def export_cirq_endpoint(circuit: CircuitIR):
@@ -700,7 +718,6 @@ def export_cirq_endpoint(circuit: CircuitIR):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Cirq code generation error: {str(e)}")
 
-
 @app.post("/export/pennylane")
 def export_pennylane_endpoint(circuit: CircuitIR):
     """Export CircuitIR to executable PennyLane Python code."""
@@ -709,7 +726,6 @@ def export_pennylane_endpoint(circuit: CircuitIR):
         return {"code": code_str, "num_qubits": circuit.num_qubits, "language": "python"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"PennyLane code generation error: {str(e)}")
-
 
 @app.post("/execute/code", response_model=CodeExecuteResponse)
 def execute_code_endpoint(req: CodeExecuteRequest):
@@ -728,10 +744,9 @@ def execute_code_endpoint(req: CodeExecuteRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Code execution failed: {str(e)}")
 
-
-# -----------------------------------------------------------------------------
 # Dashboard & Analytics REST Endpoints
-# -----------------------------------------------------------------------------
+
+@app.get("/api/dashboard/metrics", response_model=DashboardMetricsResponse)
 @app.get("/dashboard/metrics", response_model=DashboardMetricsResponse)
 def get_dashboard_metrics_endpoint():
     """
@@ -744,7 +759,7 @@ def get_dashboard_metrics_endpoint():
         logger.error(f"❌ [DASHBOARD METRICS ERROR]: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to aggregate dashboard metrics: {str(e)}")
 
-
+@app.post("/api/dashboard/log-event", response_model=LogEventResponse)
 @app.post("/dashboard/log-event", response_model=LogEventResponse)
 def log_dashboard_event_endpoint(req: LogEventRequest):
     """
@@ -772,16 +787,28 @@ def log_dashboard_event_endpoint(req: LogEventRequest):
         logger.error(f"❌ [LOG EVENT ERROR]: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to log dashboard event: {str(e)}")
 
+@app.post("/api/analytics/lesson-complete")
+def record_lesson_complete_direct(payload: Dict[str, Any] = Body(...)):
+    """Direct endpoint to record a completed course lesson."""
+    try:
+        course_id = payload.get("course_id", "")
+        lesson_id = payload.get("lesson_id", "")
+        xp = int(payload.get("xp", 120))
+        analytics_store.record_lesson_completion(course_id, lesson_id, xp)
+        return {"status": "ok", "message": f"Lesson {lesson_id} marked complete."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/analytics/reset")
+@app.post("/api/dashboard/reset")
 @app.post("/dashboard/reset")
 def reset_dashboard_metrics_endpoint():
-    """Reset user analytics data back to baseline seed."""
+    """Reset user analytics data back to baseline seed (all 0s)."""
     try:
         analytics_store.reset_to_baseline()
-        return {"status": "ok", "message": "Dashboard analytics reset to baseline."}
+        return {"status": "ok", "message": "Dashboard analytics reset to baseline 0."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset dashboard metrics: {str(e)}")
-
 
 # ── Chat History Endpoints ───────────────────────────────────────
 
@@ -791,13 +818,11 @@ def list_chat_sessions():
     sessions = list_sessions()
     return {"sessions": sessions}
 
-
 @app.post("/api/tutor/history")
 def create_chat_session(req: CreateSessionRequest = Body(default=CreateSessionRequest())):
     """Create a new chat session."""
     session = create_session(title=req.title)
     return session
-
 
 @app.get("/api/tutor/history/{session_id}")
 def get_chat_session(session_id: str):
@@ -810,7 +835,6 @@ def get_chat_session(session_id: str):
         **session,
         "messages": messages,
     }
-
 
 @app.post("/api/tutor/history/{session_id}/message")
 def save_chat_message(session_id: str, req: SaveMessageRequest):
@@ -826,7 +850,6 @@ def save_chat_message(session_id: str, req: SaveMessageRequest):
     )
     return msg
 
-
 @app.patch("/api/tutor/history/{session_id}")
 def patch_chat_session(session_id: str, req: UpdateSessionTitleRequest):
     """Update a session's title."""
@@ -835,7 +858,6 @@ def patch_chat_session(session_id: str, req: UpdateSessionTitleRequest):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True, "session_id": session_id, "title": req.title}
 
-
 @app.delete("/api/tutor/history/{session_id}")
 def delete_chat_session(session_id: str):
     """Delete a session and all its messages."""
@@ -843,4 +865,78 @@ def delete_chat_session(session_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True, "session_id": session_id}
+
+# Daily Challenge AI Endpoints
+
+_daily_challenge_cache: Dict[str, DailyChallengeResponse] = {}
+
+@app.post("/api/daily-challenge/generate", response_model=DailyChallengeResponse)
+def api_generate_daily_challenge(req: DailyChallengeRequest):
+    """
+    Generate an AI-powered Daily Challenge (MCQ or Theoretical) tailored to the student's learning history.
+    """
+    try:
+        # Fetch user analytics context for targeted questions
+        analytics_data = analytics_store.get_dashboard_metrics()
+        weak_topics = [t.get("topic", "") for t in analytics_data.get("weak_topics", []) if isinstance(t, dict)]
+        user_context = {
+            "weak_topics": weak_topics,
+            "total_xp": analytics_data.get("user_profile", {}).get("xp", 0),
+            "streak": analytics_data.get("user_profile", {}).get("streak_days", 1),
+            "recent_events": analytics_data.get("recent_activity", [])[:5],
+        }
+    except Exception as e:
+        logger.warning(f"Could not build user context for daily challenge: {e}")
+        user_context = None
+
+    try:
+        challenge = generate_daily_challenge(req, user_context=user_context)
+        return challenge
+    except Exception as e:
+        logger.error(f"Error generating daily challenge: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/daily-challenge/today", response_model=DailyChallengeResponse)
+def api_get_today_daily_challenge(
+    user_id: str = Query("arjun"),
+    question_type: str = Query("any"),
+):
+    """
+    Get today's daily challenge. Caches the challenge per date and question type.
+    """
+    import datetime
+    today_str = datetime.date.today().isoformat()
+    cache_key = f"{today_str}_{question_type}"
+
+    if cache_key in _daily_challenge_cache:
+        return _daily_challenge_cache[cache_key]
+
+    req = DailyChallengeRequest(user_id=user_id, question_type=question_type)
+    challenge = api_generate_daily_challenge(req)
+    _daily_challenge_cache[cache_key] = challenge
+    return challenge
+
+@app.post("/api/daily-challenge/evaluate", response_model=EvaluateTheoreticalChallengeResponse)
+def api_evaluate_theoretical_challenge(req: EvaluateTheoreticalChallengeRequest):
+    """
+    Evaluate a theoretical student response using Gemini AI and log completion analytics.
+    """
+    try:
+        evaluation = evaluate_theoretical_challenge(req)
+        # Log event to analytics store
+        analytics_store.log_event(
+            event_type="daily_challenge_completed",
+            metadata={
+                "challenge_id": req.challenge_id,
+                "topic": req.topic,
+                "score": evaluation.score,
+                "is_correct": evaluation.is_correct,
+                "type": "theoretical",
+            },
+            xp=evaluation.xp_earned,
+        )
+        return evaluation
+    except Exception as e:
+        logger.error(f"Error evaluating theoretical challenge: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 

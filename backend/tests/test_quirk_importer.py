@@ -3,7 +3,6 @@ import math
 from backend.quirk_importer import quirk_to_ir, parse_quirk_raw
 from backend.engine import run_circuit_qiskit
 
-
 def test_quirk_importer_bell_state_json():
     quirk_json = {
         "cols": [
@@ -24,7 +23,6 @@ def test_quirk_importer_bell_state_json():
     assert math.isclose(res.probabilities["00"], 0.5, abs_tol=1e-4)
     assert math.isclose(res.probabilities["11"], 0.5, abs_tol=1e-4)
 
-
 def test_quirk_importer_real_url():
     # Quirk URL for Bell State: H on q0, Control on q0, Target X on q1
     url = "https://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22H%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%5D%5D%7D"
@@ -33,7 +31,6 @@ def test_quirk_importer_real_url():
     assert len(ir.gates) == 2
     assert ir.gates[0].name == "h"
     assert ir.gates[1].name == "cx"
-
 
 def test_quirk_importer_toffoli_and_swap():
     quirk_json = {
@@ -53,7 +50,6 @@ def test_quirk_importer_toffoli_and_swap():
     assert ir.gates[2].qubits == [0, 1, 2]
     assert ir.gates[3].name == "swap"
     assert ir.gates[3].qubits == [0, 2]
-
 
 def test_quirk_importer_single_gates():
     quirk_json = {

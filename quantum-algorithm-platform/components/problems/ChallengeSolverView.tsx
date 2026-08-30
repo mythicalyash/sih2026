@@ -103,7 +103,6 @@ export function ChallengeSolverView({
   const [aiCustomQuestion, setAiCustomQuestion] = useState<string>('');
   const [aiLoading, setAiLoading] = useState<boolean>(false);
 
-
   // Current problem index in catalog
   const currentIndex = allProblems.findIndex((p) => p.id === problem.id);
   const prevProblem = currentIndex > 0 ? allProblems[currentIndex - 1] : null;
@@ -657,9 +656,9 @@ export function ChallengeSolverView({
 
   return (
     <div className="w-full min-h-screen bg-[#f7f4ee] text-[#211f1b] font-sans flex flex-col selection:bg-[#c96b2c] selection:text-white">
-      {/* ========================================================================= */}
+
       {/* 1. Minimal LeetCode Header                                                 */}
-      {/* ========================================================================= */}
+
       <header className="w-full bg-[#fffdf9] border-b border-[#ded7cb] px-4 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-3">
           <button
@@ -723,13 +722,12 @@ export function ChallengeSolverView({
         </div>
       </header>
 
-      {/* ========================================================================= */}
       {/* 2. Main Two-Column Layout                                                  */}
-      {/* ========================================================================= */}
+
       <div className="flex-1 max-w-[1750px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-3 sm:p-4 items-start">
-        {/* ======================================================================= */}
+
         {/* LEFT COLUMN: Problem Details + Available Operations + AI Tutor          */}
-        {/* ======================================================================= */}
+
         <div className="lg:col-span-5 flex flex-col gap-4 lg:sticky lg:top-[56px] lg:max-h-[calc(100vh-76px)] lg:overflow-y-auto pr-1 pb-6">
           {/* Problem Card */}
           <div className="p-5 rounded-xl bg-[#fffdf9] border border-[#ded7cb] shadow-sm flex flex-col gap-4">
@@ -791,9 +789,8 @@ export function ChallengeSolverView({
             )}
           </div>
 
-          {/* ===================================================================== */}
           {/* Operations Section (Only relevant gates for the challenge)            */}
-          {/* ===================================================================== */}
+
           <div className="p-4 rounded-xl bg-[#fffdf9] border border-[#ded7cb] shadow-sm flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-[#746e64] uppercase tracking-wider flex items-center gap-1.5">
@@ -873,9 +870,8 @@ export function ChallengeSolverView({
             )}
           </div>
 
-          {/* ===================================================================== */}
           {/* AI Tutor Assistant (Collapsible / Compact Drawer)                      */}
-          {/* ===================================================================== */}
+
           <div className="p-4 rounded-xl bg-[#fffdf9] border border-[#ded7cb] shadow-sm flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-[#211f1b] uppercase tracking-wider flex items-center gap-1.5">
@@ -1001,9 +997,8 @@ export function ChallengeSolverView({
           </div>
         </div>
 
-        {/* ======================================================================= */}
         {/* RIGHT COLUMN: Interactive Circuit + Code + Simulation Run/Check Controls */}
-        {/* ======================================================================= */}
+
         <div className="lg:col-span-7 flex flex-col gap-4">
           {/* Workspace Container */}
           <div className="rounded-xl bg-[#fffdf9] border border-[#ded7cb] shadow-sm overflow-hidden flex flex-col">
@@ -1132,9 +1127,8 @@ export function ChallengeSolverView({
             </div>
           </div>
 
-          {/* ===================================================================== */}
           {/* Failed Check Inline Alert Banner                                       */}
-          {/* ===================================================================== */}
+
           {showFailedBanner && checkResult && !checkResult.passed && (
             <div className="p-4 rounded-xl bg-[#fffaf3] border border-[#f0d1b3] shadow-xs flex flex-col gap-2.5 animate-fadeIn">
               <div className="flex items-center justify-between">
@@ -1176,9 +1170,8 @@ export function ChallengeSolverView({
             </div>
           )}
 
-          {/* ===================================================================== */}
           {/* Compact Simulation Results Card                                        */}
-          {/* ===================================================================== */}
+
           <div className="p-4 rounded-xl bg-[#fffdf9] border border-[#ded7cb] shadow-sm flex flex-col gap-3">
             <div className="flex items-center justify-between border-b border-[#ded7cb] pb-2">
               <span className="text-[11px] font-bold text-[#746e64] uppercase tracking-wider flex items-center gap-1.5">

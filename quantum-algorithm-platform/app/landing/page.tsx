@@ -8,7 +8,7 @@ export default function LandingPageRoute() {
   const router = useRouter()
 
   const handleGetStarted = () => {
-    router.push('/')
+    router.push('/auth')
   }
 
   return <LandingPage onGetStarted={handleGetStarted} />

@@ -21,6 +21,10 @@ from backend.schemas import (
     QuizRequest,
     QuizQuestion,
     QuizResponse,
+    DailyChallengeRequest,
+    DailyChallengeResponse,
+    EvaluateTheoreticalChallengeRequest,
+    EvaluateTheoreticalChallengeResponse,
 )
 from backend.converter import ir_to_qasm
 
@@ -41,7 +45,6 @@ FALLBACK_MODELS = [
 
 # In-memory runtime API key override
 _runtime_api_key: Optional[str] = None
-
 
 def get_api_key() -> Optional[str]:
     """Retrieve the Gemini API key from runtime memory, environment, or .env file."""
@@ -73,7 +76,6 @@ def get_api_key() -> Optional[str]:
 _init_key = get_api_key()
 print(f"Gemini API Key Loaded: {bool(_init_key)} (Prefix: {_init_key[:6] if _init_key else 'None'}...)")
 
-
 def set_gemini_api_key(key: str) -> None:
     """Dynamically set the Gemini API key at runtime."""
     global _runtime_api_key
@@ -90,7 +92,6 @@ def set_gemini_api_key(key: str) -> None:
     except Exception as e:
         logger.warning(f"Could not persist API key to .env: {e}")
 
-
 def get_gemini_client() -> Optional[genai.Client]:
     """Return an initialized Google GenAI client if an API key is available."""
     key = get_api_key()
@@ -101,7 +102,6 @@ def get_gemini_client() -> Optional[genai.Client]:
     except Exception as e:
         logger.error(f"Failed to create Google GenAI client: {e}")
         return None
-
 
 def is_gemini_active() -> Dict[str, Any]:
     """Check status of Gemini AI service."""
@@ -114,7 +114,6 @@ def is_gemini_active() -> Dict[str, Any]:
         "has_api_key": has_key,
         "masked_key": masked_key,
     }
-
 
 def _extract_text_from_response(response: Any) -> Optional[str]:
     if not response:
@@ -134,7 +133,6 @@ def _extract_text_from_response(response: Any) -> Optional[str]:
     except Exception:
         pass
     return None
-
 
 def _call_gemini_with_fallback(system_instruction: str, prompt: str) -> Optional[str]:
     """Attempt generation with primary model, falling back if model not found."""
@@ -165,10 +163,7 @@ def _call_gemini_with_fallback(system_instruction: str, prompt: str) -> Optional
 
     return None
 
-
-# ==============================================================================
 # Socratic Problem Guidance with Gemini
-# ==============================================================================
 
 SOCRATIC_TUTOR_SYSTEM = """You are a helpful, clear, and friendly AI Quantum Computing Tutor.
 
@@ -178,7 +173,6 @@ Core Rules:
 3. Scannable Structure: Use short paragraphs and concise bullet points. Avoid long, overwhelming walls of text.
 4. Clean Math: If the user asks for math or formulas, show clean LaTeX ($inline$ or $$display$$). Otherwise, keep it conceptual.
 5. No Robotic Fillers: Do not start with generic intros like "Sure, I'd love to help with that!" or "Here is an explanation:". Start directly with the answer."""
-
 
 def generate_gemini_problem_hint(
     problem_id: str,
@@ -218,7 +212,6 @@ Instructions:
 
     result = _call_gemini_with_fallback(SOCRATIC_TUTOR_SYSTEM, prompt)
     return result if result else deterministic_fallback
-
 
 def review_gemini_problem_circuit(
     problem_id: str,
@@ -276,7 +269,6 @@ Respond strictly in JSON format:
 
     return ("in_progress", fallback_positives, fallback_guidance)
 
-
 def explain_gemini_problem_concept(
     problem_id: str,
     problem_title: str,
@@ -312,7 +304,6 @@ Make the explanation intuitive, deep, and educational (2-3 structured paragraphs
 
     result = _call_gemini_with_fallback(SOCRATIC_TUTOR_SYSTEM, prompt)
     return result if result else fallback_explanation
-
 
 def ask_gemini_socratic_tutor(
     circuit: CircuitIR,
@@ -381,7 +372,6 @@ Instructions:
     result = _call_gemini_with_fallback(SOCRATIC_TUTOR_SYSTEM, prompt)
     return result if result else fallback_response
 
-
 def explain_gemini_solution_feedback(
     problem_id: str,
     problem_title: str,
@@ -411,7 +401,6 @@ Keep the tone encouraging, clear, and pedagogically sound."""
 
     result = _call_gemini_with_fallback(SOCRATIC_TUTOR_SYSTEM, prompt)
     return result if result else fallback_explanation
-
 
 def analyze_and_fix_quantum_code(req: CodeFixRequest) -> CodeFixResponse:
     """
@@ -476,10 +465,7 @@ Respond strictly in valid JSON format:
         optimizations=["Use Qiskit 1.0 Statevector.from_instruction() for exact simulation."],
     )
 
-
-# ==============================================================================
 # Brilliant.org Style Socratic Learning Engine
-# ==============================================================================
 
 BRILLIANT_TRACKS: Dict[str, List[Dict[str, Any]]] = {
     "superposition": [
@@ -662,7 +648,6 @@ BRILLIANT_TRACKS: Dict[str, List[Dict[str, Any]]] = {
     ],
 }
 
-
 def generate_brilliant_socratic_step(req: SocraticStepRequest) -> SocraticStepItem:
     """
     Generate an interactive Brilliant-style Socratic micro-step.
@@ -793,14 +778,9 @@ Respond strictly in valid JSON:
         xp_reward=25,
     )
 
-
-# ==============================================================================
 # Pure Socratic Q&A Tutor Pipeline (Fast, Reliable, LaTeX-Powered)
-# ==============================================================================
 
-# ==============================================================================
 # Direct AI Tutor Chat & Practice Quiz Pipeline (Gemini Live Powered)
-# ==============================================================================
 
 def answer_socratic_chat(req: TutorChatRequest) -> TutorChatResponse:
     """
@@ -892,7 +872,6 @@ Respond strictly in valid JSON format:
             concept_tag="Quantum Fundamentals",
         )
 
-
 def generate_micro_quiz(req: QuizRequest) -> QuizResponse:
     """
     Generate an interactive 3-question multiple-choice practice quiz using live Gemini API.
@@ -967,7 +946,256 @@ Respond strictly in valid JSON format:
 
     raise RuntimeError("Gemini returned invalid quiz schema.")
 
+# Curated Offline Fallback Challenges Bank
+FALLBACK_DAILY_CHALLENGES = [
+    {
+        "id": "dc-fb-01",
+        "topic": "Quantum Superposition",
+        "question_type": "mcq",
+        "difficulty": "Beginner",
+        "question": "Which unitary single-qubit gate transforms the basis state $|0\\rangle$ into the equal superposition $(|0\\rangle + |1\\rangle)/\\sqrt{2}$?",
+        "options": ["Pauli-X Gate", "Hadamard (H) Gate", "Phase (S) Gate", "Pauli-Z Gate"],
+        "correct_index": 1,
+        "explanation": "The Hadamard gate maps basis states $|0\\rangle \\to |+\\rangle = (|0\\rangle + |1\\rangle)/\\sqrt{2}$ and $|1\\rangle \\to |-\\rangle = (|0\\rangle - |1\\rangle)/\\sqrt{2}$ by rotating the statevector by $\\pi$ radians around the $(X+Z)/\\sqrt{2}$ axis on the Bloch sphere.",
+        "xp": 50,
+        "is_ai_generated": False,
+    },
+    {
+        "id": "dc-fb-02",
+        "topic": "Quantum Entanglement",
+        "question_type": "mcq",
+        "difficulty": "Intermediate",
+        "question": "Starting with $|00\\rangle$, which sequence of gates creates the maximally entangled Bell state $|\\Phi^+\\rangle = (|00\\rangle + |11\\rangle)/\\sqrt{2}$?",
+        "options": ["X(0) then CNOT(0,1)", "H(0) then CNOT(0,1)", "H(0) then H(1)", "CNOT(0,1) then H(0)"],
+        "correct_index": 1,
+        "explanation": "Applying $H$ on qubit 0 transforms $|00\\rangle \\to \\frac{1}{\\sqrt{2}}(|00\\rangle + |10\\rangle)$. Applying CNOT with control qubit 0 and target qubit 1 flips target only when control is 1, creating $\\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$.",
+        "xp": 50,
+        "is_ai_generated": False,
+    },
+    {
+        "id": "dc-fb-03",
+        "topic": "Phase Kickback",
+        "question_type": "theoretical",
+        "difficulty": "Intermediate",
+        "question": "Explain the physical and mathematical mechanism of Phase Kickback in quantum circuits. How does a controlled-U gate modify the control qubit when the target is an eigenvector of U?",
+        "rubric_hints": ["Target qubit is in an eigenstate: $U|u\\rangle = e^{i\\theta}|u\\rangle$", "Global phase on target becomes relative phase on control", "Key mechanism behind Deutsch-Jozsa and Grover's algorithm"],
+        "explanation": "When the target qubit of a controlled-U gate is in an eigenvector $|u\\rangle$ with eigenvalue $e^{i\\theta}$, the operation $|1\\rangle|u\\rangle \\to e^{i\\theta}|1\\rangle|u\\rangle$ applies the eigenvalue phase $e^{i\\theta}$ directly to the $|1\\rangle$ amplitude of the control qubit, leaving the target invariant.",
+        "xp": 75,
+        "is_ai_generated": False,
+    },
+    {
+        "id": "dc-fb-04",
+        "topic": "Quantum Teleportation",
+        "question_type": "theoretical",
+        "difficulty": "Intermediate",
+        "question": "Why does quantum teleportation NOT violate the No-Cloning Theorem or allow faster-than-light (superluminal) communication?",
+        "rubric_hints": ["Bell measurement destroys original state (no cloning)", "Requires 2 classical bits sent at $\\le c$ for receiver to correct Pauli frame", "No faster than light information transfer"],
+        "explanation": "Teleportation collapses and destroys the original state upon Bell-basis measurement, satisfying the No-Cloning theorem. Superluminal communication is prevented because the receiver cannot reconstruct the state until receiving 2 classical correction bits through subluminal channels.",
+        "xp": 75,
+        "is_ai_generated": False,
+    },
+]
 
+def generate_daily_challenge(
+    req: DailyChallengeRequest,
+    user_context: Optional[Dict[str, Any]] = None,
+) -> DailyChallengeResponse:
+    """
+    Generate an AI-powered Daily Challenge using Gemini API tailored to the user's learning history.
+    Falls back gracefully to curated quantum challenges if Gemini is offline.
+    """
+    import datetime
+    today_str = datetime.date.today().isoformat()
+    
+    # Determine target topic from context or request
+    target_topic = req.preferred_topic
+    if not target_topic and user_context:
+        weak_topics = user_context.get("weak_topics", [])
+        if weak_topics:
+            target_topic = weak_topics[0]
+        else:
+            recent_events = user_context.get("recent_events", [])
+            if recent_events:
+                target_topic = recent_events[0].get("topic")
 
+    if not target_topic:
+        available_topics = ["Quantum Superposition", "Quantum Gates & Unitaries", "Quantum Entanglement", "Phase Kickback", "Grover Search Oracle", "Bloch Sphere Coordinates", "Quantum Measurement Collapse"]
+        import random
+        target_topic = random.choice(available_topics)
 
+    q_type = req.question_type or "any"
+    if q_type == "any":
+        import random
+        q_type = random.choice(["mcq", "theoretical"])
+
+    prompt = f"""You are a world-class Quantum Computing professor creating the Daily Challenge for an interactive learning platform.
+Target Concept: "{target_topic}"
+Difficulty Level: "{req.difficulty or 'Beginner'}"
+Question Format: "{q_type.upper()}" (MCQ or Theoretical)
+
+Task:
+Generate 1 stimulating, pedagogically rich daily quantum computing challenge.
+
+If question format is MCQ:
+- Provide a clear, precise question with Dirac notation (e.g. $|0\\rangle, |\\psi\\rangle, H, CNOT$).
+- Exactly 4 distinct options.
+- Zero-indexed integer `correct_index` (0, 1, 2, or 3).
+- 2-3 sentence mathematical & conceptual explanation.
+
+If question format is THEORETICAL:
+- Provide an insightful thought-provoking conceptual question that asks the student to explain mechanisms, analogies, or proofs.
+- Provide `rubric_hints` (array of 2-3 key points a strong answer must address).
+- Provide a comprehensive `explanation` with ideal answers and physical intuition.
+
+Respond strictly in valid JSON format:
+{{
+  "topic": "{target_topic}",
+  "question_type": "{q_type}",
+  "difficulty": "{req.difficulty or 'Beginner'}",
+  "question": "Question text with Dirac/LaTeX formulas...",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correct_index": 0,
+  "rubric_hints": ["Key point 1...", "Key point 2..."],
+  "explanation": "In-depth explanation..."
+}}"""
+
+    system_inst = "You are an automated quantum quiz engine. Output strictly valid JSON conforming to the requested schema."
+    result = _call_gemini_with_fallback(system_inst, prompt)
+
+    if result:
+        try:
+            m = re.search(r'\{[\s\S]*\}', result)
+            if m:
+                data = json.loads(m.group(0))
+                resp_type = data.get("question_type", q_type).lower()
+                options = data.get("options")
+                correct_idx = data.get("correct_index")
+                if resp_type == "mcq" and (not options or len(options) != 4):
+                    options = ["Option A", "Option B", "Option C", "Option D"]
+                    correct_idx = 0
+                
+                return DailyChallengeResponse(
+                    id=f"dc-ai-{uuid.uuid4().hex[:8]}",
+                    date=today_str,
+                    topic=data.get("topic", target_topic),
+                    question_type=resp_type,
+                    question=data.get("question", "What is the principle of quantum superposition?"),
+                    options=options if resp_type == "mcq" else None,
+                    correct_index=int(correct_idx) if correct_idx is not None and resp_type == "mcq" else None,
+                    explanation=data.get("explanation", "Correct based on quantum state transformations."),
+                    rubric_hints=data.get("rubric_hints", ["Superposition linearity", "Phase evolution"]) if resp_type == "theoretical" else None,
+                    xp=75 if resp_type == "theoretical" else 50,
+                    difficulty=data.get("difficulty", req.difficulty or "Beginner"),
+                    is_ai_generated=True,
+                )
+        except Exception as e:
+            logger.warning(f"Failed to parse Gemini Daily Challenge JSON: {e}, falling back to curated bank")
+
+    # Fallback to curated bank matching question type if possible
+    import random
+    matches = [c for c in FALLBACK_DAILY_CHALLENGES if q_type == "any" or c["question_type"] == q_type]
+    choice = random.choice(matches if matches else FALLBACK_DAILY_CHALLENGES)
+    return DailyChallengeResponse(
+        id=f"{choice['id']}-{int(time.time())}",
+        date=today_str,
+        topic=choice["topic"],
+        question_type=choice["question_type"],
+        question=choice["question"],
+        options=choice.get("options"),
+        correct_index=choice.get("correct_index"),
+        explanation=choice["explanation"],
+        rubric_hints=choice.get("rubric_hints"),
+        xp=choice.get("xp", 50),
+        difficulty=choice.get("difficulty", "Beginner"),
+        is_ai_generated=False,
+    )
+
+def evaluate_theoretical_challenge(
+    req: EvaluateTheoreticalChallengeRequest,
+) -> EvaluateTheoreticalChallengeResponse:
+    """
+    Evaluate a student's open-ended written explanation for a theoretical quantum challenge.
+    Uses Gemini for Socratic scoring and feedback, with deterministic heuristic fallback.
+    """
+    user_answer = req.user_answer.strip()
+    if not user_answer:
+        return EvaluateTheoreticalChallengeResponse(
+            challenge_id=req.challenge_id,
+            score=0,
+            is_correct=False,
+            xp_earned=0,
+            feedback="No answer was provided. Please write an explanation to submit for evaluation.",
+            strengths=[],
+            missed_points=["Complete explanation required."],
+            ideal_explanation="A complete physical and mathematical explanation is needed.",
+        )
+
+    prompt = f"""You are an encouraging and rigorous quantum computing tutor evaluating a student's answer.
+
+Question Topic: "{req.topic}"
+Question Prompt: "{req.question}"
+Student's Written Explanation:
+\"\"\"{user_answer}\"\"\"
+
+Task:
+1. Grade the answer on a scale from 0 to 100 based on conceptual accuracy, physical intuition, and quantum mechanics principles.
+2. Mark `is_correct` as true if score >= 60.
+3. Provide constructive, friendly Socratic feedback (2-3 sentences) praising what they got right and clarifying any misconceptions.
+4. List 1-3 specific `strengths` (what they explained accurately).
+5. List 1-2 `missed_points` (key nuances or mathematical properties they could add).
+6. Provide a concise `ideal_explanation` using Dirac notation.
+
+Output strictly in JSON format:
+{{
+  "score": 85,
+  "is_correct": true,
+  "feedback": "Great intuition! You correctly identified that...",
+  "strengths": ["Identified target statevector eigenvalue", "Explained why relative phase shifts control"],
+  "missed_points": ["Could mention global phase invariance"],
+  "ideal_explanation": "When U|u> = exp(i*theta)|u>, the controlled operation..."
+}}"""
+
+    system_inst = "You are an automated quantum education grader. Output strictly valid JSON conforming to the schema."
+    result = _call_gemini_with_fallback(system_inst, prompt)
+
+    if result:
+        try:
+            m = re.search(r'\{[\s\S]*\}', result)
+            if m:
+                data = json.loads(m.group(0))
+                score = max(0, min(100, int(data.get("score", 70))))
+                is_correct = bool(data.get("is_correct", score >= 60))
+                xp_earned = int(75 * (score / 100)) if is_correct else 15
+
+                return EvaluateTheoreticalChallengeResponse(
+                    challenge_id=req.challenge_id,
+                    score=score,
+                    is_correct=is_correct,
+                    xp_earned=max(xp_earned, 10),
+                    feedback=data.get("feedback", "Good effort! Keep exploring the physical principles."),
+                    strengths=data.get("strengths", ["Demonstrated quantum conceptual awareness"]),
+                    missed_points=data.get("missed_points", []),
+                    ideal_explanation=data.get("ideal_explanation", "Refer to standard quantum gate unitaries."),
+                )
+        except Exception as e:
+            logger.warning(f"Failed to parse Gemini evaluation JSON: {e}")
+
+    # Heuristic Fallback Evaluation
+    word_count = len(user_answer.split())
+    has_keywords = any(kw in user_answer.lower() for kw in ["state", "qubit", "phase", "superposition", "hadamard", "entangle", "eigen", "unitary", "measurement", "matrix", "vector", "cnot"])
+    
+    score = min(90, max(30, word_count * 3 + (40 if has_keywords else 10)))
+    is_correct = score >= 60
+    xp_earned = 50 if is_correct else 15
+
+    return EvaluateTheoreticalChallengeResponse(
+        challenge_id=req.challenge_id,
+        score=score,
+        is_correct=is_correct,
+        xp_earned=xp_earned,
+        feedback="Your explanation captures core quantum intuition. Keep linking physical wave mechanics with statevector transformations.",
+        strengths=["Clear effort to explain the quantum mechanism", "Used relevant terminology"],
+        missed_points=["Include Dirac notation ($|0\\rangle, |1\\rangle$) for greater precision"],
+        ideal_explanation="In quantum mechanics, state evolution is unitary and projective measurement collapses superposition into orthogonal eigenvalues.",
+    )
 

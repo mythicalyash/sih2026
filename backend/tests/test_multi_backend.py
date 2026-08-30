@@ -12,7 +12,6 @@ from backend.engine import (
 )
 from backend.comparator import compare_circuits
 
-
 def test_get_available_backends():
     backends = get_available_backends()
     ids = [b.id for b in backends]
@@ -21,7 +20,6 @@ def test_get_available_backends():
     assert "qsim" in ids
     assert "cirq" in ids
     assert "qbraid" in ids
-
 
 @pytest.mark.parametrize("backend_id", ["qiskit_aer", "pennylane", "qsim", "cirq", "qbraid"])
 def test_all_backends_bell_state(backend_id):
@@ -49,7 +47,6 @@ def test_all_backends_bell_state(backend_id):
     assert "00" in res.counts
     assert "11" in res.counts
 
-
 @pytest.mark.parametrize("backend_id", ["qiskit_aer", "pennylane", "qsim", "cirq", "qbraid"])
 def test_all_backends_ghz_state(backend_id):
     circuit = CircuitIR(
@@ -64,7 +61,6 @@ def test_all_backends_ghz_state(backend_id):
     assert res.num_qubits == 3
     assert pytest.approx(res.probabilities.get("000", 0.0), abs=1e-3) == 0.5
     assert pytest.approx(res.probabilities.get("111", 0.0), abs=1e-3) == 0.5
-
 
 def test_compare_all_four_backends():
     circuit = CircuitIR(

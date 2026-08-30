@@ -33,7 +33,8 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
   onOpenSimulator,
   onLessonCompleted,
 }) => {
-  const [selectedLesson, setSelectedLesson] = useState<Lesson>(course.lessons[0] || null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>(course.lessons[0]?.id || '');
+  const selectedLesson = course.lessons.find((l) => l.id === selectedLessonId) || course.lessons[0] || null;
   const [activeLessonWorkspace, setActiveLessonWorkspace] = useState<Lesson | null>(null);
 
   const completedCount = course.lessons.filter((l) => l.completed).length;
@@ -107,7 +108,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
         </div>
 
         {/* Minimal Progress Indicator */}
-        <div className="flex flex-col gap-2 min-w-[200px] shrink-0">
+        <div className="flex flex-col gap-2 min-w-[220px] shrink-0">
           <div className="flex items-center justify-between text-xs font-medium text-[#78716c]">
             <span>{completedCount} / {course.lessons.length} completed</span>
             <span className="font-mono text-[#1c1917] font-bold">{progressPct}%</span>
@@ -118,6 +119,21 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
               style={{ width: `${progressPct}%` }}
             />
           </div>
+          {progressPct < 100 && (
+            <button
+              onClick={() => {
+                if (onLessonCompleted) {
+                  course.lessons.forEach((l) => {
+                    onLessonCompleted(course.id, l.id, l.challenge?.xpReward || 100);
+                  });
+                }
+              }}
+              className="mt-1 px-3 py-1 rounded-lg bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] border border-[#fde68a] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Complete All {course.lessons.length} Lessons</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -139,7 +155,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
                   key={lesson.id}
                   onClick={() => {
                     if (!isLocked) {
-                      setSelectedLesson(lesson);
+                      setSelectedLessonId(lesson.id);
                     }
                   }}
                   className={`p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-4 ${
@@ -183,7 +199,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedLesson(lesson);
+                        setSelectedLessonId(lesson.id);
                         setActiveLessonWorkspace(lesson);
                       }}
                       className="p-1 rounded-md text-[#a8a29e] hover:text-[#d97706] transition-colors"
@@ -281,16 +297,34 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({
                 </div>
               )}
 
-              {/* Launch Button */}
-              <button
-                onClick={() => setActiveLessonWorkspace(selectedLesson)}
-                className="w-full py-3 rounded-xl bg-[#1c1917] hover:bg-[#292524] text-white font-medium text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>
-                  {selectedLesson.completed ? 'Review Lesson' : 'Start Lesson'}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {/* Launch & Completion Actions */}
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={() => setActiveLessonWorkspace(selectedLesson)}
+                  className="w-full py-3 rounded-xl bg-[#1c1917] hover:bg-[#292524] text-white font-medium text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                >
+                  <span>
+                    {selectedLesson.completed ? 'Review Lesson Workspace' : 'Start Lesson Workspace'}
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (onLessonCompleted && selectedLesson) {
+                      onLessonCompleted(course.id, selectedLesson.id, selectedLesson.challenge?.xpReward || 100);
+                    }
+                  }}
+                  className={`w-full py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    selectedLesson.completed
+                      ? 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0] hover:bg-[#dcfce7]'
+                      : 'bg-white text-[#78716c] border-[#e7e5e4] hover:border-[#d97706] hover:text-[#d97706]'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{selectedLesson.completed ? 'Lesson Completed ✓' : 'Mark Lesson as Completed (+100 XP)'}</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="py-8 text-center text-xs text-[#a8a29e]">

@@ -3,7 +3,6 @@ from backend.schemas import CircuitIR, GateIR, CodeExecuteRequest
 from backend.converter import ir_to_qiskit_code, ir_to_cirq_code, ir_to_pennylane_code
 from backend.code_runner import execute_python_code
 
-
 def test_code_generators():
     circuit = CircuitIR(
         num_qubits=2,
@@ -27,7 +26,6 @@ def test_code_generators():
     assert "qml.Hadamard(wires=0)" in pl_code
     assert "qml.CNOT(wires=[0, 1])" in pl_code
 
-
 def test_local_python_quantum_execution():
     circuit = CircuitIR(
         num_qubits=2,
@@ -45,7 +43,6 @@ def test_local_python_quantum_execution():
     assert "q_0" in res.stdout
     assert "q_1" in res.stdout
     assert res.stderr is None or res.stderr == ""
-
 
 def test_code_execution_with_error():
     req = CodeExecuteRequest(source_code="1 / 0")

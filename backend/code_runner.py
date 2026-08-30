@@ -5,7 +5,6 @@ import tempfile
 from typing import Optional
 from backend.schemas import CodeExecuteRequest, CodeExecuteResponse
 
-
 def execute_python_code(req: CodeExecuteRequest) -> CodeExecuteResponse:
     """
     Execute Python code locally in the backend Python virtual environment

@@ -2,12 +2,10 @@ import pytest
 from backend.schemas import CircuitIR, GateIR
 from backend.tutor import analyze_circuit_diagnostics, generate_circuit_explanation
 
-
 def test_tutor_empty_circuit():
     circuit = CircuitIR(num_qubits=2, gates=[])
     issues = analyze_circuit_diagnostics(circuit)
     assert any(i.type == "EMPTY_CIRCUIT" for i in issues)
-
 
 def test_tutor_index_out_of_bounds():
     circuit = CircuitIR(
@@ -17,7 +15,6 @@ def test_tutor_index_out_of_bounds():
     issues = analyze_circuit_diagnostics(circuit)
     assert any(i.type == "INDEX_OUT_OF_BOUNDS" for i in issues)
 
-
 def test_tutor_unconnected_qubit():
     circuit = CircuitIR(
         num_qubits=3,
@@ -25,7 +22,6 @@ def test_tutor_unconnected_qubit():
     )
     issues = analyze_circuit_diagnostics(circuit)
     assert any(i.type == "UNCONNECTED_QUBIT" for i in issues)
-
 
 def test_tutor_redundant_gates():
     circuit = CircuitIR(
@@ -37,7 +33,6 @@ def test_tutor_redundant_gates():
     )
     issues = analyze_circuit_diagnostics(circuit)
     assert any(i.type == "REDUNDANT_GATES" for i in issues)
-
 
 def test_tutor_explanation_generation():
     circuit = CircuitIR(
@@ -53,7 +48,6 @@ def test_tutor_explanation_generation():
     assert resp.circuit_summary["num_qubits"] == 2
     assert resp.latex_math is not None
     assert "\\Phi^+" in resp.latex_math or "\\frac{1}{\\sqrt{2}}" in resp.latex_math
-
 
 def test_tutor_misconception_detection():
     from backend.tutor import detect_quantum_misconceptions
@@ -76,7 +70,6 @@ def test_tutor_misconception_detection():
     misc4 = detect_quantum_misconceptions(circuit, "What is qubit 0 alone in a bell state?")
     assert any(m.id == "ENTANGLEMENT_VS_PRODUCT" for m in misc4)
 
-
 def test_step_by_step_evolution():
     from backend.engine import run_circuit_step_by_step
     
@@ -96,7 +89,6 @@ def test_step_by_step_evolution():
     assert len(resp.steps[0].bloch_vectors) == 2
     assert resp.steps[1].bloch_vectors[0].x > 0.9  # H rotates |0> to equator (+X axis)
 
-
 def test_quest_grading():
     from backend.tutor import grade_quantum_quest
 
@@ -113,7 +105,6 @@ def test_quest_grading():
     assert res2.success is True
     assert res2.score == 100
     assert res2.badge == "Entanglement Pioneer"
-
 
 def test_voice_command_parsing():
     from backend.tutor import parse_voice_circuit_command
@@ -136,5 +127,4 @@ def test_voice_command_parsing():
     v3 = parse_voice_circuit_command("reset circuit", v2.circuit)
     assert v3.success is True
     assert len(v3.circuit.gates) == 0
-
 

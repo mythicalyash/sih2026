@@ -37,12 +37,23 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 
-# OS & Environment
+# OS & Secrets
 .DS_Store
+*.pem
+*.key
+*.cert
+*.log
+
+# Environment Files (Keep examples tracked, ignore all real env files)
 .env
-.env.local
+.env.*
+.env*.local
+!.env.example
+!.env.local.example
+
+# Local SQLite & Runtime Store Data
 *.db
 *.db-wal
 *.db-shm
-.env.*.local
-*.log
+backend/data/*.json
+backend/data/*.db

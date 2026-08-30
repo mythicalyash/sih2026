@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Activity, Bell, BookOpen, BrainCircuit, ChevronRight, CircleHelp, Code2,
-  Flame, Gauge, GitBranch, Home as HomeIcon, Layers3, LayoutDashboard, Menu, MessageCircle,
-  Moon, Play, Plus, Search, Settings, Sparkles, Terminal, Trophy, X, Zap
+  Bell, BookOpen, BrainCircuit, ChevronRight, Flame, GitBranch,
+  Home as HomeIcon, LayoutDashboard, MessageCircle, Play, Plus,
+  Search, Settings, Sparkles, Terminal, Trophy, Zap
 } from 'lucide-react'
 import { LearnView } from '@/components/learning/LearnView'
 import { LearningDashboard } from '@/components/dashboard/LearningDashboard'
@@ -12,6 +12,9 @@ import { ProblemsListView } from '@/components/problems/ProblemsListView'
 import { ProblemDetailView } from '@/components/problems/ProblemDetailView'
 import { ChallengeSolverView } from '@/components/problems/ChallengeSolverView'
 import { AITutorView } from '@/components/tutor/AITutorView'
+import { DailyAIChallengeCard } from '@/components/dashboard/DailyAIChallengeCard'
+import { RecentCircuitCard } from '@/components/dashboard/RecentCircuitCard'
+import { useCourses } from '@/hooks/useCourses'
 import LandingPage from '@/QubitLabLanding'
 import type { QuantumProblem, ProblemProgressState } from '@/types/quantum'
 
@@ -25,20 +28,6 @@ const navItems = [
   { label: 'Community', icon: MessageCircle },
 ]
 
-const modules = [
-  { title: 'Qubits & measurement', meta: '4 lessons', status: 'complete', tone: 'blue' },
-  { title: 'Superposition', meta: '6 lessons', status: 'active', tone: 'orange' },
-  { title: 'Quantum gates', meta: '8 lessons', status: 'open', tone: 'blue' },
-  { title: 'Entanglement', meta: '5 lessons', status: 'locked', tone: 'muted' },
-  { title: "Grover's algorithm", meta: '7 lessons', status: 'locked', tone: 'muted' },
-]
-
-const activity = [
-  ['Completed lesson', 'The Bloch sphere', 'Today, 10:42 AM', '+120 XP', 'blue'],
-  ['Ran simulation', 'Bell state experiment', 'Yesterday, 4:18 PM', '+80 XP', 'orange'],
-  ['Solved problem', 'Hadamard transform', 'Yesterday, 11:03 AM', '+150 XP', 'green'],
-]
-
 function Brand() {
   return <div className="brand"><div className="brand-mark"><span /><span /><span /><span /></div><span>Qubit<span className="brand-dot">.</span>lab</span></div>
 }
@@ -46,9 +35,6 @@ function Brand() {
 function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: string; setActive: (v: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void }) {
   const handleNavClick = (label: string) => {
     setActive(label);
-    if (label === 'Quantum Simulation') {
-      setCollapsed(true);
-    }
   };
 
   return (
@@ -118,73 +104,22 @@ function Topbar({
   learnSubTab: 'courses' | 'problems';
   setLearnSubTab: (v: 'courses' | 'problems') => void;
 }) {
-  const isCoursesActive = active === 'Learn Quantum' && learnSubTab === 'courses';
-  const isProblemsActive = (active === 'Learn Quantum' && learnSubTab === 'problems') || active === 'Problems';
-  const isSimulatorActive = active === 'Quantum Simulation';
-  const isTutorActive = active === 'AI Tutor';
-
   return (
-    <header className="topbar flex items-center justify-between px-6 py-2 border-b border-[#ded7cb] bg-[#f7f4ee]">
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => {
-            setActive('Learn Quantum');
-            setLearnSubTab('courses');
-          }}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-            isCoursesActive
-              ? 'bg-white text-[#211f1b] border-[#ded7cb] shadow-xs font-extrabold'
-              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
-          }`}
-        >
-          <BookOpen className={`w-3.5 h-3.5 ${isCoursesActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
-          <span>Courses</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActive('Problems');
-            setLearnSubTab('problems');
-          }}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-            isProblemsActive
-              ? 'bg-white text-[#211f1b] border-[#ded7cb] shadow-xs font-extrabold'
-              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
-          }`}
-        >
-          <Trophy className={`w-3.5 h-3.5 ${isProblemsActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
-          <span>Problems &amp; Challenges</span>
-        </button>
-
-        <button
-          onClick={() => setActive('Quantum Simulation')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-            isSimulatorActive
-              ? 'bg-white text-[#211f1b] border-[#ded7cb] shadow-xs font-extrabold'
-              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
-          }`}
-        >
-          <GitBranch className={`w-3.5 h-3.5 ${isSimulatorActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
-          <span>Quantum Simulator</span>
-        </button>
-
-        <button
-          onClick={() => setActive('AI Tutor')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-            isTutorActive
-              ? 'bg-white text-[#211f1b] border-[#ded7cb] shadow-xs font-extrabold'
-              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
-          }`}
-        >
-          <BrainCircuit className={`w-3.5 h-3.5 ${isTutorActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
-          <span>AI Quantum Tutor</span>
-        </button>
+    <header className="topbar flex items-center justify-between px-6 py-2.5 border-b border-[#ded7cb] bg-[#f7f4ee]">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-mono font-bold text-[#746e64] uppercase tracking-wider">
+          Workspace
+        </span>
+        <span className="text-xs text-[#b8b0a2]">/</span>
+        <span className="text-xs font-bold text-[#211f1b]">
+          {active}
+        </span>
       </div>
 
       <div className="top-actions flex items-center gap-3">
-        <div className="search flex items-center gap-2 bg-[#fffdf9] border border-[#ded7cb] rounded-lg px-3 py-1.5 w-44 text-xs">
+        <div className="search flex items-center gap-2 bg-[#fffdf9] border border-[#ded7cb] rounded-lg px-3 py-1.5 w-48 text-xs">
           <Search className="w-3.5 h-3.5 text-[#746e64]" />
-          <input aria-label="Search" placeholder="Search workspace" className="bg-transparent border-0 outline-none w-full text-xs text-[#211f1b]" />
+          <input aria-label="Search" placeholder="Search workspace..." className="bg-transparent border-0 outline-none w-full text-xs text-[#211f1b]" />
         </div>
         <button className="icon-button relative p-1.5 text-[#746e64] hover:text-[#211f1b] rounded-lg transition-colors cursor-pointer" title="Notifications">
           <Bell className="w-4 h-4" />
@@ -202,15 +137,13 @@ function Topbar({
   );
 }
 
-function ProgressBar({ value }: { value: number }) { return <div className="progress-track"><span style={{ width: `${value}%` }} /></div> }
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <section className={`card ${className}`}>{children}</section> }
 
 function Home({ setActive }: { setActive: (v: string) => void }) {
+  const { courses } = useCourses();
   const [blochState, setBlochState] = useState<'0' | '1' | '+' | '-'>('+');
   const [simRunning, setSimRunning] = useState(false);
   const [simRunCount, setSimRunCount] = useState(1024);
-  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
 
   const blochDetails = {
     '0': { label: '|0⟩', desc: 'Ground state (North pole)', math: '|ψ⟩ = 1|0⟩ + 0|1⟩', rot: 'rotate(0deg)' },
@@ -226,13 +159,6 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
       setSimRunCount((prev) => prev + 1024);
     }, 300);
   };
-
-  const quizOptions = [
-    { text: 'Pauli-X Gate', isCorrect: false },
-    { text: 'Hadamard (H) Gate', isCorrect: true },
-    { text: 'Phase (S) Gate', isCorrect: false },
-    { text: 'Pauli-Z Gate', isCorrect: false },
-  ];
 
   const quickLabs = [
     {
@@ -318,14 +244,16 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
         </div>
       </div>
 
-
       {/* 3. Horizontal Course Track & Last Experiment (2 Horizontal Cards) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left: My Courses — placeholder, will be wired to Learn page */}
+        {/* Left: My Courses — Live Real Tracking */}
         <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 lg:col-span-7 flex flex-col shadow-xs min-h-[380px]">
           <div className="flex items-center justify-between pb-2.5 border-b border-[#ded7cb]/60 mb-3">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-[#c96b2c] uppercase tracking-wider">MY COURSES</span>
+              <span className="text-[10px] font-mono text-[#746e64]">
+                ({courses.filter((c) => c.status === 'complete').length}/{courses.length} Completed)
+              </span>
             </div>
             <button
               className="text-xs font-bold text-[#c96b2c] hover:underline flex items-center gap-1 cursor-pointer"
@@ -335,173 +263,74 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
             </button>
           </div>
 
-          {/* Placeholder — courses from Learn will be listed here */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center py-6">
-            <div className="w-12 h-12 rounded-xl bg-[#fff5eb] border border-[#c96b2c]/30 flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-[#c96b2c]" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-[#211f1b]">Course list coming soon</p>
-              <p className="text-[11px] text-[#746e64] mt-1 max-w-[260px]">
-                Your enrolled courses from <strong>Learn Quantum</strong> will appear here — progress, current module, and quick-resume.
-              </p>
-            </div>
-            <button
-              onClick={() => setActive('Learn Quantum')}
-              className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#c96b2c] text-white hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              Browse Courses →
-            </button>
+          <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto max-h-[310px] pr-1">
+            {courses.map((course) => {
+              const pct = course.lessonsCount > 0 ? Math.round((course.completedLessonsCount / course.lessonsCount) * 100) : 0;
+              const isComplete = course.status === 'complete';
+              const isActive = course.status === 'active';
+
+              return (
+                <div
+                  key={course.id}
+                  onClick={() => setActive('Learn Quantum')}
+                  className="p-2.5 rounded-lg border border-[#ded7cb]/70 hover:border-[#c96b2c] bg-white/80 hover:bg-[#fffaf0] transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                >
+                  <div className="flex flex-col gap-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold text-[#746e64]">{course.code}</span>
+                      <h4 className="text-xs font-bold text-[#211f1b] truncate group-hover:text-[#c96b2c] transition-colors">
+                        {course.title}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-[#746e64]">
+                      <span>{course.completedLessonsCount} / {course.lessonsCount} lessons</span>
+                      <span>·</span>
+                      <span className={pct > 0 ? 'font-bold text-[#c96b2c]' : ''}>{pct}%</span>
+                    </div>
+                    {/* Tiny Progress Bar */}
+                    <div className="w-full h-1 bg-[#eee9df] rounded-full overflow-hidden mt-0.5">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-[#287854]' : 'bg-[#c96b2c]'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                        isComplete
+                          ? 'bg-[#eef8f2] text-[#287854] border-[#bad8cb]'
+                          : isActive
+                          ? 'bg-[#fff5eb] text-[#c96b2c] border-[#fed7aa]'
+                          : 'bg-[#f4efe6] text-[#746e64] border-[#ded7cb]'
+                      }`}
+                    >
+                      {isComplete ? 'Completed' : isActive ? 'In Progress' : 'Ready'}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#746e64] group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Horizontal Mini-Sim Card (5 cols) */}
-        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 lg:col-span-5 flex flex-col justify-between shadow-xs min-h-[380px]">
-          <div>
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#ded7cb]/60 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-[#746e64] uppercase tracking-wider">RECENT CIRCUIT</span>
-                <span className="text-xs font-bold text-[#211f1b]">Bell State Experiment</span>
-              </div>
-              <button
-                onClick={handleQuickRun}
-                disabled={simRunning}
-                className="text-[10.5px] px-2 py-0.5 rounded bg-[#fff5eb] border border-[#c96b2c] text-[#c96b2c] font-semibold hover:bg-[#c96b2c] hover:text-white transition-all cursor-pointer flex items-center gap-1"
-              >
-                <Zap className={`w-3 h-3 ${simRunning ? 'animate-spin text-amber-500' : ''}`} />
-                {simRunning ? 'Running...' : 'Quick Run'}
-              </button>
-            </div>
-
-            {/* Mini Circuit */}
-            <div className="bg-[#f7f4ee] p-2 rounded border border-[#ded7cb] font-mono text-[11px] mb-2">
-              <div className="flex items-center h-6 relative">
-                <label className="w-7 text-[10px] text-[#746e64] font-bold">q[0]</label>
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-                <b className="w-4 h-4 rounded bg-[#da1e28] text-white text-[9px] flex items-center justify-center mx-1.5">H</b>
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-                <b className="w-3.5 h-3.5 rounded-full bg-[#0f62fe] text-white text-[8px] flex items-center justify-center mx-1.5">●</b>
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-              </div>
-              <div className="flex items-center h-6 relative">
-                <label className="w-7 text-[10px] text-[#746e64] font-bold">q[1]</label>
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-                <span className="w-4 mx-1.5" />
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-                <b className="w-4 h-4 rounded-full bg-[#0f62fe] text-white text-[10px] flex items-center justify-center mx-1.5 font-bold">⊕</b>
-                <i className="flex-1 h-[1px] bg-[#c8c1b4]" />
-              </div>
-            </div>
-
-            {/* Live horizontal probability bar */}
-            <div className="flex items-center gap-2 text-[10.5px] font-mono">
-              <span className="font-bold">|00⟩ 50%</span>
-              <div className="flex-1 h-3 bg-[#f0ece4] rounded overflow-hidden flex">
-                <div className="h-full bg-[#0f62fe]" style={{ width: '50%' }} />
-                <div className="h-full bg-[#c96b2c]" style={{ width: '50%' }} />
-              </div>
-              <span className="font-bold">|11⟩ 50%</span>
-            </div>
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-[#ded7cb]/60 flex items-center justify-between text-xs text-[#746e64]">
-            <span className="text-[11px]">Aer Simulator · {simRunCount} shots</span>
-            <button
-              className="text-xs font-bold text-[#c96b2c] hover:underline flex items-center gap-1 cursor-pointer"
-              onClick={() => setActive('Quantum Simulation')}
-            >
-              Open Workbench <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        {/* Horizontal Mini-Sim Card (5 cols) - Live Backend Persistent Circuit */}
+        <div className="lg:col-span-5">
+          <RecentCircuitCard onOpenWorkbench={() => setActive('Quantum Simulation')} />
         </div>
       </div>
 
-
-      {/* 5. Horizontal Pair: Daily Challenge (50%) & AI Tutor Insight (50%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Daily Challenge Box */}
-        <div className="bg-[#fffdf9] border border-[#ded7cb] rounded-lg p-4 flex flex-col justify-between shadow-xs">
-          <div>
-            <div className="flex items-center justify-between pb-2 border-b border-[#ded7cb]/60 mb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-[#c96b2c] uppercase tracking-wider">DAILY CHALLENGE</span>
-                <span className="bg-[#fff5eb] border border-[#c96b2c]/30 text-[#c96b2c] text-[9.5px] px-1.5 py-0.2 rounded-full font-bold">
-                  +50 XP
-                </span>
-              </div>
-              {quizSubmitted && (
-                <button
-                  onClick={() => {
-                    setSelectedQuizAnswer(null);
-                    setQuizSubmitted(false);
-                  }}
-                  className="text-[10px] px-2 py-0.5 rounded border border-[#ded7cb] text-[#746e64] hover:bg-[#eee9df] cursor-pointer"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-
-            <h3 className="text-xs sm:text-sm font-bold text-[#211f1b] mb-2.5">
-              Which gate transforms state |0⟩ into equal superposition (|0⟩ + |1⟩)/√2?
-            </h3>
-
-            <div className="grid grid-cols-2 gap-2">
-              {quizOptions.map((opt, idx) => {
-                const isSelected = selectedQuizAnswer === idx;
-                const showFeedback = quizSubmitted;
-                return (
-                  <button
-                    key={opt.text}
-                    onClick={() => {
-                      if (!quizSubmitted) {
-                        setSelectedQuizAnswer(idx);
-                        setQuizSubmitted(true);
-                        try {
-                          fetch(`${BACKEND_URL}/dashboard/log-event`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              event_type: 'quiz_submitted',
-                              metadata: {
-                                lesson_id: 'hadamard-superposition-quiz',
-                                is_correct: opt.isCorrect,
-                                topic: 'Quantum Superposition',
-                              },
-                              xp: opt.isCorrect ? 30 : 5,
-                            }),
-                          }).catch(() => {});
-                        } catch (e) {}
-                      }
-                    }}
-                    disabled={quizSubmitted}
-                    className={`p-2.5 rounded border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
-                      showFeedback && opt.isCorrect
-                        ? 'bg-[#edf7ed] border-[#4f806d] text-[#1e4620] font-bold'
-                        : showFeedback && isSelected && !opt.isCorrect
-                        ? 'bg-[#fdeeed] border-[#d32f2f] text-[#5f2120]'
-                        : isSelected
-                        ? 'bg-[#fff5eb] border-[#c96b2c] text-[#c96b2c]'
-                        : 'bg-[#f7f4ee] border-[#ded7cb] text-[#211f1b] hover:bg-[#eee9df]'
-                    }`}
-                  >
-                    <span className="truncate">{opt.text}</span>
-                    {showFeedback && opt.isCorrect && <span className="text-[#4f806d] font-bold ml-1">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {quizSubmitted && (
-            <div className="mt-2.5 p-2 rounded bg-[#f7f4ee] border border-[#ded7cb] text-[11px] text-[#211f1b]">
-              <strong className="text-[#c96b2c]">Explanation:</strong> Hadamard (H) rotates statevector by π radians around the (X+Z)/√2 diagonal axis, mapping |0⟩ → |+⟩.
-            </div>
-          )}
+      {/* 5. Horizontal Pair: Daily AI Challenge (50%) & AI Tutor Insight (50%) - Independent heights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        {/* Dynamic AI-Powered Daily Challenge */}
+        <div className="self-start">
+          <DailyAIChallengeCard onNavigate={setActive} />
         </div>
 
         {/* AI Tutor Insight Box */}
-        <div className="bg-[#182434] border border-[#2d4260] rounded-lg p-4 flex flex-col justify-between text-white shadow-xs">
+        <div className="bg-[#182434] border border-[#2d4260] rounded-lg p-4 flex flex-col justify-between text-white shadow-xs self-start">
           <div>
             <div className="flex items-center justify-between pb-2 border-b border-[#2d4260] mb-2.5">
               <div className="flex items-center gap-2">
@@ -530,7 +359,6 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
           </div>
         </div>
       </div>
-
 
     
     </div>
@@ -676,9 +504,6 @@ export default function Page() {
       setSelectedProblemDetail(null);
     }
     setActive(tab);
-    if (tab === 'Quantum Simulation' || tab === 'Problems') {
-      setCollapsed(true);
-    }
   };
 
   const content =

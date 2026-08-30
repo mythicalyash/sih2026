@@ -204,3 +204,12 @@ export interface TutorResponse {
   circuit_summary?: Record<string, any>;
   suggestions: string[];
 }
+
+export interface CodeFixResponse {
+  success: boolean;
+  explanation: string;
+  corrected_code: string;
+  issues_found?: string[];
+  optimizations?: string[];
+}
+

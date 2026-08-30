@@ -49,9 +49,8 @@ const GATE_STYLES: Record<string, { bg: string; text: string; border: string; la
   cz: { bg: 'bg-[#6929c4]', text: 'text-white', border: 'border-[#6929c4]', label: 'CZ' },
 };
 
-// -----------------------------------------------------------------------------
 // Interactive 2D/3D Bloch Sphere Component
-// -----------------------------------------------------------------------------
+
 function BlochSphereVisualizer({ theta, phi, label }: { theta: number; phi: number; label: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -549,10 +548,9 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
 
   return (
     <div className="fixed inset-0 z-50 bg-[#fdfcf9] w-screen h-screen flex flex-col select-none font-sans overflow-hidden text-[#211f1b]">
-      
-      {/* ================================================================= */}
+
       {/* 1. TOP MINIMALIST HEADER BAR */}
-      {/* ================================================================= */}
+
       <header className="px-6 py-3 bg-[#fdfcf9] border-b border-[#eee8dd] flex items-center justify-between shrink-0 h-14">
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -584,9 +582,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
         </div>
       </header>
 
-      {/* ================================================================= */}
       {/* 2. DUAL-PANE WORKSPACE: LEFT NAV BAR + RIGHT OPEN PROSE */}
-      {/* ================================================================= */}
+
       <div className="flex-1 min-h-0 flex overflow-hidden">
         
         {/* ----------------- Clean Left Sidebar: Lesson Switcher ----------------- */}
@@ -659,9 +656,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
               )}
             </div>
 
-            {/* ========================================================================= */}
             {/* 1. CLEAN THEORY SECTION (Zero Heavy Outer Borders)                        */}
-            {/* ========================================================================= */}
+
             <div className="flex flex-col gap-5 text-base sm:text-lg text-[#332f2a] leading-relaxed">
               <h3 className="text-lg sm:text-xl font-extrabold text-[#1d1a16] flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-[#c96b2c]" />
@@ -777,9 +773,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
                 </div>
               )}
 
-              {/* ========================================================================= */}
               {/* ENRICHMENT: Key Insight / Real-World Application / Historical Note        */}
-              {/* ========================================================================= */}
+
               {currentLesson.keyInsight && (
                 <div className="mt-4 relative overflow-hidden rounded-xl bg-gradient-to-br from-[#fef9e7] to-[#fdf4d9] p-4 sm:p-5">
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#f59e0b] to-[#d97706]" />
@@ -825,9 +820,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
                 </div>
               )}
 
-              {/* ========================================================================= */}
               {/* Gradient Divider                                                           */}
-              {/* ========================================================================= */}
+
               <div className="h-px bg-gradient-to-r from-transparent via-[#d8d2c6] to-transparent my-2" />
 
               {/* Beginner Born Rule & Wave Insight Callouts */}
@@ -852,16 +846,14 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
               </div>
             </div>
 
-            {/* ========================================================================= */}
             {/* 2. INTERACTIVE BLOCH SPHERE (Contextual 1-Qubit)                          */}
-            {/* ========================================================================= */}
+
             {currentLesson.numQubits === 1 && (
               <InteractiveBlochSphere compact={false} />
             )}
 
-            {/* ========================================================================= */}
             {/* 2.5 INLINE PREDICTION CHECKPOINT (Active Learning)                        */}
-            {/* ========================================================================= */}
+
             {currentLesson.predictionCheckpoint && (
               <div className="rounded-2xl bg-white border border-[#fed7aa] p-5 sm:p-6 shadow-2xs flex flex-col gap-4 animate-fadeIn">
                 <div className="flex items-center justify-between border-b border-[#fff4e6] pb-2.5">
@@ -948,9 +940,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
               </div>
             )}
 
-            {/* ========================================================================= */}
             {/* 3. YOUR TURN: INTERACTIVE CIRCUIT WORKSPACE                              */}
-            {/* ========================================================================= */}
+
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-[#eee8dd] pb-2">
                 <div className="flex items-center gap-2">
@@ -1186,9 +1177,8 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
 
       </div>
 
-      {/* ================================================================= */}
       {/* 4. BOTTOM LESSON SEQUENCER FOOTER */}
-      {/* ================================================================= */}
+
       <footer className="px-8 py-3 bg-[#fdfcf9] border-t border-[#eee8dd] flex items-center justify-between shrink-0 h-14">
         <button
           onClick={() => prevLesson && setCurrentLesson(prevLesson)}
@@ -1206,6 +1196,9 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
 
           <button
             onClick={() => {
+              if (onLessonCompleted) {
+                onLessonCompleted(currentLesson.id, currentLesson.challenge?.xpReward || 100);
+              }
               if (nextLesson) {
                 setCurrentLesson(nextLesson);
               } else {
@@ -1214,7 +1207,7 @@ export const InteractiveLessonWorkspace: React.FC<InteractiveLessonWorkspaceProp
             }}
             className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer bg-[#c96b2c] hover:bg-[#b55e24] text-white hover:scale-102 active:scale-98"
           >
-            <span>{nextLesson ? `Next: Lesson ${nextLesson.number}` : 'Finish Course'}</span>
+            <span>{nextLesson ? `Next: Lesson ${nextLesson.number}` : 'Finish Course ✓'}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

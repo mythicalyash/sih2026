@@ -29,7 +29,6 @@ QUIRK_SINGLE_GATE_MAP = {
     "y^-½": ("ry", [-1.57079632679]),
 }
 
-
 def parse_quirk_raw(raw_data: Union[str, Dict[str, Any], List[Any]]) -> Dict[str, Any]:
     """Parse raw URL, JSON string, or python dict into a Quirk dictionary."""
     if isinstance(raw_data, dict):
@@ -60,7 +59,6 @@ def parse_quirk_raw(raw_data: Union[str, Dict[str, Any], List[Any]]) -> Dict[str
         pass
 
     raise ValueError("Invalid Quirk circuit data: cannot parse JSON or URL format.")
-
 
 def quirk_to_ir(raw_data: Union[str, Dict[str, Any], List[Any]]) -> Tuple[CircuitIR, List[str]]:
     """

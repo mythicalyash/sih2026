@@ -21,6 +21,8 @@ import { AITutorPanel } from './AITutorPanel';
 import { GateCheatSheetModal } from './GateCheatSheetModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { AboutModal } from './AboutModal';
+import { FloatingAIAssistant } from './FloatingAIAssistant';
+import type { CodeMode } from './CodePanel';
 
 interface QuantumSimulatorWorkbenchProps {
   onToggleSidebar?: () => void;
@@ -55,6 +57,11 @@ export function QuantumSimulatorWorkbench({
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [selectedBackend, setSelectedBackend] = useState<string>('qiskit_aer');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+
+  // Active Code and Debugger Synchronization
+  const [activeCode, setActiveCode] = useState<string>('');
+  const [activeFramework, setActiveFramework] = useState<string>('qiskit');
+  const [appliedCodeFix, setAppliedCodeFix] = useState<string | null>(null);
 
   // Resizable Code Editor States
   const [editorWidthPercent, setEditorWidthPercent] = useState<number>(40);
@@ -106,7 +113,6 @@ export function QuantumSimulatorWorkbench({
     else if (preset === 'standard') setEditorWidthPercent(40);
     else if (preset === 'wide') setEditorWidthPercent(56);
   };
-
 
   const checkHealth = useCallback(async () => {
     try {
@@ -779,6 +785,11 @@ export function QuantumSimulatorWorkbench({
               onToggleMaximize={() => setIsEditorMaximized((prev) => !prev)}
               onToggleCollapse={() => setIsEditorCollapsed(true)}
               onSetWidthPreset={handleSetWidthPreset}
+              onActiveCodeChange={(code, mode) => {
+                setActiveCode(code);
+                setActiveFramework(mode);
+              }}
+              appliedCode={appliedCodeFix}
             />
           </div>
         )}
@@ -797,6 +808,17 @@ export function QuantumSimulatorWorkbench({
           </button>
         )}
       </div>
+
+      {/* Floating AI Circuit Explainer, Code Debugger & Analyzer (Bottom Right) */}
+      <FloatingAIAssistant
+        circuitIR={circuitIR}
+        activeCode={activeCode}
+        activeFramework={activeFramework}
+        executionResult={executionResult}
+        simulationError={simulationError}
+        onApplyIR={(newIr) => applyCircuitIR(newIr, true)}
+        onApplyCode={(code) => setAppliedCodeFix(code)}
+      />
 
       <QuirkImportModal
         isOpen={isQuirkModalOpen}

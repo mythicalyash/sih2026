@@ -7,7 +7,6 @@ from backend.problems import (
     review_problem_circuit,
 )
 
-
 def test_problem_registry_complete():
     assert len(PROBLEMS_REGISTRY) == 6
     expected_ids = ["superposition", "flip_qubit", "bell_state", "ghz_state", "quantum_coin", "break_entanglement"]
@@ -16,7 +15,6 @@ def test_problem_registry_complete():
         assert "title" in PROBLEMS_REGISTRY[pid]
         assert "hints" in PROBLEMS_REGISTRY[pid]
         assert len(PROBLEMS_REGISTRY[pid]["hints"]) >= 3
-
 
 def test_superposition_problem():
     # Wrong: empty circuit
@@ -30,7 +28,6 @@ def test_superposition_problem():
     assert passed
     assert "superposition" in feedback.lower() or "success" in feedback.lower()
 
-
 def test_flip_qubit_problem():
     # Correct: X gate on q0
     ir_valid = CircuitIR(num_qubits=1, gates=[GateIR(name="x", qubits=[0])])
@@ -41,7 +38,6 @@ def test_flip_qubit_problem():
     ir_wrong = CircuitIR(num_qubits=1, gates=[GateIR(name="h", qubits=[0])])
     passed, _, _, _ = check_problem_solution("flip_qubit", ir_wrong)
     assert not passed
-
 
 def test_bell_state_problem():
     # Correct: H on q0, CX on q0->q1
@@ -61,7 +57,6 @@ def test_bell_state_problem():
     passed, feedback, _, _ = check_problem_solution("bell_state", ir_half)
     assert not passed
 
-
 def test_ghz_state_problem():
     ir_ghz = CircuitIR(
         num_qubits=3,
@@ -73,7 +68,6 @@ def test_ghz_state_problem():
     )
     passed, _, _, _ = check_problem_solution("ghz_state", ir_ghz)
     assert passed
-
 
 def test_quantum_coin_problem():
     # Correct: H on q0 with explicit measurement
@@ -87,7 +81,6 @@ def test_quantum_coin_problem():
     passed, _, _, _ = check_problem_solution("quantum_coin", ir_coin)
     assert passed
 
-
 def test_progressive_hints():
     h1 = generate_problem_hint("bell_state", CircuitIR(num_qubits=2, gates=[]), hint_level=1)
     h2 = generate_problem_hint("bell_state", CircuitIR(num_qubits=2, gates=[]), hint_level=2)
@@ -98,7 +91,6 @@ def test_progressive_hints():
     assert len(h3) > 0
     assert h1 != h2
     assert "CNOT" in h3 or "CX" in h3
-
 
 def test_circuit_review():
     ir_bell = CircuitIR(

@@ -220,7 +220,6 @@ PROBLEMS_REGISTRY = {
     },
 }
 
-
 def check_problem_solution(problem_id: str, circuit: CircuitIR, execution: Optional[ExecutionResponse] = None) -> Tuple[bool, str, str, Dict[str, Any]]:
     """
     Evaluates whether the user's circuit satisfies the success criteria of the given problem.
@@ -357,7 +356,6 @@ def check_problem_solution(problem_id: str, circuit: CircuitIR, execution: Optio
 
     return False, "Evaluation criteria not met.", "Keep experimenting with gates on the canvas.", {}
 
-
 def generate_problem_hint(problem_id: str, circuit: CircuitIR, hint_level: int = 1) -> str:
     """Provides progressive tier hints based on problem and current circuit state."""
     prob = PROBLEMS_REGISTRY.get(problem_id)
@@ -367,7 +365,6 @@ def generate_problem_hint(problem_id: str, circuit: CircuitIR, hint_level: int =
     hints_list = prob.get("hints", [])
     idx = max(0, min(len(hints_list) - 1, hint_level - 1))
     return hints_list[idx]
-
 
 def review_problem_circuit(problem_id: str, circuit: CircuitIR, execution: Optional[ExecutionResponse] = None) -> Tuple[str, List[str], List[str]]:
     """

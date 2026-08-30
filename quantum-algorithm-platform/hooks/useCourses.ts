@@ -12,6 +12,7 @@ interface UseCoursesReturn {
   error: string | null;
   refetch: () => Promise<void>;
   markLessonComplete: (courseId: string, lessonId: string, xp: number) => Promise<void>;
+  resetAllProgress: () => Promise<void>;
   getLessonBlocks: (lessonId: string) => Promise<LessonBlockRecord[]>;
 }
 
@@ -34,18 +35,26 @@ export function useCourses(userId: string = 'guest-learner'): UseCoursesReturn {
         progressRecords.filter((p) => p.completed).map((p) => p.module_id)
       );
 
-      const mergedCourses = loadedCourses.map((course) => {
+      const mergedCourses: Course[] = loadedCourses.map((course) => {
         let completedCount = 0;
         const updatedLessons = course.lessons.map((lesson) => {
-          const isDone = lesson.completed || completedSet.has(lesson.id);
+          const isDone = completedSet.has(lesson.id);
           if (isDone) completedCount++;
           return { ...lesson, completed: isDone };
         });
 
+        const status: Course['status'] =
+          completedCount === course.lessonsCount && course.lessonsCount > 0
+            ? 'complete'
+            : completedCount > 0
+            ? 'active'
+            : 'open';
+
         return {
           ...course,
           lessons: updatedLessons,
-          completedLessonsCount: Math.max(course.completedLessonsCount, completedCount),
+          completedLessonsCount: completedCount,
+          status,
         };
       });
 
@@ -74,15 +83,24 @@ export function useCourses(userId: string = 'guest-learner'): UseCoursesReturn {
           if (isDone) completedCount++;
           return { ...l, completed: isDone };
         });
+
+        const status: Course['status'] =
+          completedCount === course.lessonsCount && course.lessonsCount > 0
+            ? 'complete'
+            : completedCount > 0
+            ? 'active'
+            : 'open';
+
         return {
           ...course,
           lessons: updatedLessons,
           completedLessonsCount: completedCount,
+          status,
         };
       })
     );
 
-    // 2. Persist to Supabase
+    // 2. Persist to Supabase, LocalStorage, and Backend Analytics
     await CourseService.saveUserProgress({
       user_id: userId,
       course_id: courseId,
@@ -90,6 +108,11 @@ export function useCourses(userId: string = 'guest-learner'): UseCoursesReturn {
       completed: true,
       xp_earned: xp,
     });
+  };
+
+  const resetAllProgress = async () => {
+    await CourseService.resetAllProgress(userId);
+    await loadCourses();
   };
 
   const getLessonBlocks = async (lessonId: string): Promise<LessonBlockRecord[]> => {
@@ -103,6 +126,7 @@ export function useCourses(userId: string = 'guest-learner'): UseCoursesReturn {
     error,
     refetch: loadCourses,
     markLessonComplete,
+    resetAllProgress,
     getLessonBlocks,
   };
 }

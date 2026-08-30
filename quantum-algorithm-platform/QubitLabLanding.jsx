@@ -396,14 +396,23 @@ export default function LandingPage({ onGetStarted }) {
         />
       ))}
 
-      {/* top-left logo, nothing else */}
-      <div className="absolute left-6 top-6 flex items-center gap-2 sm:left-10 sm:top-8">
+      {/* top-left logo & top-right sign in */}
+      <div className="absolute left-6 top-6 flex items-center gap-2 sm:left-10 sm:top-8 z-20">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
           <Atom className="h-4 w-4 text-white" />
         </div>
         <span className="font-display text-lg font-bold text-white">
           QubitLab
         </span>
+      </div>
+
+      <div className="absolute right-6 top-6 flex items-center gap-3 sm:right-10 sm:top-8 z-20">
+        <button
+          onClick={onGetStarted}
+          className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2 text-xs font-semibold text-white backdrop-blur transition-all cursor-pointer hover:scale-105 active:scale-95"
+        >
+          Sign In
+        </button>
       </div>
 
       {/* hero */}

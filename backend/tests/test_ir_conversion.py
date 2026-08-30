@@ -2,13 +2,11 @@ import pytest
 from backend.schemas import CircuitIR, GateIR
 from backend.converter import ir_to_qiskit, qiskit_to_ir, normalize_gate_name
 
-
 def test_gate_aliases():
     assert normalize_gate_name("CNOT") == "cx"
     assert normalize_gate_name("Hadamard") == "h"
     assert normalize_gate_name("Toffoli") == "ccx"
     assert normalize_gate_name("phase") == "p"
-
 
 def test_ir_to_qiskit_and_back_single_qubit():
     gates = [
@@ -33,7 +31,6 @@ def test_ir_to_qiskit_and_back_single_qubit():
     assert ir_roundtrip.gates[0].name == "h"
     assert ir_roundtrip.gates[0].qubits == [0]
 
-
 def test_ir_to_qiskit_and_back_multi_qubit():
     gates = [
         GateIR(name="cx", qubits=[0, 1]),
@@ -53,7 +50,6 @@ def test_ir_to_qiskit_and_back_multi_qubit():
     assert ir_roundtrip.gates[3].name == "ccx"
     assert ir_roundtrip.gates[3].qubits == [0, 1, 2]
 
-
 def test_ir_invalid_qubit_index():
     ir = CircuitIR(
         num_qubits=2,
@@ -61,7 +57,6 @@ def test_ir_invalid_qubit_index():
     )
     with pytest.raises(ValueError, match="invalid qubit index 5"):
         ir_to_qiskit(ir)
-
 
 def test_ir_measurements():
     ir = CircuitIR(

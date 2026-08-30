@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FlaskConical,
   CheckCircle2,
@@ -11,6 +11,7 @@ import {
   BookOpen,
   Code2,
   ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { Course } from './types';
@@ -19,6 +20,7 @@ import { ProblemsListView } from '@/components/problems/ProblemsListView';
 import { ProblemDetailView } from '@/components/problems/ProblemDetailView';
 import { ChallengeSolverView } from '@/components/problems/ChallengeSolverView';
 import { CourseZeroInteractive } from '@/components/course/CourseZeroInteractive';
+import { BACKEND_URL } from '@/config';
 import type { QuantumProblem, ProblemProgressState } from '@/types/quantum';
 
 interface LearnViewProps {
@@ -29,7 +31,6 @@ interface LearnViewProps {
   progress: ProblemProgressState;
   onProblemSolved: (problemId: string) => void;
 }
-
 export const LearnView: React.FC<LearnViewProps> = ({
   setActive,
   learnSubTab,
@@ -38,10 +39,41 @@ export const LearnView: React.FC<LearnViewProps> = ({
   progress,
   onProblemSolved,
 }) => {
-  const { courses, isLiveSupabase, isLoading, markLessonComplete } = useCourses();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const { courses, isLiveSupabase, isLoading, markLessonComplete, resetAllProgress } = useCourses();
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId) || null;
   const [activeProblem, setActiveProblem] = useState<QuantumProblem | null>(null);
   const [selectedProblemDetail, setSelectedProblemDetail] = useState<QuantumProblem | null>(null);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
+  const [liveStreak, setLiveStreak] = useState<number>(0);
+  const [liveAccuracy, setLiveAccuracy] = useState<string>('0%');
+
+  // Fetch live backend metrics for streak and accuracy
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/dashboard/metrics`);
+        if (res.ok) {
+          const data = await res.json();
+          setLiveStreak(data.current_streak_days || data.user_profile?.streak_days || 0);
+          const accKpi = data.kpis?.find((k: any) => k.id === 'quiz_accuracy');
+          setLiveAccuracy(accKpi?.value || `${data.user_profile?.quiz_accuracy_pct || 0}%`);
+        }
+      } catch {}
+    };
+    fetchStats();
+  }, []);
+
+  const handleResetData = async () => {
+    if (window.confirm('Are you sure you want to reset all curriculum and analytics progress back to 0?')) {
+      setIsResetting(true);
+      await resetAllProgress();
+      setLiveStreak(0);
+      setLiveAccuracy('0%');
+      setSelectedCourseId(null);
+      setIsResetting(false);
+    }
+  };
 
   const handleOpenInSimulator = (problem: QuantumProblem) => {
     setActiveProblem(problem);
@@ -50,7 +82,20 @@ export const LearnView: React.FC<LearnViewProps> = ({
 
   // If Course 0 Interactive Studio is selected
   if (selectedCourse && selectedCourse.id === 'course-zero-interactive') {
-    return <CourseZeroInteractive onClose={() => setSelectedCourse(null)} />;
+    return (
+      <CourseZeroInteractive
+        onClose={() => setSelectedCourseId(null)}
+        onLessonComplete={(courseId, lessonId, xp) => {
+          markLessonComplete(courseId, lessonId, xp);
+        }}
+        onComplete={() => {
+          for (let i = 1; i <= 13; i++) {
+            markLessonComplete('course-zero-interactive', `c0_m${i}`, 25);
+          }
+          setSelectedCourseId(null);
+        }}
+      />
+    );
   }
 
   // Show course detailed lesson view
@@ -58,7 +103,7 @@ export const LearnView: React.FC<LearnViewProps> = ({
     return (
       <CourseDetailView
         course={selectedCourse}
-        onBack={() => setSelectedCourse(null)}
+        onBack={() => setSelectedCourseId(null)}
         onLaunchChallenge={(cId) => {
           const found = allProblems.find((p) => p.id === cId);
           if (found) {
@@ -84,9 +129,9 @@ export const LearnView: React.FC<LearnViewProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[#faf8f5] text-[#1c1917] font-sans p-6 sm:p-10 flex flex-col gap-10 selection:bg-[#d97706] selection:text-white animate-fadeIn">
-      {/* ========================================================================= */}
+
       {/* 1. SUB-TAB CONTENT: PROBLEMS VIEW                                         */}
-      {/* ========================================================================= */}
+
       {learnSubTab === 'problems' ? (
         activeProblem ? (
           <ChallengeSolverView
@@ -112,9 +157,9 @@ export const LearnView: React.FC<LearnViewProps> = ({
           />
         )
       ) : (
-        /* ========================================================================= */
+
         /* 2. SUB-TAB CONTENT: COURSES VIEW (MINIMALIST & CLEAN)                     */
-        /* ========================================================================= */
+
         <>
           {/* Minimalist Top Progress Header */}
           <div className="flex flex-col gap-6 pb-2">
@@ -139,21 +184,31 @@ export const LearnView: React.FC<LearnViewProps> = ({
               </div>
 
               {/* Minimal Stats */}
-              <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-4 sm:gap-6 text-sm">
                 <div>
                   <span className="text-xs text-[#a8a29e] block font-mono">Streak</span>
-                  <span className="font-semibold text-[#1c1917]">🔥 4 Days</span>
+                  <span className="font-semibold text-[#1c1917]">🔥 {liveStreak} Days</span>
                 </div>
                 <div className="h-8 w-px bg-[#e7e5e4]" />
                 <div>
                   <span className="text-xs text-[#a8a29e] block font-mono">Accuracy</span>
-                  <span className="font-semibold text-[#1c1917]">100%</span>
+                  <span className="font-semibold text-[#1c1917]">{liveAccuracy}</span>
                 </div>
                 <div className="h-8 w-px bg-[#e7e5e4]" />
                 <div>
                   <span className="text-xs text-[#a8a29e] block font-mono">Mastery</span>
                   <span className="font-semibold text-[#d97706]">{overallPct}%</span>
                 </div>
+                <div className="h-8 w-px bg-[#e7e5e4]" />
+                <button
+                  onClick={handleResetData}
+                  disabled={isResetting}
+                  className="px-2.5 py-1.5 rounded-lg border border-[#e7e5e4] hover:border-[#d6d3d1] bg-white hover:bg-[#f5f5f4] text-[#78716c] hover:text-[#dc2626] text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Reset all course progress and analytics to 0"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
               </div>
             </div>
 
@@ -186,7 +241,7 @@ export const LearnView: React.FC<LearnViewProps> = ({
                 return (
                   <div
                     key={course.id}
-                    onClick={() => setSelectedCourse(course)}
+                    onClick={() => setSelectedCourseId(course.id)}
                     className="group bg-white rounded-2xl p-6 border border-[#e7e5e4] hover:border-[#d97706] transition-all duration-200 cursor-pointer flex flex-col justify-between gap-6 hover:shadow-xs"
                   >
                     {/* Top Row: Track Code & Status Tag */}

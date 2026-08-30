@@ -1,6 +1,7 @@
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { QUANTUM_COURSES } from '@/components/learning/coursesData';
 import { Course, Lesson, LessonChallenge } from '@/components/learning/types';
+import { BACKEND_URL } from '@/config';
 
 export interface LessonBlockRecord {
   id: string;
@@ -144,7 +145,6 @@ export const CourseService = {
       ]);
 
       if (coursesRes.error || !coursesRes.data || coursesRes.data.length === 0) {
-        console.warn('Supabase courses empty or error, using local curriculum:', coursesRes.error?.message);
         return { courses: QUANTUM_COURSES, isLive: false };
       }
 
@@ -155,8 +155,7 @@ export const CourseService = {
       );
 
       return { courses, isLive: true };
-    } catch (err) {
-      console.error('Error fetching courses from Supabase, falling back to local:', err);
+    } catch {
       return { courses: QUANTUM_COURSES, isLive: false };
     }
   },
@@ -195,37 +194,114 @@ export const CourseService = {
   },
 
   /**
-   * Fetch user progress records.
+   * Fetch user progress records across Supabase, LocalStorage, and Backend Analytics.
    */
-  async getUserProgress(userId: string): Promise<UserProgressRecord[]> {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      return [];
-    }
+  async getUserProgress(userId: string = 'guest-learner'): Promise<UserProgressRecord[]> {
+    const recordsMap = new Map<string, UserProgressRecord>();
 
-    try {
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching user progress:', error.message);
-        return [];
+    // 1. Try local storage first for offline / immediate sync
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('quantum_course_progress');
+        if (stored) {
+          const parsed: UserProgressRecord[] = JSON.parse(stored);
+          parsed.forEach((r) => recordsMap.set(r.module_id, r));
+        }
+      } catch (e) {
+        console.warn('Could not read local course progress:', e);
       }
-      return data || [];
-    } catch (err) {
-      console.error('Error fetching user progress:', err);
-      return [];
     }
+
+    // 2. Fetch from Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (!error && data) {
+          data.forEach((r: any) => {
+            recordsMap.set(r.module_id, {
+              id: r.id,
+              user_id: r.user_id,
+              course_id: r.course_id,
+              module_id: r.module_id,
+              completed: Boolean(r.completed),
+              xp_earned: r.xp_earned || 0,
+              saved_qasm: r.saved_qasm,
+              circuit_state: r.circuit_state,
+              completed_at: r.completed_at,
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('Error fetching user progress from Supabase:', err);
+      }
+    }
+
+    // 3. Sync from backend metrics if available
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/dashboard/metrics`);
+      if (res.ok) {
+        const metrics = await res.json();
+        const completedLessons: string[] = metrics.completed_lessons || [];
+        completedLessons.forEach((mId) => {
+          if (!recordsMap.has(mId)) {
+            recordsMap.set(mId, {
+              user_id: userId,
+              course_id: '',
+              module_id: mId,
+              completed: true,
+              xp_earned: 120,
+            });
+          }
+        });
+      }
+    } catch {}
+
+    return Array.from(recordsMap.values());
   },
 
   /**
-   * Save user progress (upsert completion, xp, saved QASM).
+   * Save user progress (upsert completion, xp, saved QASM) to Supabase, LocalStorage, and Backend Analytics.
    */
   async saveUserProgress(progress: UserProgressRecord): Promise<boolean> {
+    // 1. Save to LocalStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('quantum_course_progress');
+        const list: UserProgressRecord[] = stored ? JSON.parse(stored) : [];
+        const filtered = list.filter((p) => p.module_id !== progress.module_id);
+        filtered.push({
+          ...progress,
+          completed_at: progress.completed ? new Date().toISOString() : undefined,
+        });
+        localStorage.setItem('quantum_course_progress', JSON.stringify(filtered));
+      } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+      }
+    }
+
+    // 2. Notify Backend Analytics Engine
+    try {
+      await fetch(`${BACKEND_URL}/api/analytics/lesson-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: progress.course_id,
+          lesson_id: progress.module_id,
+          xp: progress.xp_earned || 120,
+        }),
+      });
+    } catch (e) {
+      console.warn('Could not sync lesson completion to backend analytics:', e);
+    }
+
+    // 3. Save to Supabase if connected
     const supabase = getSupabaseClient();
-    if (!supabase) return false;
+    if (!supabase) return true;
 
     try {
       const { error } = await supabase.from('user_progress').upsert(
@@ -244,13 +320,35 @@ export const CourseService = {
       );
 
       if (error) {
-        console.error('Error saving user progress to Supabase:', error.message);
         return false;
       }
       return true;
-    } catch (err) {
-      console.error('Error saving user progress:', err);
+    } catch {
       return false;
+    }
+  },
+
+  /**
+   * Reset all user course tracking data to 0.
+   */
+  async resetAllProgress(userId: string = 'guest-learner'): Promise<void> {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('quantum_course_progress');
+      } catch {}
+    }
+
+    // Reset Backend Analytics
+    try {
+      await fetch(`${BACKEND_URL}/api/analytics/reset`, { method: 'POST' });
+    } catch {}
+
+    // Reset Supabase user_progress
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.from('user_progress').delete().eq('user_id', userId);
+      } catch {}
     }
   },
 

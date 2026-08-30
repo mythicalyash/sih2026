@@ -55,11 +55,9 @@ GATE_ALIASES = {
     "z_sixteenth": "z_1_8",
 }
 
-
 def normalize_gate_name(name: str) -> str:
     name_clean = name.strip().lower()
     return GATE_ALIASES.get(name_clean, name_clean)
-
 
 def ir_to_qiskit(ir: CircuitIR) -> Any:
     """Convert CircuitIR JSON model to a Qiskit QuantumCircuit."""
@@ -270,7 +268,6 @@ def ir_to_qiskit(ir: CircuitIR) -> Any:
 
     return qc
 
-
 def qiskit_to_ir(qc: Any) -> CircuitIR:
     """Convert a Qiskit QuantumCircuit into our CircuitIR JSON schema."""
     num_qubits = qc.num_qubits
@@ -301,7 +298,6 @@ def qiskit_to_ir(qc: Any) -> CircuitIR:
         )
 
     return CircuitIR(num_qubits=num_qubits, gates=gates)
-
 
 def ir_to_qasm(circuit: CircuitIR) -> str:
     """Generate OpenQASM 3.0 representation of CircuitIR."""
@@ -343,7 +339,6 @@ def ir_to_qasm(circuit: CircuitIR) -> str:
             lines.append(f"{name} q[{g.qubits[0]}];")
 
     return "\n".join(lines)
-
 
 def ir_to_cirq(ir: CircuitIR) -> Any:
     """Convert CircuitIR JSON model to a Google Cirq Circuit."""
@@ -426,7 +421,6 @@ def ir_to_cirq(ir: CircuitIR) -> Any:
 
     return cirq.Circuit(ops)
 
-
 def ir_to_qiskit_code(circuit: CircuitIR) -> str:
     """Generate clean, standalone, executable Qiskit Python code for the circuit."""
     lines = [
@@ -493,7 +487,6 @@ def ir_to_qiskit_code(circuit: CircuitIR) -> str:
 
     return "\n".join(lines)
 
-
 def ir_to_cirq_code(circuit: CircuitIR) -> str:
     """Generate clean, standalone, executable Google Cirq Python code for the circuit."""
     lines = [
@@ -546,7 +539,6 @@ def ir_to_cirq_code(circuit: CircuitIR) -> str:
             for q in qs: lines.append(f"circuit.append(cirq.measure(qubits[{q}]))")
 
     return "\n".join(lines)
-
 
 def ir_to_pennylane_code(circuit: CircuitIR) -> str:
     """Generate clean, standalone, executable Xanadu PennyLane Python code for the circuit."""
@@ -602,5 +594,115 @@ def ir_to_pennylane_code(circuit: CircuitIR) -> str:
     lines.append("    return qml.state()")
     return "\n".join(lines)
 
+def qasm_to_ir(qasm_text: str) -> CircuitIR:
+    """Parse an OpenQASM 2.0 or 3.0 string into a clean CircuitIR structure."""
+    if not qasm_text or not qasm_text.strip():
+        return CircuitIR(num_qubits=2, gates=[])
 
+    try:
+        if QuantumCircuit is not None:
+            # Try QASM 3.0 first if available
+            qc = None
+            if HAS_QASM3:
+                try:
+                    qc = qasm3.loads(qasm_text)
+                except Exception:
+                    pass
+            
+            # Fallback to standard Qiskit from_qasm_str (QASM 2.0/3.0)
+            if qc is None:
+                try:
+                    qc = QuantumCircuit.from_qasm_str(qasm_text)
+                except Exception:
+                    pass
+
+            if qc is not None:
+                num_q = qc.num_qubits
+                gates: List[GateIR] = []
+
+                for instruction in qc.data:
+                    op_name = instruction.operation.name.lower()
+                    
+                    # Resolve qubit indices
+                    q_indices = []
+                    for qubit in instruction.qubits:
+                        try:
+                            bit_idx = qc.find_bit(qubit).index
+                            q_indices.append(bit_idx)
+                        except Exception:
+                            # Fallback if index exists directly
+                            if hasattr(qubit, "_index"):
+                                q_indices.append(qubit._index)
+
+                    # Extract numeric params
+                    params = []
+                    for p in instruction.operation.params:
+                        try:
+                            params.append(float(p))
+                        except Exception:
+                            pass
+
+                    # Filter barrier or non-physical helper directives
+                    if op_name in ["barrier", "delay"]:
+                        continue
+
+                    gates.append(
+                        GateIR(
+                            name=op_name,
+                            qubits=q_indices,
+                            params=params,
+                        )
+                    )
+
+                return CircuitIR(num_qubits=max(1, num_q), gates=gates)
+    except Exception as e:
+        print(f"[WARN] Qiskit QASM parser fallback triggered: {e}")
+
+    # Pure Python Regex Fallback for standard QASM lines
+    import re
+    lines = qasm_text.strip().split("\n")
+    num_q = 2
+    gates: List[GateIR] = []
+
+    # Find qubit count from `qreg q[N];` or `qubit[N] q;`
+    for line in lines:
+        m = re.search(r'(?:qreg|qubit\[?)\s*(?:\[(\d+)\]|q\s*\[(\d+)\]|\w+\[(\d+)\])', line)
+        if m:
+            val = next(g for g in m.groups() if g is not None)
+            num_q = max(num_q, int(val))
+
+    for line in lines:
+        clean = line.strip().rstrip(";")
+        if not clean or clean.startswith("//") or clean.startswith("OPENQASM") or clean.startswith("include"):
+            continue
+
+        # CX gate: cx q[0], q[1] or cx q[0],q[1]
+        cx_match = re.match(r'cx\s+q\[(\d+)\],\s*q\[(\d+)\]', clean)
+        if cx_match:
+            ctrl, tgt = int(cx_match.group(1)), int(cx_match.group(2))
+            gates.append(GateIR(name="cx", qubits=[ctrl, tgt]))
+            num_q = max(num_q, ctrl + 1, tgt + 1)
+            continue
+
+        # Single qubit gates: h q[0], x q[1], etc.
+        sq_match = re.match(r'([a-z]+)\s+q\[(\d+)\]', clean)
+        if sq_match:
+            g_name, q_idx = sq_match.group(1), int(sq_match.group(2))
+            gates.append(GateIR(name=g_name, qubits=[q_idx]))
+            num_q = max(num_q, q_idx + 1)
+            continue
+
+        # Parametric gates: rx(1.57) q[0]
+        param_match = re.match(r'([a-z]+)\s*\(([^)]+)\)\s+q\[(\d+)\]', clean)
+        if param_match:
+            g_name, param_str, q_idx = param_match.group(1), param_match.group(2), int(param_match.group(3))
+            try:
+                p_val = float(eval(param_str, {"pi": math.pi, "np": math}))
+            except Exception:
+                p_val = 0.0
+            gates.append(GateIR(name=g_name, qubits=[q_idx], params=[p_val]))
+            num_q = max(num_q, q_idx + 1)
+            continue
+
+    return CircuitIR(num_qubits=max(1, min(10, num_q)), gates=gates)
 

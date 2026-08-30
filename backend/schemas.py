@@ -1,17 +1,14 @@
 from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel, Field
 
-
 class GateIR(BaseModel):
     name: str = Field(..., description="Name of the gate, e.g. 'h', 'x', 'cx', 'rx', 'measure'")
     qubits: List[int] = Field(..., description="List of target qubit indices")
     params: Optional[List[float]] = Field(default_factory=list, description="Gate parameters e.g. rotation angles")
 
-
 class CircuitIR(BaseModel):
     num_qubits: int = Field(..., ge=1, le=10, description="Total number of qubits (1 to 10)")
     gates: List[GateIR] = Field(default_factory=list, description="Ordered list of quantum gates")
-
 
 class ExecutionRequest(BaseModel):
     circuit: CircuitIR
@@ -22,7 +19,6 @@ class ExecutionRequest(BaseModel):
         description="Quantum simulator backend: 'qiskit_aer', 'pennylane', 'qbraid', 'qsim', 'cirq'"
     )
 
-
 class AmplitudeItem(BaseModel):
     state: str
     index: int
@@ -31,7 +27,6 @@ class AmplitudeItem(BaseModel):
     magnitude: float
     phase_rad: float
     phase_deg: float
-
 
 class BackendInfo(BaseModel):
     id: str
@@ -44,11 +39,9 @@ class BackendInfo(BaseModel):
     supports_gpu: bool = False
     status: str = "active"
 
-
 class BackendsListResponse(BaseModel):
     backends: List[BackendInfo]
     default: str = "qiskit_aer"
-
 
 class ExecutionResponse(BaseModel):
     statevector: Optional[List[AmplitudeItem]] = None
@@ -59,7 +52,6 @@ class ExecutionResponse(BaseModel):
     backend: str = "qiskit_aer"
     backend_name: str = "Qiskit Aer (Statevector & Qasm)"
 
-
 class ComparisonRequest(BaseModel):
     circuit: CircuitIR
     tolerance: float = Field(default=1e-4, ge=1e-7, le=0.5, description="Comparison absolute tolerance")
@@ -68,7 +60,6 @@ class ComparisonRequest(BaseModel):
         default_factory=lambda: ["qiskit_aer", "pennylane"],
         description="List of backends to compare: 'qiskit_aer', 'pennylane', 'qsim', 'qbraid', 'cirq'"
     )
-
 
 class ComparisonResponse(BaseModel):
     match: bool
@@ -80,7 +71,6 @@ class ComparisonResponse(BaseModel):
     results: Dict[str, Any] = Field(default_factory=dict)
     details: str
 
-
 class BlochVector(BaseModel):
     qubit: int
     x: float
@@ -90,21 +80,17 @@ class BlochVector(BaseModel):
     theta: float
     phi: float
 
-
 class BlochResponse(BaseModel):
     num_qubits: int
     bloch_vectors: List[BlochVector]
-
 
 class ProbabilitiesResponse(BaseModel):
     num_qubits: int
     probabilities: Dict[str, float]
 
-
 class AmplitudesResponse(BaseModel):
     num_qubits: int
     amplitudes: List[AmplitudeItem]
-
 
 class StepEvolutionItem(BaseModel):
     step_index: int
@@ -117,12 +103,10 @@ class StepEvolutionItem(BaseModel):
     bloch_vectors: List[BlochVector] = Field(default_factory=list)
     latex_state: str = ""
 
-
 class StepEvolutionResponse(BaseModel):
     num_qubits: int
     total_steps: int
     steps: List[StepEvolutionItem] = Field(default_factory=list)
-
 
 class DiagnosticIssue(BaseModel):
     type: str  # e.g., "EMPTY_CIRCUIT", "UNMEASURED_QUBITS", "INDEX_OUT_OF_BOUNDS", "REDUNDANT_GATES", "UNCONNECTED_QUBIT"
@@ -131,7 +115,6 @@ class DiagnosticIssue(BaseModel):
     qubits: Optional[List[int]] = None
     gate_indices: Optional[List[int]] = None
 
-
 class MisconceptionItem(BaseModel):
     id: str  # e.g., "CLASSICAL_VS_SUPERPOSITION", "NO_CLONING_VIOLATION", "MEASUREMENT_COLLAPSE", "REDUNDANT_GATES"
     title: str
@@ -139,12 +122,10 @@ class MisconceptionItem(BaseModel):
     corrective_guidance: str
     severity: str = "warning"  # "info", "warning", "error"
 
-
 class TutorRequest(BaseModel):
     circuit: CircuitIR
     question: Optional[str] = ""
     mode: Optional[str] = "socratic"  # "socratic", "beginner", "mathematical", "diagnostics", "code"
-
 
 class TutorResponse(BaseModel):
     status: str  # "clean", "warning", "error"
@@ -156,12 +137,10 @@ class TutorResponse(BaseModel):
     latex_math: Optional[str] = None
     code_fix: Optional[str] = None
 
-
 class TutorChatRequest(BaseModel):
     message: str
     conversation_history: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     mode: Optional[str] = "socratic"  # "socratic", "eli5", "mathematical"
-
 
 class TutorChatResponse(BaseModel):
     reply: str
@@ -170,12 +149,10 @@ class TutorChatResponse(BaseModel):
     concept_tag: Optional[str] = "Quantum Fundamentals"
     key_takeaways: List[str] = Field(default_factory=list)
 
-
 class QuizRequest(BaseModel):
     topic: str
     context: Optional[str] = None
     num_questions: Optional[int] = 3
-
 
 class QuizQuestion(BaseModel):
     question: str
@@ -183,11 +160,9 @@ class QuizQuestion(BaseModel):
     correctIndex: int
     explanation: str
 
-
 class QuizResponse(BaseModel):
     topic: str
     quiz: List[QuizQuestion] = Field(default_factory=list)
-
 
 class PredictiveChallenge(BaseModel):
     question: str
@@ -195,7 +170,6 @@ class PredictiveChallenge(BaseModel):
     correct_index: int
     hint: str
     explanation: str
-
 
 class SocraticStepItem(BaseModel):
     step_id: str
@@ -211,20 +185,17 @@ class SocraticStepItem(BaseModel):
     misconceptions: List[MisconceptionItem] = Field(default_factory=list)
     xp_reward: int = 25
 
-
 class SocraticStepRequest(BaseModel):
     circuit: CircuitIR
     question: Optional[str] = None
     track_id: Optional[str] = "superposition"
     step_number: int = 1
 
-
 class CodeFixRequest(BaseModel):
     source_code: str
     error_message: Optional[str] = None
     language: str = "python"
     circuit_context: Optional[CircuitIR] = None
-
 
 class CodeFixResponse(BaseModel):
     success: bool
@@ -233,11 +204,9 @@ class CodeFixResponse(BaseModel):
     issues_found: List[str] = Field(default_factory=list)
     optimizations: List[str] = Field(default_factory=list)
 
-
 class VoiceCommandRequest(BaseModel):
     speech_transcript: str
     circuit: CircuitIR
-
 
 class VoiceCommandResponse(BaseModel):
     success: bool
@@ -245,11 +214,9 @@ class VoiceCommandResponse(BaseModel):
     circuit: CircuitIR
     gates_added: List[GateIR] = Field(default_factory=list)
 
-
 class QuestGradeRequest(BaseModel):
     quest_id: str
     circuit: CircuitIR
-
 
 class QuestGradeResponse(BaseModel):
     success: bool
@@ -262,24 +229,20 @@ class QuestGradeResponse(BaseModel):
     current_state_latex: str
     badge: Optional[str] = None
 
-
 class QuirkImportRequest(BaseModel):
     quirk_json: Optional[Union[Dict[str, Any], List[Any], str]] = None
     quirk_url: Optional[str] = None
-
 
 class QuirkImportResponse(BaseModel):
     circuit: CircuitIR
     imported_gates_count: int
     warnings: List[str] = Field(default_factory=list)
 
-
 class CodeExecuteRequest(BaseModel):
     source_code: str
     language: str = "python"
     stdin: Optional[str] = None
     timeout: Optional[float] = 8.0
-
 
 class CodeExecuteResponse(BaseModel):
     stdout: Optional[str] = None
@@ -288,15 +251,12 @@ class CodeExecuteResponse(BaseModel):
     time: Optional[str] = "0.000"
     source: str = "quantum_sandbox"
 
-
-
 class AlgorithmSummary(BaseModel):
     name: str
     display_name: str
     description: str
     default_params: Dict[str, Any]
     circuit: CircuitIR
-
 
 class ProblemDefinition(BaseModel):
     id: str
@@ -317,12 +277,10 @@ class ProblemDefinition(BaseModel):
     requirements: List[str] = Field(default_factory=list)
     example_distribution: Dict[str, float] = Field(default_factory=dict)
 
-
 class ProblemHintRequest(BaseModel):
     problem_id: str
     circuit: Optional[CircuitIR] = None
     hint_level: int = Field(default=1, ge=1, le=5)
-
 
 class ProblemHintResponse(BaseModel):
     problem_id: str
@@ -330,11 +288,9 @@ class ProblemHintResponse(BaseModel):
     hint: str
     total_hints: int
 
-
 class ProblemReviewRequest(BaseModel):
     problem_id: str
     circuit: CircuitIR
-
 
 class ProblemReviewResponse(BaseModel):
     problem_id: str
@@ -343,11 +299,9 @@ class ProblemReviewResponse(BaseModel):
     guidance: List[str] = Field(default_factory=list)
     qasm: str = ""
 
-
 class ProblemExplainRequest(BaseModel):
     problem_id: str
     circuit: Optional[CircuitIR] = None
-
 
 class ProblemExplainResponse(BaseModel):
     problem_id: str
@@ -355,11 +309,9 @@ class ProblemExplainResponse(BaseModel):
     concept_explanation: str
     suggested_concept: str
 
-
 class ProblemCheckRequest(BaseModel):
     problem_id: str
     circuit: CircuitIR
-
 
 class ProblemCheckResponse(BaseModel):
     problem_id: str
@@ -368,7 +320,6 @@ class ProblemCheckResponse(BaseModel):
     ai_explanation: str
     metrics: Dict[str, Any] = Field(default_factory=dict)
     next_problem_id: Optional[str] = None
-
 
 class UserProfileSchema(BaseModel):
     name: str
@@ -382,7 +333,6 @@ class UserProfileSchema(BaseModel):
     streak_days: int
     last_active_date: str
 
-
 class KPICardSchema(BaseModel):
     id: str
     title: str
@@ -392,26 +342,22 @@ class KPICardSchema(BaseModel):
     tone: str
     icon: str
 
-
 class HeatmapDayCell(BaseModel):
     date: str
     iso_date: str
     count: int
     level: int
 
-
 class RadarConceptSchema(BaseModel):
     concept: str
     score: int
     category: str
-
 
 class FocusAreaSchema(BaseModel):
     concept: str
     accuracy: str
     recommended_problem_id: str
     recommended_problem_title: str
-
 
 class RecentActivityItemSchema(BaseModel):
     id: str
@@ -420,7 +366,6 @@ class RecentActivityItemSchema(BaseModel):
     time: str
     xp: str
     tone: str
-
 
 class DashboardMetricsResponse(BaseModel):
     user_profile: UserProfileSchema
@@ -431,18 +376,20 @@ class DashboardMetricsResponse(BaseModel):
     radar_data: List[RadarConceptSchema]
     focus_area: FocusAreaSchema
     recent_activity: List[RecentActivityItemSchema]
-
+    completed_courses_count: Optional[int] = 0
+    completed_lessons_count: Optional[int] = 0
+    total_courses_count: Optional[int] = 5
+    total_lessons_count: Optional[int] = 44
+    courses_progress: Optional[Dict[str, Any]] = None
 
 class LogEventRequest(BaseModel):
     event_type: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
     xp: int = 0
 
-
 class LogEventResponse(BaseModel):
     success: bool
     event: Dict[str, Any]
-
 
 # ── Chat History Models ──────────────────────────────────────────
 
@@ -454,14 +401,12 @@ class ChatMessageRecord(BaseModel):
     concept_tag: str = ""
     created_at: str
 
-
 class ChatSessionSummary(BaseModel):
     id: str
     title: str
     created_at: str
     updated_at: str
     message_count: int = 0
-
 
 class ChatSessionDetail(BaseModel):
     id: str
@@ -470,17 +415,81 @@ class ChatSessionDetail(BaseModel):
     updated_at: str
     messages: List[ChatMessageRecord] = Field(default_factory=list)
 
-
 class CreateSessionRequest(BaseModel):
     title: str = "New Chat"
-
 
 class SaveMessageRequest(BaseModel):
     role: str  # "user" | "tutor"
     content: str
     concept_tag: str = ""
 
-
 class UpdateSessionTitleRequest(BaseModel):
     title: str
+
+class DailyChallengeRequest(BaseModel):
+    user_id: Optional[str] = "arjun"
+    question_type: Optional[str] = Field(default="any", description="'any', 'mcq', or 'theoretical'")
+    preferred_topic: Optional[str] = None
+    difficulty: Optional[str] = "Beginner"
+
+class DailyChallengeResponse(BaseModel):
+    id: str
+    date: str
+    topic: str
+    question_type: str = "mcq"  # "mcq" | "theoretical"
+    question: str
+    options: Optional[List[str]] = None
+    correct_index: Optional[int] = None
+    explanation: str
+    rubric_hints: Optional[List[str]] = None
+    xp: int = 50
+    difficulty: str = "Beginner"
+    is_ai_generated: bool = True
+
+class EvaluateTheoreticalChallengeRequest(BaseModel):
+    challenge_id: str
+    question: str
+    topic: Optional[str] = "Quantum Mechanics"
+    user_answer: str
+    user_id: Optional[str] = "arjun"
+
+class EvaluateTheoreticalChallengeResponse(BaseModel):
+    challenge_id: str
+    score: int  # 0 to 100
+    is_correct: bool  # True if score >= 60
+    xp_earned: int
+    feedback: str
+    strengths: List[str] = Field(default_factory=list)
+    missed_points: List[str] = Field(default_factory=list)
+    ideal_explanation: str
+
+class RecentSimulationData(BaseModel):
+    id: str = "sim-recent-1"
+    name: str = "Bell State Experiment"
+    circuit: CircuitIR
+    probabilities: Dict[str, float] = Field(default_factory=lambda: {"00": 0.5, "11": 0.5})
+    counts: Optional[Dict[str, int]] = None
+    shots: int = 1024
+    total_accumulated_shots: int = 1024
+    backend_name: str = "Aer Simulator"
+    execution_time_ms: float = 1.2
+    timestamp: str = Field(default="")
+
+class SaveRecentSimulationRequest(BaseModel):
+    name: Optional[str] = None
+    circuit: CircuitIR
+    probabilities: Optional[Dict[str, float]] = None
+    counts: Optional[Dict[str, int]] = None
+    shots: Optional[int] = 1024
+    backend_name: Optional[str] = "Aer Simulator"
+
+class QuickRunSimulationResponse(BaseModel):
+    name: str
+    circuit: CircuitIR
+    probabilities: Dict[str, float]
+    counts: Dict[str, int]
+    shots: int
+    total_accumulated_shots: int
+    backend_name: str
+    execution_time_ms: float
 

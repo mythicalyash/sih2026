@@ -13,7 +13,6 @@ from typing import List, Optional, Dict, Any
 DB_DIR = os.path.join(os.path.dirname(__file__), "data")
 DB_PATH = os.path.join(DB_DIR, "tutor_chat.db")
 
-
 def _get_conn() -> sqlite3.Connection:
     """Get a connection with row_factory for dict-style access."""
     os.makedirs(DB_DIR, exist_ok=True)
@@ -22,7 +21,6 @@ def _get_conn() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
-
 
 def init_db() -> None:
     """Create tables if they don't exist."""
@@ -53,7 +51,6 @@ def init_db() -> None:
     finally:
         conn.close()
 
-
 def create_session(title: str = "New Chat") -> Dict[str, Any]:
     """Create a new chat session. Returns {id, title, created_at, updated_at}."""
     conn = _get_conn()
@@ -68,7 +65,6 @@ def create_session(title: str = "New Chat") -> Dict[str, Any]:
         return {"id": session_id, "title": title, "created_at": now, "updated_at": now}
     finally:
         conn.close()
-
 
 def list_sessions() -> List[Dict[str, Any]]:
     """List all sessions (newest first) with message counts."""
@@ -87,7 +83,6 @@ def list_sessions() -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
-
 def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
     """Get all messages for a session, ordered chronologically."""
     conn = _get_conn()
@@ -101,7 +96,6 @@ def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
-
 def get_session(session_id: str) -> Optional[Dict[str, Any]]:
     """Get session metadata by ID."""
     conn = _get_conn()
@@ -113,7 +107,6 @@ def get_session(session_id: str) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
     finally:
         conn.close()
-
 
 def save_message(
     session_id: str,
@@ -148,7 +141,6 @@ def save_message(
     finally:
         conn.close()
 
-
 def update_session_title(session_id: str, title: str) -> bool:
     """Update a session's title. Returns True if session existed."""
     conn = _get_conn()
@@ -162,7 +154,6 @@ def update_session_title(session_id: str, title: str) -> bool:
         return cursor.rowcount > 0
     finally:
         conn.close()
-
 
 def delete_session(session_id: str) -> bool:
     """Delete a session and all its messages (CASCADE). Returns True if session existed."""

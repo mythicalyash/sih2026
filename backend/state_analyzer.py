@@ -3,7 +3,6 @@ import math
 import numpy as np
 from backend.schemas import AmplitudeItem, BlochVector, BlochResponse, ProbabilitiesResponse, AmplitudesResponse
 
-
 def statevector_to_amplitudes(statevector: np.ndarray, num_qubits: int) -> List[AmplitudeItem]:
     """
     Decompose a statevector into individual basis state amplitudes with magnitude and phase.
@@ -36,7 +35,6 @@ def statevector_to_amplitudes(statevector: np.ndarray, num_qubits: int) -> List[
 
     return amplitudes
 
-
 def statevector_to_probabilities(statevector: np.ndarray, num_qubits: int) -> Dict[str, float]:
     """
     Compute measurement probabilities |c_i|^2 for all computational basis states.
@@ -51,7 +49,6 @@ def statevector_to_probabilities(statevector: np.ndarray, num_qubits: int) -> Di
         probs[bin_str] = round(p, 6)
 
     return probs
-
 
 def compute_bloch_vectors(statevector: np.ndarray, num_qubits: int) -> List[BlochVector]:
     """
@@ -127,7 +124,6 @@ def compute_bloch_vectors(statevector: np.ndarray, num_qubits: int) -> List[Bloc
         )
 
     return bloch_vectors
-
 
 def format_dirac_latex(statevector: np.ndarray, num_qubits: int, threshold: float = 1e-4) -> str:
     """
