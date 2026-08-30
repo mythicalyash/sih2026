@@ -5,14 +5,14 @@
     "role": "IIT Delhi \u2014 Quantum Information Group",
     "level": 7,
     "level_title": "Quantum Vanguard",
-    "xp": 3870,
+    "xp": 3990,
     "max_xp": 5000,
-    "weekly_xp": 840,
+    "weekly_xp": 960,
     "streak_days": 14,
     "last_active_date": "2026-08-30"
   },
   "stats": {
-    "simulations_count": 113,
+    "simulations_count": 125,
     "simulations_weekly_delta_pct": 18,
     "quizzes_taken": 45,
     "quizzes_correct": 40,
@@ -2234,6 +2234,150 @@
     {
       "id": "sim_1788080445645",
       "timestamp": "2026-08-30T09:00:45.645839+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080895161",
+      "timestamp": "2026-08-30T09:08:15.161259+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080895976",
+      "timestamp": "2026-08-30T09:08:15.976002+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080896158",
+      "timestamp": "2026-08-30T09:08:16.158065+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080896307",
+      "timestamp": "2026-08-30T09:08:16.307903+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080896441",
+      "timestamp": "2026-08-30T09:08:16.441274+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080900905",
+      "timestamp": "2026-08-30T09:08:20.905387+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080900910",
+      "timestamp": "2026-08-30T09:08:20.910049+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080901025",
+      "timestamp": "2026-08-30T09:08:21.025750+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080901036",
+      "timestamp": "2026-08-30T09:08:21.036609+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080903351",
+      "timestamp": "2026-08-30T09:08:23.351935+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788080903945",
+      "timestamp": "2026-08-30T09:08:23.945818+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080903989",
+      "timestamp": "2026-08-30T09:08:23.989502+00:00",
       "date": "2026-08-30",
       "type": "simulation_run",
       "xp": 10,
