@@ -1,7 +1,0 @@
-User-agent: *
-
-Disallow: /en/v0.30.0/  # Hidden version
-
-Disallow: /en/latest/   # Not hidden, but disallow from search engine results 
-
-Sitemap: https://docs.pennylane.ai/sitemap.xml
