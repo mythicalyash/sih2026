@@ -160,3 +160,150 @@ class AlgorithmSummary(BaseModel):
     description: str
     default_params: Dict[str, Any]
     circuit: CircuitIR
+
+
+class ProblemDefinition(BaseModel):
+    id: str
+    title: str
+    short_description: str
+    difficulty: str
+    topic: str
+    xp: int
+    num_qubits: int
+    estimated_minutes: int
+    starter_circuit: CircuitIR
+    goal: str
+    expected_behavior: str
+    suggested_concept: str
+    hints: List[str] = Field(default_factory=list)
+    concept_explanation: str
+    available_gates: List[str] = Field(default_factory=lambda: ["h", "x", "y", "z", "cx", "measure"])
+    requirements: List[str] = Field(default_factory=list)
+    example_distribution: Dict[str, float] = Field(default_factory=dict)
+
+
+class ProblemHintRequest(BaseModel):
+    problem_id: str
+    circuit: Optional[CircuitIR] = None
+    hint_level: int = Field(default=1, ge=1, le=5)
+
+
+class ProblemHintResponse(BaseModel):
+    problem_id: str
+    hint_level: int
+    hint: str
+    total_hints: int
+
+
+class ProblemReviewRequest(BaseModel):
+    problem_id: str
+    circuit: CircuitIR
+
+
+class ProblemReviewResponse(BaseModel):
+    problem_id: str
+    status: str  # "clean", "warning", "error"
+    positives: List[str] = Field(default_factory=list)
+    guidance: List[str] = Field(default_factory=list)
+    qasm: str = ""
+
+
+class ProblemExplainRequest(BaseModel):
+    problem_id: str
+    circuit: Optional[CircuitIR] = None
+
+
+class ProblemExplainResponse(BaseModel):
+    problem_id: str
+    title: str
+    concept_explanation: str
+    suggested_concept: str
+
+
+class ProblemCheckRequest(BaseModel):
+    problem_id: str
+    circuit: CircuitIR
+
+
+class ProblemCheckResponse(BaseModel):
+    problem_id: str
+    passed: bool
+    feedback: str
+    ai_explanation: str
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+    next_problem_id: Optional[str] = None
+
+
+class UserProfileSchema(BaseModel):
+    name: str
+    email: str
+    role: str
+    level: int
+    level_title: str
+    xp: int
+    max_xp: int
+    weekly_xp: int
+    streak_days: int
+    last_active_date: str
+
+
+class KPICardSchema(BaseModel):
+    id: str
+    title: str
+    value: str
+    subtitle: str
+    footer: str
+    tone: str
+    icon: str
+
+
+class HeatmapDayCell(BaseModel):
+    date: str
+    iso_date: str
+    count: int
+    level: int
+
+
+class RadarConceptSchema(BaseModel):
+    concept: str
+    score: int
+    category: str
+
+
+class FocusAreaSchema(BaseModel):
+    concept: str
+    accuracy: str
+    recommended_problem_id: str
+    recommended_problem_title: str
+
+
+class RecentActivityItemSchema(BaseModel):
+    id: str
+    label: str
+    detail: str
+    time: str
+    xp: str
+    tone: str
+
+
+class DashboardMetricsResponse(BaseModel):
+    user_profile: UserProfileSchema
+    kpis: List[KPICardSchema]
+    heatmap: List[List[HeatmapDayCell]]
+    total_events_6m: int
+    current_streak_days: int
+    radar_data: List[RadarConceptSchema]
+    focus_area: FocusAreaSchema
+    recent_activity: List[RecentActivityItemSchema]
+
+
+class LogEventRequest(BaseModel):
+    event_type: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    xp: int = 0
+
+
+class LogEventResponse(BaseModel):
+    success: bool
+    event: Dict[str, Any]
+

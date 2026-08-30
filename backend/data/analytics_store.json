@@ -1,0 +1,2247 @@
+{
+  "user_profile": {
+    "name": "Aarav Sharma",
+    "email": "aarav.sharma@iitd.ac.in",
+    "role": "IIT Delhi \u2014 Quantum Information Group",
+    "level": 7,
+    "level_title": "Quantum Vanguard",
+    "xp": 3870,
+    "max_xp": 5000,
+    "weekly_xp": 840,
+    "streak_days": 14,
+    "last_active_date": "2026-08-30"
+  },
+  "stats": {
+    "simulations_count": 113,
+    "simulations_weekly_delta_pct": 18,
+    "quizzes_taken": 45,
+    "quizzes_correct": 40,
+    "quiz_accuracy_pct": 88.9,
+    "percentile": "Top 8%",
+    "total_problems_in_bank": 32
+  },
+  "completed_lessons": [
+    "qubits-intro",
+    "superposition-bloch",
+    "single-qubit-gates",
+    "multi-qubit-entanglement",
+    "bell-states",
+    "measurement-born-rule",
+    "deutsch-jozsa-algorithm",
+    "grover-search-intro",
+    "test-lesson"
+  ],
+  "total_lessons_count": 17,
+  "solved_problems": [
+    "superposition",
+    "flip_qubit",
+    "bell_state",
+    "ghz_state",
+    "deutsch_oracle",
+    "phase_flip",
+    "teleportation_alice",
+    "cnot_cascade",
+    "hadamard_sandwich",
+    "phase_kickback_intro",
+    "grover_oracle_2q",
+    "qft_2qubit",
+    "dense_coding",
+    "toffoli_decomp",
+    "swap_test",
+    "bernstein_vazirani",
+    "simon_oracle",
+    "w_state",
+    "quantum_error_bit_flip"
+  ],
+  "attempted_problems": [
+    "superposition",
+    "flip_qubit",
+    "bell_state",
+    "ghz_state",
+    "deutsch_oracle",
+    "phase_flip",
+    "teleportation_alice",
+    "cnot_cascade",
+    "hadamard_sandwich",
+    "phase_kickback_intro",
+    "grover_oracle_2q",
+    "qft_2qubit",
+    "dense_coding",
+    "toffoli_decomp",
+    "swap_test",
+    "bernstein_vazirani",
+    "simon_oracle",
+    "w_state",
+    "quantum_error_bit_flip",
+    "shor_period_finding",
+    "quantum_phase_estimation"
+  ],
+  "concept_mastery": {
+    "Phase Kickback": {
+      "score": 50,
+      "category": "Gates & Oracles",
+      "attempts": 14,
+      "correct": 7
+    },
+    "Quantum Superposition": {
+      "score": 94,
+      "category": "Foundations",
+      "attempts": 28,
+      "correct": 26
+    },
+    "Entanglement & Bell States": {
+      "score": 88,
+      "category": "Foundations",
+      "attempts": 25,
+      "correct": 22
+    },
+    "Quantum Gates & Circuits": {
+      "score": 85,
+      "category": "Circuits",
+      "attempts": 34,
+      "correct": 29
+    },
+    "Quantum Algorithms": {
+      "score": 70,
+      "category": "Algorithms",
+      "attempts": 20,
+      "correct": 14
+    },
+    "Measurement & Protocols": {
+      "score": 65,
+      "category": "Protocols",
+      "attempts": 17,
+      "correct": 11
+    }
+  },
+  "events": [
+    {
+      "id": "seed_168_0",
+      "timestamp": "2026-03-15T08:48:56.330317+00:00",
+      "date": "2026-03-15",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_168_1",
+      "timestamp": "2026-03-15T08:48:56.330317+00:00",
+      "date": "2026-03-15",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_168_2",
+      "timestamp": "2026-03-15T08:48:56.330317+00:00",
+      "date": "2026-03-15",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_168_3",
+      "timestamp": "2026-03-15T08:48:56.330317+00:00",
+      "date": "2026-03-15",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_167_0",
+      "timestamp": "2026-03-16T08:48:56.330317+00:00",
+      "date": "2026-03-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_167_1",
+      "timestamp": "2026-03-16T08:48:56.330317+00:00",
+      "date": "2026-03-16",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_167_2",
+      "timestamp": "2026-03-16T08:48:56.330317+00:00",
+      "date": "2026-03-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_166_0",
+      "timestamp": "2026-03-17T08:48:56.330317+00:00",
+      "date": "2026-03-17",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_166_1",
+      "timestamp": "2026-03-17T08:48:56.330317+00:00",
+      "date": "2026-03-17",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_166_2",
+      "timestamp": "2026-03-17T08:48:56.330317+00:00",
+      "date": "2026-03-17",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_166_3",
+      "timestamp": "2026-03-17T08:48:56.330317+00:00",
+      "date": "2026-03-17",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_165_0",
+      "timestamp": "2026-03-18T08:48:56.330317+00:00",
+      "date": "2026-03-18",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_165_1",
+      "timestamp": "2026-03-18T08:48:56.330317+00:00",
+      "date": "2026-03-18",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_165_2",
+      "timestamp": "2026-03-18T08:48:56.330317+00:00",
+      "date": "2026-03-18",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_163_0",
+      "timestamp": "2026-03-20T08:48:56.330317+00:00",
+      "date": "2026-03-20",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_163_1",
+      "timestamp": "2026-03-20T08:48:56.330317+00:00",
+      "date": "2026-03-20",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_162_0",
+      "timestamp": "2026-03-21T08:48:56.330317+00:00",
+      "date": "2026-03-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_162_1",
+      "timestamp": "2026-03-21T08:48:56.330317+00:00",
+      "date": "2026-03-21",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_162_2",
+      "timestamp": "2026-03-21T08:48:56.330317+00:00",
+      "date": "2026-03-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_162_3",
+      "timestamp": "2026-03-21T08:48:56.330317+00:00",
+      "date": "2026-03-21",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_160_0",
+      "timestamp": "2026-03-23T08:48:56.330317+00:00",
+      "date": "2026-03-23",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_160_1",
+      "timestamp": "2026-03-23T08:48:56.330317+00:00",
+      "date": "2026-03-23",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_156_0",
+      "timestamp": "2026-03-27T08:48:56.330317+00:00",
+      "date": "2026-03-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_154_0",
+      "timestamp": "2026-03-29T08:48:56.330317+00:00",
+      "date": "2026-03-29",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_154_1",
+      "timestamp": "2026-03-29T08:48:56.330317+00:00",
+      "date": "2026-03-29",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_153_0",
+      "timestamp": "2026-03-30T08:48:56.330317+00:00",
+      "date": "2026-03-30",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_153_1",
+      "timestamp": "2026-03-30T08:48:56.330317+00:00",
+      "date": "2026-03-30",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_153_2",
+      "timestamp": "2026-03-30T08:48:56.330317+00:00",
+      "date": "2026-03-30",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_152_0",
+      "timestamp": "2026-03-31T08:48:56.330317+00:00",
+      "date": "2026-03-31",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_152_1",
+      "timestamp": "2026-03-31T08:48:56.330317+00:00",
+      "date": "2026-03-31",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_151_0",
+      "timestamp": "2026-04-01T08:48:56.330317+00:00",
+      "date": "2026-04-01",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_151_1",
+      "timestamp": "2026-04-01T08:48:56.330317+00:00",
+      "date": "2026-04-01",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_151_2",
+      "timestamp": "2026-04-01T08:48:56.330317+00:00",
+      "date": "2026-04-01",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_150_0",
+      "timestamp": "2026-04-02T08:48:56.330317+00:00",
+      "date": "2026-04-02",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_150_1",
+      "timestamp": "2026-04-02T08:48:56.330317+00:00",
+      "date": "2026-04-02",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_150_2",
+      "timestamp": "2026-04-02T08:48:56.330317+00:00",
+      "date": "2026-04-02",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_148_0",
+      "timestamp": "2026-04-04T08:48:56.330317+00:00",
+      "date": "2026-04-04",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_144_0",
+      "timestamp": "2026-04-08T08:48:56.330317+00:00",
+      "date": "2026-04-08",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_136_0",
+      "timestamp": "2026-04-16T08:48:56.330317+00:00",
+      "date": "2026-04-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_136_1",
+      "timestamp": "2026-04-16T08:48:56.330317+00:00",
+      "date": "2026-04-16",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_136_2",
+      "timestamp": "2026-04-16T08:48:56.330317+00:00",
+      "date": "2026-04-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_136_3",
+      "timestamp": "2026-04-16T08:48:56.330317+00:00",
+      "date": "2026-04-16",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_131_0",
+      "timestamp": "2026-04-21T08:48:56.330317+00:00",
+      "date": "2026-04-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_131_1",
+      "timestamp": "2026-04-21T08:48:56.330317+00:00",
+      "date": "2026-04-21",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_131_2",
+      "timestamp": "2026-04-21T08:48:56.330317+00:00",
+      "date": "2026-04-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_131_3",
+      "timestamp": "2026-04-21T08:48:56.330317+00:00",
+      "date": "2026-04-21",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_126_0",
+      "timestamp": "2026-04-26T08:48:56.330317+00:00",
+      "date": "2026-04-26",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_126_1",
+      "timestamp": "2026-04-26T08:48:56.330317+00:00",
+      "date": "2026-04-26",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_126_2",
+      "timestamp": "2026-04-26T08:48:56.330317+00:00",
+      "date": "2026-04-26",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_125_0",
+      "timestamp": "2026-04-27T08:48:56.330317+00:00",
+      "date": "2026-04-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_125_1",
+      "timestamp": "2026-04-27T08:48:56.330317+00:00",
+      "date": "2026-04-27",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_125_2",
+      "timestamp": "2026-04-27T08:48:56.330317+00:00",
+      "date": "2026-04-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_125_3",
+      "timestamp": "2026-04-27T08:48:56.330317+00:00",
+      "date": "2026-04-27",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_123_0",
+      "timestamp": "2026-04-29T08:48:56.330317+00:00",
+      "date": "2026-04-29",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_123_1",
+      "timestamp": "2026-04-29T08:48:56.330317+00:00",
+      "date": "2026-04-29",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_123_2",
+      "timestamp": "2026-04-29T08:48:56.330317+00:00",
+      "date": "2026-04-29",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_123_3",
+      "timestamp": "2026-04-29T08:48:56.330317+00:00",
+      "date": "2026-04-29",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_122_0",
+      "timestamp": "2026-04-30T08:48:56.330317+00:00",
+      "date": "2026-04-30",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_122_1",
+      "timestamp": "2026-04-30T08:48:56.330317+00:00",
+      "date": "2026-04-30",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_116_0",
+      "timestamp": "2026-05-06T08:48:56.330317+00:00",
+      "date": "2026-05-06",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_116_1",
+      "timestamp": "2026-05-06T08:48:56.330317+00:00",
+      "date": "2026-05-06",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_116_2",
+      "timestamp": "2026-05-06T08:48:56.330317+00:00",
+      "date": "2026-05-06",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_115_0",
+      "timestamp": "2026-05-07T08:48:56.330317+00:00",
+      "date": "2026-05-07",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_109_0",
+      "timestamp": "2026-05-13T08:48:56.330317+00:00",
+      "date": "2026-05-13",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_109_1",
+      "timestamp": "2026-05-13T08:48:56.330317+00:00",
+      "date": "2026-05-13",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_109_2",
+      "timestamp": "2026-05-13T08:48:56.330317+00:00",
+      "date": "2026-05-13",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_109_3",
+      "timestamp": "2026-05-13T08:48:56.330317+00:00",
+      "date": "2026-05-13",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_108_0",
+      "timestamp": "2026-05-14T08:48:56.330317+00:00",
+      "date": "2026-05-14",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_108_1",
+      "timestamp": "2026-05-14T08:48:56.330317+00:00",
+      "date": "2026-05-14",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_106_0",
+      "timestamp": "2026-05-16T08:48:56.330317+00:00",
+      "date": "2026-05-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_106_1",
+      "timestamp": "2026-05-16T08:48:56.330317+00:00",
+      "date": "2026-05-16",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_106_2",
+      "timestamp": "2026-05-16T08:48:56.330317+00:00",
+      "date": "2026-05-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_106_3",
+      "timestamp": "2026-05-16T08:48:56.330317+00:00",
+      "date": "2026-05-16",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_105_0",
+      "timestamp": "2026-05-17T08:48:56.330317+00:00",
+      "date": "2026-05-17",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_105_1",
+      "timestamp": "2026-05-17T08:48:56.330317+00:00",
+      "date": "2026-05-17",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_105_2",
+      "timestamp": "2026-05-17T08:48:56.330317+00:00",
+      "date": "2026-05-17",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_100_0",
+      "timestamp": "2026-05-22T08:48:56.330317+00:00",
+      "date": "2026-05-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_100_1",
+      "timestamp": "2026-05-22T08:48:56.330317+00:00",
+      "date": "2026-05-22",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_100_2",
+      "timestamp": "2026-05-22T08:48:56.330317+00:00",
+      "date": "2026-05-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_95_0",
+      "timestamp": "2026-05-27T08:48:56.330317+00:00",
+      "date": "2026-05-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_95_1",
+      "timestamp": "2026-05-27T08:48:56.330317+00:00",
+      "date": "2026-05-27",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_87_0",
+      "timestamp": "2026-06-04T08:48:56.330317+00:00",
+      "date": "2026-06-04",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_87_1",
+      "timestamp": "2026-06-04T08:48:56.330317+00:00",
+      "date": "2026-06-04",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_87_2",
+      "timestamp": "2026-06-04T08:48:56.330317+00:00",
+      "date": "2026-06-04",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_87_3",
+      "timestamp": "2026-06-04T08:48:56.330317+00:00",
+      "date": "2026-06-04",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_83_0",
+      "timestamp": "2026-06-08T08:48:56.330317+00:00",
+      "date": "2026-06-08",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_81_0",
+      "timestamp": "2026-06-10T08:48:56.330317+00:00",
+      "date": "2026-06-10",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_81_1",
+      "timestamp": "2026-06-10T08:48:56.330317+00:00",
+      "date": "2026-06-10",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_80_0",
+      "timestamp": "2026-06-11T08:48:56.330317+00:00",
+      "date": "2026-06-11",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_80_1",
+      "timestamp": "2026-06-11T08:48:56.330317+00:00",
+      "date": "2026-06-11",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_79_0",
+      "timestamp": "2026-06-12T08:48:56.330317+00:00",
+      "date": "2026-06-12",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_77_0",
+      "timestamp": "2026-06-14T08:48:56.330317+00:00",
+      "date": "2026-06-14",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_75_0",
+      "timestamp": "2026-06-16T08:48:56.330317+00:00",
+      "date": "2026-06-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_71_0",
+      "timestamp": "2026-06-20T08:48:56.330317+00:00",
+      "date": "2026-06-20",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_71_1",
+      "timestamp": "2026-06-20T08:48:56.330317+00:00",
+      "date": "2026-06-20",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_71_2",
+      "timestamp": "2026-06-20T08:48:56.330317+00:00",
+      "date": "2026-06-20",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_71_3",
+      "timestamp": "2026-06-20T08:48:56.330317+00:00",
+      "date": "2026-06-20",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_70_0",
+      "timestamp": "2026-06-21T08:48:56.330317+00:00",
+      "date": "2026-06-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_70_1",
+      "timestamp": "2026-06-21T08:48:56.330317+00:00",
+      "date": "2026-06-21",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_69_0",
+      "timestamp": "2026-06-22T08:48:56.330317+00:00",
+      "date": "2026-06-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_68_0",
+      "timestamp": "2026-06-23T08:48:56.330317+00:00",
+      "date": "2026-06-23",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_68_1",
+      "timestamp": "2026-06-23T08:48:56.330317+00:00",
+      "date": "2026-06-23",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_66_0",
+      "timestamp": "2026-06-25T08:48:56.330317+00:00",
+      "date": "2026-06-25",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_66_1",
+      "timestamp": "2026-06-25T08:48:56.330317+00:00",
+      "date": "2026-06-25",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_65_0",
+      "timestamp": "2026-06-26T08:48:56.330317+00:00",
+      "date": "2026-06-26",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_64_0",
+      "timestamp": "2026-06-27T08:48:56.330317+00:00",
+      "date": "2026-06-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_64_1",
+      "timestamp": "2026-06-27T08:48:56.330317+00:00",
+      "date": "2026-06-27",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_64_2",
+      "timestamp": "2026-06-27T08:48:56.330317+00:00",
+      "date": "2026-06-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_63_0",
+      "timestamp": "2026-06-28T08:48:56.330317+00:00",
+      "date": "2026-06-28",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_63_1",
+      "timestamp": "2026-06-28T08:48:56.330317+00:00",
+      "date": "2026-06-28",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_63_2",
+      "timestamp": "2026-06-28T08:48:56.330317+00:00",
+      "date": "2026-06-28",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_63_3",
+      "timestamp": "2026-06-28T08:48:56.330317+00:00",
+      "date": "2026-06-28",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_61_0",
+      "timestamp": "2026-06-30T08:48:56.330317+00:00",
+      "date": "2026-06-30",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_61_1",
+      "timestamp": "2026-06-30T08:48:56.330317+00:00",
+      "date": "2026-06-30",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_61_2",
+      "timestamp": "2026-06-30T08:48:56.330317+00:00",
+      "date": "2026-06-30",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_61_3",
+      "timestamp": "2026-06-30T08:48:56.330317+00:00",
+      "date": "2026-06-30",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_60_0",
+      "timestamp": "2026-07-01T08:48:56.330317+00:00",
+      "date": "2026-07-01",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_60_1",
+      "timestamp": "2026-07-01T08:48:56.330317+00:00",
+      "date": "2026-07-01",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_60_2",
+      "timestamp": "2026-07-01T08:48:56.330317+00:00",
+      "date": "2026-07-01",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_59_0",
+      "timestamp": "2026-07-02T08:48:56.330317+00:00",
+      "date": "2026-07-02",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_59_1",
+      "timestamp": "2026-07-02T08:48:56.330317+00:00",
+      "date": "2026-07-02",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_59_2",
+      "timestamp": "2026-07-02T08:48:56.330317+00:00",
+      "date": "2026-07-02",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_59_3",
+      "timestamp": "2026-07-02T08:48:56.330317+00:00",
+      "date": "2026-07-02",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_56_0",
+      "timestamp": "2026-07-05T08:48:56.330317+00:00",
+      "date": "2026-07-05",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_56_1",
+      "timestamp": "2026-07-05T08:48:56.330317+00:00",
+      "date": "2026-07-05",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_56_2",
+      "timestamp": "2026-07-05T08:48:56.330317+00:00",
+      "date": "2026-07-05",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_53_0",
+      "timestamp": "2026-07-08T08:48:56.330317+00:00",
+      "date": "2026-07-08",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_53_1",
+      "timestamp": "2026-07-08T08:48:56.330317+00:00",
+      "date": "2026-07-08",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_53_2",
+      "timestamp": "2026-07-08T08:48:56.330317+00:00",
+      "date": "2026-07-08",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_53_3",
+      "timestamp": "2026-07-08T08:48:56.330317+00:00",
+      "date": "2026-07-08",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_49_0",
+      "timestamp": "2026-07-12T08:48:56.330317+00:00",
+      "date": "2026-07-12",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_49_1",
+      "timestamp": "2026-07-12T08:48:56.330317+00:00",
+      "date": "2026-07-12",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_49_2",
+      "timestamp": "2026-07-12T08:48:56.330317+00:00",
+      "date": "2026-07-12",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_45_0",
+      "timestamp": "2026-07-16T08:48:56.330317+00:00",
+      "date": "2026-07-16",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_44_0",
+      "timestamp": "2026-07-17T08:48:56.330317+00:00",
+      "date": "2026-07-17",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_44_1",
+      "timestamp": "2026-07-17T08:48:56.330317+00:00",
+      "date": "2026-07-17",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_39_0",
+      "timestamp": "2026-07-22T08:48:56.330317+00:00",
+      "date": "2026-07-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_39_1",
+      "timestamp": "2026-07-22T08:48:56.330317+00:00",
+      "date": "2026-07-22",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_39_2",
+      "timestamp": "2026-07-22T08:48:56.330317+00:00",
+      "date": "2026-07-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_39_3",
+      "timestamp": "2026-07-22T08:48:56.330317+00:00",
+      "date": "2026-07-22",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_38_0",
+      "timestamp": "2026-07-23T08:48:56.330317+00:00",
+      "date": "2026-07-23",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_38_1",
+      "timestamp": "2026-07-23T08:48:56.330317+00:00",
+      "date": "2026-07-23",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_38_2",
+      "timestamp": "2026-07-23T08:48:56.330317+00:00",
+      "date": "2026-07-23",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_38_3",
+      "timestamp": "2026-07-23T08:48:56.330317+00:00",
+      "date": "2026-07-23",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_37_0",
+      "timestamp": "2026-07-24T08:48:56.330317+00:00",
+      "date": "2026-07-24",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_37_1",
+      "timestamp": "2026-07-24T08:48:56.330317+00:00",
+      "date": "2026-07-24",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_37_2",
+      "timestamp": "2026-07-24T08:48:56.330317+00:00",
+      "date": "2026-07-24",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_37_3",
+      "timestamp": "2026-07-24T08:48:56.330317+00:00",
+      "date": "2026-07-24",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_34_0",
+      "timestamp": "2026-07-27T08:48:56.330317+00:00",
+      "date": "2026-07-27",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_33_0",
+      "timestamp": "2026-07-28T08:48:56.330317+00:00",
+      "date": "2026-07-28",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_33_1",
+      "timestamp": "2026-07-28T08:48:56.330317+00:00",
+      "date": "2026-07-28",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_33_2",
+      "timestamp": "2026-07-28T08:48:56.330317+00:00",
+      "date": "2026-07-28",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_30_0",
+      "timestamp": "2026-07-31T08:48:56.330317+00:00",
+      "date": "2026-07-31",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_29_0",
+      "timestamp": "2026-08-01T08:48:56.330317+00:00",
+      "date": "2026-08-01",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_21_0",
+      "timestamp": "2026-08-09T08:48:56.330317+00:00",
+      "date": "2026-08-09",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_21_1",
+      "timestamp": "2026-08-09T08:48:56.330317+00:00",
+      "date": "2026-08-09",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_15_0",
+      "timestamp": "2026-08-15T08:48:56.330317+00:00",
+      "date": "2026-08-15",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_12_0",
+      "timestamp": "2026-08-18T08:48:56.330317+00:00",
+      "date": "2026-08-18",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_12_1",
+      "timestamp": "2026-08-18T08:48:56.330317+00:00",
+      "date": "2026-08-18",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_12_2",
+      "timestamp": "2026-08-18T08:48:56.330317+00:00",
+      "date": "2026-08-18",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_12_3",
+      "timestamp": "2026-08-18T08:48:56.330317+00:00",
+      "date": "2026-08-18",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_9_0",
+      "timestamp": "2026-08-21T08:48:56.330317+00:00",
+      "date": "2026-08-21",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_8_0",
+      "timestamp": "2026-08-22T08:48:56.330317+00:00",
+      "date": "2026-08-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_8_1",
+      "timestamp": "2026-08-22T08:48:56.330317+00:00",
+      "date": "2026-08-22",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_8_2",
+      "timestamp": "2026-08-22T08:48:56.330317+00:00",
+      "date": "2026-08-22",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_8_3",
+      "timestamp": "2026-08-22T08:48:56.330317+00:00",
+      "date": "2026-08-22",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_5_0",
+      "timestamp": "2026-08-25T08:48:56.330317+00:00",
+      "date": "2026-08-25",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_5_1",
+      "timestamp": "2026-08-25T08:48:56.330317+00:00",
+      "date": "2026-08-25",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_5_2",
+      "timestamp": "2026-08-25T08:48:56.330317+00:00",
+      "date": "2026-08-25",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_5_3",
+      "timestamp": "2026-08-25T08:48:56.330317+00:00",
+      "date": "2026-08-25",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_4_0",
+      "timestamp": "2026-08-26T08:48:56.330317+00:00",
+      "date": "2026-08-26",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_4_1",
+      "timestamp": "2026-08-26T08:48:56.330317+00:00",
+      "date": "2026-08-26",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_4_2",
+      "timestamp": "2026-08-26T08:48:56.330317+00:00",
+      "date": "2026-08-26",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_4_3",
+      "timestamp": "2026-08-26T08:48:56.330317+00:00",
+      "date": "2026-08-26",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_1_0",
+      "timestamp": "2026-08-29T08:48:56.330317+00:00",
+      "date": "2026-08-29",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_1_1",
+      "timestamp": "2026-08-29T08:48:56.330317+00:00",
+      "date": "2026-08-29",
+      "type": "problem_solved",
+      "xp": 150,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "seed_1_2",
+      "timestamp": "2026-08-29T08:48:56.330317+00:00",
+      "date": "2026-08-29",
+      "type": "simulation_run",
+      "xp": 20,
+      "metadata": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "sim_1788079969435",
+      "timestamp": "2026-08-30T08:52:49.435333+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 4
+      }
+    },
+    {
+      "id": "quiz_1788079969437",
+      "timestamp": "2026-08-30T08:52:49.437402+00:00",
+      "date": "2026-08-30",
+      "type": "quiz_submitted",
+      "xp": 30,
+      "metadata": {
+        "lesson_id": "test-lesson",
+        "is_correct": true,
+        "topic": "Phase Kickback"
+      }
+    },
+    {
+      "id": "less_1788079969438",
+      "timestamp": "2026-08-30T08:52:49.438760+00:00",
+      "date": "2026-08-30",
+      "type": "lesson_completed",
+      "xp": 100,
+      "metadata": {
+        "course_id": "foundation",
+        "lesson_id": "test-lesson"
+      }
+    },
+    {
+      "id": "sim_1788080312580",
+      "timestamp": "2026-08-30T08:58:32.580381+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 4
+      }
+    },
+    {
+      "id": "quiz_1788080312584",
+      "timestamp": "2026-08-30T08:58:32.584670+00:00",
+      "date": "2026-08-30",
+      "type": "quiz_submitted",
+      "xp": 30,
+      "metadata": {
+        "lesson_id": "test-lesson",
+        "is_correct": true,
+        "topic": "Phase Kickback"
+      }
+    },
+    {
+      "id": "less_1788080312586",
+      "timestamp": "2026-08-30T08:58:32.586010+00:00",
+      "date": "2026-08-30",
+      "type": "lesson_completed",
+      "xp": 100,
+      "metadata": {
+        "course_id": "foundation",
+        "lesson_id": "test-lesson"
+      }
+    },
+    {
+      "id": "sim_1788080385363",
+      "timestamp": "2026-08-30T08:59:45.363075+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080385366",
+      "timestamp": "2026-08-30T08:59:45.366153+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080387443",
+      "timestamp": "2026-08-30T08:59:47.443922+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080387444",
+      "timestamp": "2026-08-30T08:59:47.444800+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080419333",
+      "timestamp": "2026-08-30T09:00:19.333858+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080419338",
+      "timestamp": "2026-08-30T09:00:19.338011+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080419441",
+      "timestamp": "2026-08-30T09:00:19.441127+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080419446",
+      "timestamp": "2026-08-30T09:00:19.446399+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080421986",
+      "timestamp": "2026-08-30T09:00:21.986428+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080421992",
+      "timestamp": "2026-08-30T09:00:21.992343+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080422099",
+      "timestamp": "2026-08-30T09:00:22.099728+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080422107",
+      "timestamp": "2026-08-30T09:00:22.107300+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080423810",
+      "timestamp": "2026-08-30T09:00:23.810297+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080423813",
+      "timestamp": "2026-08-30T09:00:23.813512+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080423913",
+      "timestamp": "2026-08-30T09:00:23.913308+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080423917",
+      "timestamp": "2026-08-30T09:00:23.917678+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080439767",
+      "timestamp": "2026-08-30T09:00:39.767277+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080439773",
+      "timestamp": "2026-08-30T09:00:39.773170+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080439862",
+      "timestamp": "2026-08-30T09:00:39.862515+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080439868",
+      "timestamp": "2026-08-30T09:00:39.868129+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080445540",
+      "timestamp": "2026-08-30T09:00:45.540384+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080445546",
+      "timestamp": "2026-08-30T09:00:45.546975+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080445636",
+      "timestamp": "2026-08-30T09:00:45.636489+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788080445645",
+      "timestamp": "2026-08-30T09:00:45.645839+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    }
+  ]
+}

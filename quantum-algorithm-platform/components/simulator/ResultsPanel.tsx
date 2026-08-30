@@ -176,7 +176,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
         {/* 2. Statevector Visualizer */}
         <div className="h-full min-h-0 min-w-0 overflow-hidden">
           <StatevectorVisualizer
-            amplitudes={executionResult?.statevector}
+            amplitudes={executionResult?.statevector as any}
             numQubits={numQubits}
           />
         </div>
@@ -184,7 +184,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
         {/* 3. Q-Sphere */}
         <div className="h-full min-h-0 min-w-0 overflow-hidden">
           <QSphere
-            amplitudes={executionResult?.statevector}
+            amplitudes={executionResult?.statevector as any}
             numQubits={numQubits}
           />
         </div>

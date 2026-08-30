@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from backend.schemas import (
+    GateIR,
     CircuitIR,
     ExecutionRequest,
     ExecutionResponse,
@@ -23,7 +24,20 @@ from backend.schemas import (
     CodeExecuteRequest,
     CodeExecuteResponse,
     AlgorithmSummary,
+    ProblemDefinition,
+    ProblemHintRequest,
+    ProblemHintResponse,
+    ProblemReviewRequest,
+    ProblemReviewResponse,
+    ProblemExplainRequest,
+    ProblemExplainResponse,
+    ProblemCheckRequest,
+    ProblemCheckResponse,
+    DashboardMetricsResponse,
+    LogEventRequest,
+    LogEventResponse,
 )
+from backend.analytics import analytics_store
 from backend.converter import (
     ir_to_qiskit,
     ir_to_qasm,
@@ -43,6 +57,21 @@ from backend.state_analyzer import (
 from backend.algorithms import ALGORITHMS_REGISTRY
 from backend.quirk_importer import quirk_to_ir
 from backend.tutor import generate_circuit_explanation
+from backend.problems import (
+    PROBLEMS_REGISTRY,
+    generate_problem_hint,
+    review_problem_circuit,
+    check_problem_solution,
+)
+from backend.gemini_service import (
+    is_gemini_active,
+    set_gemini_api_key,
+    generate_gemini_problem_hint,
+    review_gemini_problem_circuit,
+    explain_gemini_problem_concept,
+    ask_gemini_socratic_tutor,
+    explain_gemini_solution_feedback,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("quantum.engine")
@@ -91,6 +120,10 @@ def execute_circuit(req: ExecutionRequest):
             include_statevector=req.include_statevector,
         )
         logger.info(f"✅ [SIMULATION COMPLETE] {backend_choice} executed in {res.execution_time_ms}ms | Measured {len(res.counts)} distinct states")
+        try:
+            analytics_store.record_simulation(backend=backend_choice, qubits=req.circuit.num_qubits, gates=len(req.circuit.gates))
+        except Exception:
+            pass
         return res
     except Exception as e:
         logger.error(f"❌ [SIMULATION ERROR] ({backend_choice}): {str(e)}")
@@ -111,7 +144,11 @@ def compare_circuit_execution(req: ComparisonRequest):
             shots=req.shots,
             backends=req.backends,
         )
-        logger.info(f"🎯 [CROSS-ENGINE VERIFIED] Match: {res.match} | Max Diff: {res.max_statevector_diff:.6f} | Fidelity: {res.fidelity:.6f}")
+        logger.info(f"🎯 [CROSS-ENGINE VERIFIED] Match: {res.match} | Max Diff: {res.max_diff:.6f} | Fidelity: {res.fidelity:.6f}")
+        try:
+            analytics_store.record_simulation(backend="multi_backend_compare", qubits=req.circuit.num_qubits, gates=len(req.circuit.gates))
+        except Exception:
+            pass
         return res
     except Exception as e:
         logger.error(f"❌ [COMPARE ERROR]: {str(e)}")
@@ -248,10 +285,21 @@ def import_quirk_circuit(req: QuirkImportRequest):
 def tutor_explain_circuit(req: TutorRequest):
     """
     Perform deterministic diagnostics (unmeasured qubits, empty circuit, index mismatch,
-    redundant gates) and provide AI tutor educational analysis.
+    redundant gates) and provide Gemini AI tutor educational analysis.
     """
     try:
-        return generate_circuit_explanation(req.circuit, req.question)
+        diag_resp = generate_circuit_explanation(req.circuit, req.question)
+        
+        # If student asked a question and Gemini is active, get rich Socratic AI response
+        if req.question and req.question.strip():
+            gemini_answer = ask_gemini_socratic_tutor(
+                circuit=req.circuit,
+                question=req.question.strip(),
+                fallback_response=diag_resp.explanation,
+            )
+            diag_resp.explanation = gemini_answer
+
+        return diag_resp
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Tutor analysis failed: {str(e)}")
 
@@ -264,6 +312,225 @@ def export_qasm_endpoint(circuit: CircuitIR):
         return {"qasm": qasm_str, "num_qubits": circuit.num_qubits}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"QASM export error: {str(e)}")
+
+
+# ==============================================================================
+# Gemini AI Configuration & Status APIs
+# ==============================================================================
+
+@app.get("/api/gemini/status")
+def get_gemini_status():
+    """Get status of Gemini 2.5 Flash-Lite AI service."""
+    return is_gemini_active()
+
+
+@app.post("/api/gemini/key")
+def set_gemini_key_endpoint(payload: Dict[str, str] = Body(...)):
+    """Set or update the Gemini API key at runtime."""
+    key = payload.get("api_key", "").strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="API key cannot be empty.")
+    
+    set_gemini_api_key(key)
+    return {
+        "success": True,
+        "message": "Gemini API key updated successfully.",
+        "status": is_gemini_active(),
+    }
+
+
+# ==============================================================================
+# Quantum Problems & Challenges API (Gemini Flash-Lite Powered)
+# ==============================================================================
+
+def _build_problem_definition(p_data: Dict[str, Any]) -> ProblemDefinition:
+    """Helper to cleanly parse and instantiate ProblemDefinition with typed GateIR objects."""
+    starter_dict = p_data.get("starter_circuit", {})
+    starter_gates_raw = starter_dict.get("gates", [])
+    starter_gates: List[GateIR] = []
+    for g in starter_gates_raw:
+        if isinstance(g, dict):
+            starter_gates.append(GateIR(
+                name=g.get("name", ""),
+                qubits=g.get("qubits", []),
+                params=g.get("params", []),
+            ))
+        elif isinstance(g, GateIR):
+            starter_gates.append(g)
+
+    starter_circuit = CircuitIR(
+        num_qubits=starter_dict.get("num_qubits", p_data.get("num_qubits", 2)),
+        gates=starter_gates,
+    )
+
+    return ProblemDefinition(
+        id=p_data["id"],
+        title=p_data["title"],
+        short_description=p_data["short_description"],
+        difficulty=p_data["difficulty"],
+        topic=p_data["topic"],
+        xp=p_data["xp"],
+        num_qubits=p_data["num_qubits"],
+        estimated_minutes=p_data["estimated_minutes"],
+        starter_circuit=starter_circuit,
+        goal=p_data["goal"],
+        expected_behavior=p_data["expected_behavior"],
+        suggested_concept=p_data["suggested_concept"],
+        hints=p_data["hints"],
+        concept_explanation=p_data["concept_explanation"],
+        available_gates=p_data.get("available_gates", ["h", "x", "y", "z", "cx", "measure"]),
+        requirements=p_data.get("requirements", []),
+        example_distribution=p_data.get("example_distribution", {}),
+    )
+
+
+@app.get("/problems", response_model=List[ProblemDefinition])
+def list_problems():
+    """List all available quantum learning challenges & problems."""
+    return [_build_problem_definition(p_data) for p_data in PROBLEMS_REGISTRY.values()]
+
+
+@app.get("/problems/{problem_id}", response_model=ProblemDefinition)
+def get_problem(problem_id: str):
+    """Get details for a specific quantum challenge."""
+    if problem_id not in PROBLEMS_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Problem '{problem_id}' not found.")
+    
+    return _build_problem_definition(PROBLEMS_REGISTRY[problem_id])
+
+
+@app.post("/problem/hint", response_model=ProblemHintResponse)
+def get_problem_hint_endpoint(req: ProblemHintRequest):
+    """Provide progressive tier hints for a problem using Gemini Flash-Lite with deterministic fallback."""
+    if req.problem_id not in PROBLEMS_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
+    
+    p_data = PROBLEMS_REGISTRY[req.problem_id]
+    total = len(p_data.get("hints", []))
+    circuit = req.circuit or CircuitIR(num_qubits=p_data.get("num_qubits", 2), gates=[])
+    
+    # 1. Deterministic baseline hint
+    fallback_hint = generate_problem_hint(req.problem_id, circuit, req.hint_level)
+    
+    # 2. Gemini Flash-Lite enhanced Socratic hint
+    final_hint = generate_gemini_problem_hint(
+        problem_id=req.problem_id,
+        problem_title=p_data["title"],
+        problem_goal=p_data["goal"],
+        problem_concept=p_data.get("suggested_concept", "Quantum Circuit"),
+        circuit=circuit,
+        hint_level=req.hint_level,
+        deterministic_fallback=fallback_hint,
+    )
+    
+    return ProblemHintResponse(
+        problem_id=req.problem_id,
+        hint_level=req.hint_level,
+        hint=final_hint,
+        total_hints=total,
+    )
+
+
+@app.post("/problem/review", response_model=ProblemReviewResponse)
+def review_problem_endpoint(req: ProblemReviewRequest):
+    """AI review of user's circuit against problem goal using Gemini Flash-Lite."""
+    if req.problem_id not in PROBLEMS_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
+    
+    p_data = PROBLEMS_REGISTRY[req.problem_id]
+    status, base_positives, base_guidance = review_problem_circuit(req.problem_id, req.circuit)
+    
+    # Gemini Flash-Lite circuit critique
+    final_status, final_positives, final_guidance = review_gemini_problem_circuit(
+        problem_id=req.problem_id,
+        problem_title=p_data["title"],
+        problem_goal=p_data["goal"],
+        circuit=req.circuit,
+        fallback_positives=base_positives,
+        fallback_guidance=base_guidance,
+    )
+    
+    qasm_str = ir_to_qasm(req.circuit)
+    
+    return ProblemReviewResponse(
+        problem_id=req.problem_id,
+        status=final_status or status,
+        positives=final_positives or base_positives,
+        guidance=final_guidance or base_guidance,
+        qasm=qasm_str,
+    )
+
+
+@app.post("/problem/explain", response_model=ProblemExplainResponse)
+def explain_problem_concept_endpoint(req: ProblemExplainRequest):
+    """Explain the underlying physics concept using Gemini Flash-Lite."""
+    if req.problem_id not in PROBLEMS_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
+    
+    p_data = PROBLEMS_REGISTRY[req.problem_id]
+    base_explanation = p_data["concept_explanation"]
+    concept_name = p_data.get("suggested_concept", "Quantum Concept")
+    
+    gemini_exp = explain_gemini_problem_concept(
+        problem_id=req.problem_id,
+        problem_title=p_data["title"],
+        concept_name=concept_name,
+        fallback_explanation=base_explanation,
+        circuit=req.circuit,
+    )
+    
+    return ProblemExplainResponse(
+        problem_id=req.problem_id,
+        title=p_data["title"],
+        concept_explanation=gemini_exp or base_explanation,
+        suggested_concept=concept_name,
+    )
+
+
+@app.post("/problem/check", response_model=ProblemCheckResponse)
+def check_problem_endpoint(req: ProblemCheckRequest):
+    """Evaluate and grade the user's circuit submission for a problem using Gemini Flash-Lite."""
+    if req.problem_id not in PROBLEMS_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Problem '{req.problem_id}' not found.")
+    
+    p_data = PROBLEMS_REGISTRY[req.problem_id]
+    prob_keys = list(PROBLEMS_REGISTRY.keys())
+    curr_idx = prob_keys.index(req.problem_id)
+    next_id = prob_keys[curr_idx + 1] if curr_idx + 1 < len(prob_keys) else None
+    
+    passed, feedback, ai_explanation, metrics = check_problem_solution(req.problem_id, req.circuit)
+    
+    # Record problem analytics & award XP
+    try:
+        analytics_store.record_problem_result(
+            problem_id=req.problem_id,
+            passed=passed,
+            xp=p_data.get("xp", 150)
+        )
+    except Exception:
+        pass
+
+    if passed:
+        # Generate rich AI breakdown using Gemini Flash-Lite
+        probs_dict = metrics.get("actual", {})
+        gemini_explanation = explain_gemini_solution_feedback(
+            problem_id=req.problem_id,
+            problem_title=p_data["title"],
+            problem_goal=p_data["goal"],
+            circuit=req.circuit,
+            probabilities=probs_dict,
+            fallback_explanation=ai_explanation,
+        )
+        ai_explanation = gemini_explanation or ai_explanation
+
+    return ProblemCheckResponse(
+        problem_id=req.problem_id,
+        passed=passed,
+        feedback=feedback,
+        ai_explanation=ai_explanation,
+        metrics=metrics,
+        next_problem_id=next_id,
+    )
 
 
 @app.post("/export/qiskit")
@@ -304,9 +571,67 @@ def execute_code_endpoint(req: CodeExecuteRequest):
     Returns stdout, stderr, execution time, and status.
     """
     try:
-        return execute_python_code(req)
+        res = execute_python_code(req)
+        try:
+            analytics_store.record_simulation(backend=f"code_runner_{req.language}", qubits=0, gates=0)
+        except Exception:
+            pass
+        return res
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Code execution failed: {str(e)}")
 
+
+# -----------------------------------------------------------------------------
+# Dashboard & Analytics REST Endpoints
+# -----------------------------------------------------------------------------
+@app.get("/dashboard/metrics", response_model=DashboardMetricsResponse)
+def get_dashboard_metrics_endpoint():
+    """
+    Retrieve real aggregated dashboard analytics: user profile, KPIs, 6-month practice heatmap,
+    radar concept mastery distribution, focus areas, and recent activity history.
+    """
+    try:
+        return analytics_store.get_dashboard_metrics()
+    except Exception as e:
+        logger.error(f"❌ [DASHBOARD METRICS ERROR]: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to aggregate dashboard metrics: {str(e)}")
+
+
+@app.post("/dashboard/log-event", response_model=LogEventResponse)
+def log_dashboard_event_endpoint(req: LogEventRequest):
+    """
+    Log user activity event (lesson completion, quiz submission, etc.)
+    and update persistent analytics store.
+    """
+    try:
+        ev_type = req.event_type
+        meta = req.metadata
+        
+        if ev_type == "lesson_completed":
+            course_id = meta.get("course_id", "foundation")
+            lesson_id = meta.get("lesson_id", "lesson")
+            analytics_store.record_lesson_completion(course_id, lesson_id, req.xp or 120)
+        elif ev_type == "quiz_submitted":
+            lesson_id = meta.get("lesson_id", "lesson")
+            is_correct = bool(meta.get("is_correct", False))
+            topic = meta.get("topic", "Quantum Foundations")
+            analytics_store.record_quiz_submission(lesson_id, is_correct, topic)
+        else:
+            analytics_store.log_event(ev_type, meta, req.xp)
+            
+        return LogEventResponse(success=True, event={"type": ev_type, "metadata": meta})
+    except Exception as e:
+        logger.error(f"❌ [LOG EVENT ERROR]: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to log dashboard event: {str(e)}")
+
+
+@app.post("/dashboard/reset")
+def reset_dashboard_metrics_endpoint():
+    """Reset user analytics data back to baseline seed."""
+    try:
+        analytics_store.reset_to_baseline()
+        return {"status": "ok", "message": "Dashboard analytics reset to baseline."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reset dashboard metrics: {str(e)}")
 
 

@@ -502,35 +502,41 @@ export const CodePanel: React.FC<CodePanelProps> = ({
               <Terminal className="w-3.5 h-3.5 text-[#c96b2c]" />
               <span className="font-semibold text-white font-sans">Terminal Output</span>
 
-              {executionResult && (
-                <div className="flex items-center gap-1.5 ml-2">
-                  <span
-                    className={`flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium ${
-                      executionResult.status?.id === 3
-                        ? 'bg-[#1e3a2b] text-[#5cdb95] border border-[#2d5740]'
-                        : 'bg-[#3d1e1e] text-[#f87171] border border-[#5c2d2d]'
-                    }`}
-                  >
-                    {executionResult.status?.id === 3 ? (
-                      <CheckCircle2 className="w-2.5 h-2.5" />
-                    ) : (
-                      <XCircle className="w-2.5 h-2.5" />
-                    )}
-                    <span>{executionResult.status?.description || 'Executed'}</span>
-                  </span>
+              {executionResult && (() => {
+                const statusObj = typeof executionResult.status === 'object' && executionResult.status !== null ? executionResult.status : null;
+                const isSuccess = statusObj ? statusObj.id === 3 : (executionResult.status === 'Completed' || executionResult.status === 'Success');
+                const statusDesc = statusObj ? statusObj.description : (typeof executionResult.status === 'string' ? executionResult.status : 'Executed');
 
-                  {executionResult.time && (
-                    <span className="flex items-center gap-1 text-[10px] text-[#a8a196]">
-                      <Clock className="w-2.5 h-2.5" />
-                      {executionResult.time}s
+                return (
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <span
+                      className={`flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium ${
+                        isSuccess
+                          ? 'bg-[#1e3a2b] text-[#5cdb95] border border-[#2d5740]'
+                          : 'bg-[#3d1e1e] text-[#f87171] border border-[#5c2d2d]'
+                      }`}
+                    >
+                      {isSuccess ? (
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                      ) : (
+                        <XCircle className="w-2.5 h-2.5" />
+                      )}
+                      <span>{statusDesc}</span>
                     </span>
-                  )}
 
-                  <span className="px-1.5 py-0.2 rounded bg-[#2e2c29] text-[#ded7cb] text-[9px]">
-                    Python Quantum Engine
-                  </span>
-                </div>
-              )}
+                    {executionResult.time && (
+                      <span className="flex items-center gap-1 text-[10px] text-[#a8a196]">
+                        <Clock className="w-2.5 h-2.5" />
+                        {executionResult.time}s
+                      </span>
+                    )}
+
+                    <span className="px-1.5 py-0.2 rounded bg-[#2e2c29] text-[#ded7cb] text-[9px]">
+                      Python Quantum Engine
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="flex items-center gap-1.5">
