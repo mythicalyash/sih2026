@@ -5,14 +5,14 @@
     "role": "IIT Delhi \u2014 Quantum Information Group",
     "level": 8,
     "level_title": "Quantum Vanguard",
-    "xp": 280,
+    "xp": 320,
     "max_xp": 5700,
-    "weekly_xp": 2250,
+    "weekly_xp": 2290,
     "streak_days": 14,
     "last_active_date": "2026-08-30"
   },
   "stats": {
-    "simulations_count": 254,
+    "simulations_count": 258,
     "simulations_weekly_delta_pct": 18,
     "quizzes_taken": 45,
     "quizzes_correct": 40,
@@ -3959,6 +3959,54 @@
     {
       "id": "sim_1788105555368",
       "timestamp": "2026-08-30T15:59:15.368237+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788106334069",
+      "timestamp": "2026-08-30T16:12:14.069307+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788106334074",
+      "timestamp": "2026-08-30T16:12:14.074585+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788106334178",
+      "timestamp": "2026-08-30T16:12:14.178996+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788106334184",
+      "timestamp": "2026-08-30T16:12:14.184180+00:00",
       "date": "2026-08-30",
       "type": "simulation_run",
       "xp": 10,

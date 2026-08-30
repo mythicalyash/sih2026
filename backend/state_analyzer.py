@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Optional
 import math
 import numpy as np
 from backend.schemas import AmplitudeItem, BlochVector, BlochResponse, ProbabilitiesResponse, AmplitudesResponse
@@ -127,3 +127,111 @@ def compute_bloch_vectors(statevector: np.ndarray, num_qubits: int) -> List[Bloc
         )
 
     return bloch_vectors
+
+
+def format_dirac_latex(statevector: np.ndarray, num_qubits: int, threshold: float = 1e-4) -> str:
+    """
+    Format a complex statevector into a clean LaTeX Dirac bra-ket expression.
+    e.g. \\frac{1}{\\sqrt{2}}|00\\rangle + \\frac{1}{\\sqrt{2}}|11\\rangle
+    """
+    terms: List[str] = []
+    dim = 2 ** num_qubits
+
+    def _approx_frac(val: float) -> Optional[str]:
+        sq2 = 1.0 / math.sqrt(2)
+        sq2_neg = -sq2
+        half = 0.5
+        half_neg = -0.5
+        sq4 = 0.5
+        sq8 = 1.0 / math.sqrt(8)
+
+        if abs(val - 1.0) < 1e-3:
+            return "1"
+        if abs(val - (-1.0)) < 1e-3:
+            return "-1"
+        if abs(val - sq2) < 1e-3:
+            return "\\frac{1}{\\sqrt{2}}"
+        if abs(val - sq2_neg) < 1e-3:
+            return "-\\frac{1}{\\sqrt{2}}"
+        if abs(val - half) < 1e-3:
+            return "\\frac{1}{2}"
+        if abs(val - half_neg) < 1e-3:
+            return "-\\frac{1}{2}"
+        if abs(val - sq8) < 1e-3:
+            return "\\frac{1}{2\\sqrt{2}}"
+        if abs(val - (-sq8)) < 1e-3:
+            return "-\\frac{1}{2\\sqrt{2}}"
+        return None
+
+    for i in range(dim):
+        if i < len(statevector):
+            item = statevector[i]
+            if hasattr(item, "real") and hasattr(item, "imag"):
+                c = complex(float(item.real), float(item.imag))
+            elif isinstance(item, dict):
+                c = complex(float(item.get("real", 0.0)), float(item.get("imag", 0.0)))
+            else:
+                c = complex(item)
+        else:
+            c = 0.0 + 0.0j
+
+        mag = abs(c)
+        if mag < threshold:
+            continue
+
+        bin_str = bin(i)[2:].zfill(num_qubits)
+        ket = f"|{bin_str}\\rangle"
+        
+        re = c.real
+        im = c.imag
+
+        # Pure real
+        if abs(im) < threshold:
+            frac = _approx_frac(re)
+            if frac:
+                if frac == "1":
+                    coeff = ""
+                elif frac == "-1":
+                    coeff = "-"
+                else:
+                    coeff = frac
+            else:
+                coeff = f"{re:.3f}".rstrip('0').rstrip('.')
+            terms.append(f"{coeff}{ket}")
+
+        # Pure imaginary
+        elif abs(re) < threshold:
+            frac = _approx_frac(im)
+            if frac:
+                if frac == "1":
+                    coeff = "i"
+                elif frac == "-1":
+                    coeff = "-i"
+                elif frac.startswith("-"):
+                    coeff = f"-i{frac[1:]}"
+                else:
+                    coeff = f"i{frac}"
+            else:
+                coeff = f"{im:.3f}i".rstrip('0').rstrip('.')
+            terms.append(f"{coeff}{ket}")
+
+        # Complex combination
+        else:
+            re_str = f"{re:.3f}".rstrip('0').rstrip('.')
+            im_sign = "+" if im >= 0 else "-"
+            im_str = f"{abs(im):.3f}i".rstrip('0').rstrip('.')
+            terms.append(f"({re_str} {im_sign} {im_str}){ket}")
+
+    if not terms:
+        return "|0\\dots0\\rangle"
+
+    # Assemble and format sign chains cleanly
+    res = terms[0]
+    for t in terms[1:]:
+        if t.startswith("-"):
+            res += f" - {t[1:]}"
+        else:
+            res += f" + {t}"
+
+    return res
+

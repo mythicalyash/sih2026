@@ -17,8 +17,23 @@ from backend.schemas import (
     BlochResponse,
     ProbabilitiesResponse,
     AmplitudesResponse,
+    StepEvolutionItem,
+    StepEvolutionResponse,
     TutorRequest,
     TutorResponse,
+    TutorChatRequest,
+    TutorChatResponse,
+    QuizRequest,
+    QuizResponse,
+    CodeFixRequest,
+    CodeFixResponse,
+    PredictiveChallenge,
+    SocraticStepItem,
+    SocraticStepRequest,
+    VoiceCommandRequest,
+    VoiceCommandResponse,
+    QuestGradeRequest,
+    QuestGradeResponse,
     QuirkImportRequest,
     QuirkImportResponse,
     CodeExecuteRequest,
@@ -36,6 +51,12 @@ from backend.schemas import (
     DashboardMetricsResponse,
     LogEventRequest,
     LogEventResponse,
+    ChatSessionSummary,
+    ChatSessionDetail,
+    ChatMessageRecord,
+    CreateSessionRequest,
+    SaveMessageRequest,
+    UpdateSessionTitleRequest,
 )
 from backend.analytics import analytics_store
 from backend.converter import (
@@ -46,13 +67,26 @@ from backend.converter import (
     ir_to_cirq_code,
     ir_to_pennylane_code,
 )
-from backend.engine import run_circuit, run_circuit_qiskit, get_available_backends
+from backend.tutor import (
+    analyze_circuit_diagnostics,
+    detect_quantum_misconceptions,
+    generate_circuit_explanation,
+    grade_quantum_quest,
+    parse_voice_circuit_command,
+)
+from backend.engine import (
+    run_circuit,
+    run_circuit_qiskit,
+    run_circuit_step_by_step,
+    get_available_backends,
+)
 from backend.comparator import compare_circuits
 from backend.code_runner import execute_python_code
 from backend.state_analyzer import (
     compute_bloch_vectors,
     statevector_to_probabilities,
     statevector_to_amplitudes,
+    format_dirac_latex,
 )
 from backend.algorithms import ALGORITHMS_REGISTRY
 from backend.quirk_importer import quirk_to_ir
@@ -71,10 +105,28 @@ from backend.gemini_service import (
     explain_gemini_problem_concept,
     ask_gemini_socratic_tutor,
     explain_gemini_solution_feedback,
+    analyze_and_fix_quantum_code,
+    generate_brilliant_socratic_step,
+    answer_socratic_chat,
+    generate_micro_quiz,
+)
+from backend.chat_store import (
+    init_db as init_chat_db,
+    create_session,
+    list_sessions,
+    get_session,
+    get_session_messages,
+    save_message,
+    update_session_title,
+    delete_session,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("quantum.engine")
+
+# Initialize chat history database
+init_chat_db()
+logger.info("✅ Chat history SQLite database initialized.")
 
 app = FastAPI(
     title="Quantum Computing Education Platform API",
@@ -281,14 +333,28 @@ def import_quirk_circuit(req: QuirkImportRequest):
         raise HTTPException(status_code=400, detail=f"Quirk import failed: {str(e)}")
 
 
+@app.post("/state/step-by-step", response_model=StepEvolutionResponse)
+def get_step_by_step_evolution(circuit: CircuitIR):
+    """
+    Simulate state evolution step-by-step after each gate in the circuit.
+    Returns statevector, measurement probabilities, Bloch vectors per qubit wire,
+    and LaTeX Dirac notation for every execution step.
+    """
+    try:
+        return run_circuit_step_by_step(circuit)
+    except Exception as e:
+        logger.error(f"Step-by-step simulation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Step evolution error: {str(e)}")
+
+
 @app.post("/tutor/explain", response_model=TutorResponse)
 def tutor_explain_circuit(req: TutorRequest):
     """
     Perform deterministic diagnostics (unmeasured qubits, empty circuit, index mismatch,
-    redundant gates) and provide Gemini AI tutor educational analysis.
+    redundant gates) and provide Socratic Gemini AI tutor educational analysis with LaTeX math.
     """
     try:
-        diag_resp = generate_circuit_explanation(req.circuit, req.question)
+        diag_resp = generate_circuit_explanation(req.circuit, req.question, req.mode)
         
         # If student asked a question and Gemini is active, get rich Socratic AI response
         if req.question and req.question.strip():
@@ -296,12 +362,94 @@ def tutor_explain_circuit(req: TutorRequest):
                 circuit=req.circuit,
                 question=req.question.strip(),
                 fallback_response=diag_resp.explanation,
+                mode=req.mode or "socratic",
             )
             diag_resp.explanation = gemini_answer
 
         return diag_resp
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Tutor analysis failed: {str(e)}")
+
+
+@app.post("/api/chat", response_model=TutorChatResponse)
+@app.post("/tutor/chat", response_model=TutorChatResponse)
+def tutor_socratic_chat_endpoint(req: TutorChatRequest):
+    """
+    Pure Socratic Q&A Tutor Chat Endpoint.
+    Returns 2-4 sentence intuitive explanation with LaTeX math,
+    checkpoint follow-up question, key takeaways, and 3 suggested exploration chips.
+    """
+    try:
+        return answer_socratic_chat(req)
+    except Exception as e:
+        logger.error(f"Socratic chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Socratic chat generation error: {str(e)}")
+
+
+@app.post("/api/tutor/quiz", response_model=QuizResponse)
+@app.post("/tutor/quiz", response_model=QuizResponse)
+def tutor_micro_quiz_endpoint(req: QuizRequest):
+    """
+    AI 'Check Your Understanding' Micro-Quiz Generator.
+    Returns 2-3 interactive multiple-choice questions with options,
+    correct index, and pedagogical explanations.
+    """
+    try:
+        return generate_micro_quiz(req)
+    except Exception as e:
+        logger.error(f"Micro quiz generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Micro quiz error: {str(e)}")
+
+
+@app.post("/tutor/socratic-step", response_model=SocraticStepItem)
+def get_socratic_step_endpoint(req: SocraticStepRequest):
+    """
+    Generate an interactive Brilliant-style Socratic micro-step challenge.
+    Includes intuitive concept hook, workspace action, and predictive challenge.
+    """
+    try:
+        return generate_brilliant_socratic_step(req)
+    except Exception as e:
+        logger.error(f"Socratic step error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Socratic step generation failed: {str(e)}")
+
+
+@app.post("/tutor/grade-quest", response_model=QuestGradeResponse)
+def tutor_grade_quest_endpoint(req: QuestGradeRequest):
+    """
+    Automated grader for progressive Quantum Quests.
+    Checks statevector against target state and awards XP / badges.
+    """
+    try:
+        return grade_quantum_quest(req.quest_id, req.circuit)
+    except Exception as e:
+        logger.error(f"Quest grading failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Quest grading error: {str(e)}")
+
+
+@app.post("/tutor/voice-command", response_model=VoiceCommandResponse)
+def tutor_voice_command_endpoint(req: VoiceCommandRequest):
+    """
+    Natural Language & Voice-to-Circuit Command Parser.
+    Parses speech transcripts into circuit gates and updates the quantum grid.
+    """
+    try:
+        return parse_voice_circuit_command(req.speech_transcript, req.circuit)
+    except Exception as e:
+        logger.error(f"Voice command error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Voice parsing error: {str(e)}")
+
+
+@app.post("/tutor/fix-code", response_model=CodeFixResponse)
+def tutor_fix_quantum_code_endpoint(req: CodeFixRequest):
+    """
+    AI Quantum Code Explainer and Error Fixer using Gemini.
+    Detects quantum bugs, syntax errors, deprecations, and returns corrected code.
+    """
+    try:
+        return analyze_and_fix_quantum_code(req)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Code fix error: {str(e)}")
 
 
 @app.post("/export/qasm")
@@ -634,4 +782,65 @@ def reset_dashboard_metrics_endpoint():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset dashboard metrics: {str(e)}")
 
+
+# ── Chat History Endpoints ───────────────────────────────────────
+
+@app.get("/api/tutor/history")
+def list_chat_sessions():
+    """List all saved chat sessions (newest first) with message counts."""
+    sessions = list_sessions()
+    return {"sessions": sessions}
+
+
+@app.post("/api/tutor/history")
+def create_chat_session(req: CreateSessionRequest = Body(default=CreateSessionRequest())):
+    """Create a new chat session."""
+    session = create_session(title=req.title)
+    return session
+
+
+@app.get("/api/tutor/history/{session_id}")
+def get_chat_session(session_id: str):
+    """Get full session detail with all messages."""
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    messages = get_session_messages(session_id)
+    return {
+        **session,
+        "messages": messages,
+    }
+
+
+@app.post("/api/tutor/history/{session_id}/message")
+def save_chat_message(session_id: str, req: SaveMessageRequest):
+    """Save a message to a session."""
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    msg = save_message(
+        session_id=session_id,
+        role=req.role,
+        content=req.content,
+        concept_tag=req.concept_tag,
+    )
+    return msg
+
+
+@app.patch("/api/tutor/history/{session_id}")
+def patch_chat_session(session_id: str, req: UpdateSessionTitleRequest):
+    """Update a session's title."""
+    updated = update_session_title(session_id, req.title)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"success": True, "session_id": session_id, "title": req.title}
+
+
+@app.delete("/api/tutor/history/{session_id}")
+def delete_chat_session(session_id: str):
+    """Delete a session and all its messages."""
+    deleted = delete_session(session_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"success": True, "session_id": session_id}
 

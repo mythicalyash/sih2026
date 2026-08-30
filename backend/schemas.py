@@ -106,6 +106,24 @@ class AmplitudesResponse(BaseModel):
     amplitudes: List[AmplitudeItem]
 
 
+class StepEvolutionItem(BaseModel):
+    step_index: int
+    gate_name: Optional[str] = None
+    qubits: Optional[List[int]] = None
+    params: Optional[List[float]] = None
+    description: str = ""
+    statevector: List[AmplitudeItem] = Field(default_factory=list)
+    probabilities: Dict[str, float] = Field(default_factory=dict)
+    bloch_vectors: List[BlochVector] = Field(default_factory=list)
+    latex_state: str = ""
+
+
+class StepEvolutionResponse(BaseModel):
+    num_qubits: int
+    total_steps: int
+    steps: List[StepEvolutionItem] = Field(default_factory=list)
+
+
 class DiagnosticIssue(BaseModel):
     type: str  # e.g., "EMPTY_CIRCUIT", "UNMEASURED_QUBITS", "INDEX_OUT_OF_BOUNDS", "REDUNDANT_GATES", "UNCONNECTED_QUBIT"
     severity: str  # "error", "warning", "info"
@@ -114,17 +132,135 @@ class DiagnosticIssue(BaseModel):
     gate_indices: Optional[List[int]] = None
 
 
+class MisconceptionItem(BaseModel):
+    id: str  # e.g., "CLASSICAL_VS_SUPERPOSITION", "NO_CLONING_VIOLATION", "MEASUREMENT_COLLAPSE", "REDUNDANT_GATES"
+    title: str
+    description: str
+    corrective_guidance: str
+    severity: str = "warning"  # "info", "warning", "error"
+
+
 class TutorRequest(BaseModel):
     circuit: CircuitIR
     question: Optional[str] = ""
+    mode: Optional[str] = "socratic"  # "socratic", "beginner", "mathematical", "diagnostics", "code"
 
 
 class TutorResponse(BaseModel):
     status: str  # "clean", "warning", "error"
     issues: List[DiagnosticIssue] = Field(default_factory=list)
+    misconceptions: List[MisconceptionItem] = Field(default_factory=list)
     explanation: str
     circuit_summary: Dict[str, Any] = Field(default_factory=dict)
     suggestions: List[str] = Field(default_factory=list)
+    latex_math: Optional[str] = None
+    code_fix: Optional[str] = None
+
+
+class TutorChatRequest(BaseModel):
+    message: str
+    conversation_history: Optional[List[Dict[str, str]]] = Field(default_factory=list)
+    mode: Optional[str] = "socratic"  # "socratic", "eli5", "mathematical"
+
+
+class TutorChatResponse(BaseModel):
+    reply: str
+    follow_up_question: Optional[str] = None
+    suggestions: List[str] = Field(default_factory=list)
+    concept_tag: Optional[str] = "Quantum Fundamentals"
+    key_takeaways: List[str] = Field(default_factory=list)
+
+
+class QuizRequest(BaseModel):
+    topic: str
+    context: Optional[str] = None
+    num_questions: Optional[int] = 3
+
+
+class QuizQuestion(BaseModel):
+    question: str
+    options: List[str]
+    correctIndex: int
+    explanation: str
+
+
+class QuizResponse(BaseModel):
+    topic: str
+    quiz: List[QuizQuestion] = Field(default_factory=list)
+
+
+class PredictiveChallenge(BaseModel):
+    question: str
+    options: List[str]
+    correct_index: int
+    hint: str
+    explanation: str
+
+
+class SocraticStepItem(BaseModel):
+    step_id: str
+    track_id: str
+    title: str
+    step_number: int
+    total_steps: int
+    intuitive_concept: str
+    workspace_action: str
+    target_gate_hint: Optional[str] = None
+    predictive_challenge: Optional[PredictiveChallenge] = None
+    latex_formula: Optional[str] = None
+    misconceptions: List[MisconceptionItem] = Field(default_factory=list)
+    xp_reward: int = 25
+
+
+class SocraticStepRequest(BaseModel):
+    circuit: CircuitIR
+    question: Optional[str] = None
+    track_id: Optional[str] = "superposition"
+    step_number: int = 1
+
+
+class CodeFixRequest(BaseModel):
+    source_code: str
+    error_message: Optional[str] = None
+    language: str = "python"
+    circuit_context: Optional[CircuitIR] = None
+
+
+class CodeFixResponse(BaseModel):
+    success: bool
+    explanation: str
+    corrected_code: str
+    issues_found: List[str] = Field(default_factory=list)
+    optimizations: List[str] = Field(default_factory=list)
+
+
+class VoiceCommandRequest(BaseModel):
+    speech_transcript: str
+    circuit: CircuitIR
+
+
+class VoiceCommandResponse(BaseModel):
+    success: bool
+    action_description: str
+    circuit: CircuitIR
+    gates_added: List[GateIR] = Field(default_factory=list)
+
+
+class QuestGradeRequest(BaseModel):
+    quest_id: str
+    circuit: CircuitIR
+
+
+class QuestGradeResponse(BaseModel):
+    success: bool
+    quest_id: str
+    title: str
+    score: int
+    fidelity: float
+    message: str
+    target_state_latex: str
+    current_state_latex: str
+    badge: Optional[str] = None
 
 
 class QuirkImportRequest(BaseModel):
@@ -306,4 +442,45 @@ class LogEventRequest(BaseModel):
 class LogEventResponse(BaseModel):
     success: bool
     event: Dict[str, Any]
+
+
+# ── Chat History Models ──────────────────────────────────────────
+
+class ChatMessageRecord(BaseModel):
+    id: str
+    session_id: str
+    role: str  # "user" | "tutor"
+    content: str
+    concept_tag: str = ""
+    created_at: str
+
+
+class ChatSessionSummary(BaseModel):
+    id: str
+    title: str
+    created_at: str
+    updated_at: str
+    message_count: int = 0
+
+
+class ChatSessionDetail(BaseModel):
+    id: str
+    title: str
+    created_at: str
+    updated_at: str
+    messages: List[ChatMessageRecord] = Field(default_factory=list)
+
+
+class CreateSessionRequest(BaseModel):
+    title: str = "New Chat"
+
+
+class SaveMessageRequest(BaseModel):
+    role: str  # "user" | "tutor"
+    content: str
+    concept_tag: str = ""
+
+
+class UpdateSessionTitleRequest(BaseModel):
+    title: str
 

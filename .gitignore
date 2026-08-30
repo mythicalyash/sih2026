@@ -41,5 +41,8 @@ next-env.d.ts
 .DS_Store
 .env
 .env.local
+*.db
+*.db-wal
+*.db-shm
 .env.*.local
 *.log
