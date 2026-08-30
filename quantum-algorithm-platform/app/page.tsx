@@ -18,7 +18,6 @@ import { BACKEND_URL } from '@/config'
 const navItems = [
   { label: 'Home', icon: HomeIcon },
   { label: 'Learn Quantum', icon: BookOpen },
-  { label: 'Challenges', icon: Trophy },
   { label: 'Quantum Simulation', icon: GitBranch },
   { label: 'AI Tutor', icon: BrainCircuit },
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -46,9 +45,7 @@ function Brand() {
 function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: string; setActive: (v: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void }) {
   const handleNavClick = (label: string) => {
     setActive(label);
-    if (label === 'Quantum Simulation') {
-      setCollapsed(true);
-    }
+    setCollapsed(true);
   };
 
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -72,7 +69,6 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: strin
         >
           <Icon />
           <span>{label}</span>
-          {label === 'Challenges' && <i className="nav-pip" style={{ background: '#c96b2c' }} />}
           {label === 'AI Tutor' && <i className="nav-pip" />}
         </button>
       ))}
@@ -98,11 +94,11 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: strin
           <span style={{ width: '88%' }} />
         </div>
       </div>
-      <button className="nav-item" onClick={() => setActive('Settings')}>
+      <button className="nav-item" onClick={() => { setActive('Settings'); setCollapsed(true); }}>
         <Settings />
         <span>Settings</span>
       </button>
-      <div className="profile">
+      <div className="profile cursor-pointer" onClick={() => { setActive('Settings'); setCollapsed(true); }}>
         <div className="avatar">AM</div>
         <div className="profile-copy">
           <strong>Arjun Mehta</strong>
@@ -114,8 +110,105 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: { active: strin
   </aside>
 }
 
-function Topbar({ active, setActive }: { active: string; setActive: (v: string) => void }) {
-  return <header className="topbar"><div className="crumb"><span>Workspace</span><ChevronRight /><strong>{active}</strong></div><div className="top-actions"><div className="search"><Search /><input aria-label="Search" placeholder="Search workspace" /></div><div className="top-stat"><Flame /><strong>12</strong><span>day streak</span></div><div className="top-stat xp"><Zap /><strong>2,840</strong><span>XP</span></div><button className="icon-button"><Bell /><i className="notification" /></button><button className="avatar small" onClick={() => setActive('Settings')}>AM</button></div></header>
+function Topbar({
+  active,
+  setActive,
+  collapsed,
+  setCollapsed,
+  learnSubTab,
+  setLearnSubTab,
+}: {
+  active: string;
+  setActive: (v: string) => void;
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+  learnSubTab: 'courses' | 'problems';
+  setLearnSubTab: (v: 'courses' | 'problems') => void;
+}) {
+  const isCoursesActive = active === 'Learn Quantum' && learnSubTab === 'courses';
+  const isProblemsActive = active === 'Learn Quantum' && learnSubTab === 'problems';
+  const isSimulatorActive = active === 'Quantum Simulation';
+  const isTutorActive = active === 'AI Tutor';
+
+  return (
+    <header className="topbar flex items-center justify-between px-6 py-2 border-b border-[#ded7cb] bg-[#f7f4ee]">
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => {
+            setActive('Learn Quantum');
+            setLearnSubTab('courses');
+          }}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isCoursesActive
+              ? 'bg-white text-[#211f1b] border-[#c96b2c] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <BookOpen className={`w-3.5 h-3.5 ${isCoursesActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
+          <span>Courses</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActive('Learn Quantum');
+            setLearnSubTab('problems');
+          }}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isProblemsActive
+              ? 'bg-white text-[#211f1b] border-[#c96b2c] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <Trophy className={`w-3.5 h-3.5 ${isProblemsActive ? 'text-[#c96b2c]' : 'text-[#746e64]'}`} />
+          <span>Problems & Challenges</span>
+        </button>
+
+        <button
+          onClick={() => setActive('Quantum Simulation')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isSimulatorActive
+              ? 'bg-white text-[#211f1b] border-[#0f62fe] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <GitBranch className={`w-3.5 h-3.5 ${isSimulatorActive ? 'text-[#0f62fe]' : 'text-[#746e64]'}`} />
+          <span>Quantum Simulator</span>
+        </button>
+
+        <button
+          onClick={() => setActive('AI Tutor')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            isTutorActive
+              ? 'bg-white text-[#211f1b] border-[#287854] shadow-2xs font-extrabold'
+              : 'bg-transparent text-[#746e64] border-transparent hover:text-[#211f1b] hover:bg-[#e4ded4]/50'
+          }`}
+        >
+          <BrainCircuit className={`w-3.5 h-3.5 ${isTutorActive ? 'text-[#287854]' : 'text-[#746e64]'}`} />
+          <span>AI Quantum Tutor</span>
+        </button>
+      </div>
+
+      <div className="top-actions flex items-center gap-3">
+        <div className="search flex items-center gap-2 bg-[#fffdf9] border border-[#ded7cb] rounded-lg px-3 py-1.5 w-44 text-xs">
+          <Search className="w-3.5 h-3.5 text-[#746e64]" />
+          <input aria-label="Search" placeholder="Search workspace" className="bg-transparent border-0 outline-none w-full text-xs" />
+        </div>
+        <button className="icon-button relative p-1.5 text-[#746e64] hover:text-[#211f1b] rounded-lg transition-colors cursor-pointer" title="Notifications">
+          <Bell className="w-4 h-4" />
+          <i className="notification" />
+        </button>
+        <button
+          className="avatar small cursor-pointer"
+          onClick={() => {
+            setActive('Settings');
+            setCollapsed(true);
+          }}
+        >
+          AM
+        </button>
+      </div>
+    </header>
+  );
 }
 
 function ProgressBar({ value }: { value: number }) { return <div className="progress-track"><span style={{ width: `${value}%` }} /></div> }
@@ -542,8 +635,9 @@ function Community() { return <div className="page-content"><div className="welc
 function SettingsView() { return <div className="page-content settings-page"><div className="eyebrow">WORKSPACE SETTINGS</div><h1>Make it yours<span className="accent-dot">.</span></h1><div className="settings-layout"><div className="settings-nav"><button className="selected">Profile</button><button>Appearance</button><button>Language</button><button>Editor</button><button>Notifications</button></div><Card className="settings-form"><div className="eyebrow">PROFILE</div><h2>Your public profile</h2><label>Display name<input defaultValue="Arjun Mehta" /></label><label>Bio<textarea defaultValue="Learning quantum algorithms one circuit at a time." /></label><div className="form-row"><label>Interface language<select defaultValue="English"><option>English</option><option>Hindi</option></select></label><label>Theme<select defaultValue="Dark"><option>Dark</option><option>Light</option></select></label></div><button className="button primary">Save changes</button></Card></div></div> }
 
 export default function Page() {
-  const [active, setActive] = useState('Home');
+  const [active, setActive] = useState('Learn Quantum');
   const [collapsed, setCollapsed] = useState(false);
+  const [learnSubTab, setLearnSubTab] = useState<'courses' | 'problems'>('courses');
 
   // Problem State
   const [allProblems, setAllProblems] = useState<QuantumProblem[]>([]);
@@ -579,7 +673,7 @@ export default function Page() {
           setAllProblems(data);
         }
       } catch (e) {
-        console.error('Failed to load problems:', e);
+        console.warn('Backend API offline or unreachable, using fallback problem data:', e);
       }
     };
     fetchProblems();
@@ -634,9 +728,7 @@ export default function Page() {
       setSelectedProblemDetail(null);
     }
     setActive(tab);
-    if (tab === 'Quantum Simulation') {
-      setCollapsed(true);
-    }
+    setCollapsed(true);
   };
 
   let content: React.ReactNode;
@@ -647,15 +739,11 @@ export default function Page() {
     content = (
       <LearnView
         setActive={handleSelectTab}
-        onSelectChallenge={(cId) => {
-          const found = allProblems.find((p) => p.id === cId);
-          if (found) {
-            setActiveProblem(found);
-            setActive('Challenges');
-          } else {
-            setActive('Challenges');
-          }
-        }}
+        learnSubTab={learnSubTab}
+        setLearnSubTab={setLearnSubTab}
+        allProblems={allProblems}
+        progress={progress}
+        onProblemSolved={handleProblemSolved}
       />
     );
   } else if (active === 'Challenges') {
@@ -714,7 +802,16 @@ export default function Page() {
         setCollapsed={setCollapsed}
       />
       <div className={active === 'Quantum Simulation' ? 'sim-shell' : 'main-shell'}>
-        {active !== 'Quantum Simulation' && <Topbar active={active} setActive={handleSelectTab} />}
+        {active !== 'Quantum Simulation' && (
+          <Topbar
+            active={active}
+            setActive={handleSelectTab}
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            learnSubTab={learnSubTab}
+            setLearnSubTab={setLearnSubTab}
+          />
+        )}
         {content}
       </div>
     </div>

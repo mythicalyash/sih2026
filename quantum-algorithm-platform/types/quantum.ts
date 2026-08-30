@@ -29,12 +29,25 @@ export interface ExecutionRequest {
   noise_model?: Record<string, any>;
 }
 
+export interface AmplitudeItem {
+  state: string;
+  index: number;
+  real: number;
+  imag: number;
+  magnitude: number;
+  phase_rad: number;
+  phase_deg: number;
+}
+
+export type StatevectorAmplitude = AmplitudeItem;
+
 export interface ExecutionResponse {
   counts: Record<string, number>;
   probabilities: Record<string, number>;
-  statevector?: number[][];
+  statevector?: AmplitudeItem[] | number[][];
   execution_time_ms: number;
   backend_used: string;
+  backend_name?: string;
   num_qubits: number;
   raw_output?: Record<string, any>;
 }
@@ -58,6 +71,30 @@ export interface CompareRequest {
 export interface CompareResponse {
   results: Record<string, ExecutionResponse>;
   total_time_ms: number;
+}
+
+export interface ComparisonResponse {
+  match: boolean;
+  max_diff: number;
+  max_statevector_diff?: number;
+  comparison?: Record<string, any>;
+  tolerance: number;
+  fidelity: number;
+  qiskit_result?: Record<string, any>;
+  pennylane_result?: Record<string, any>;
+  results: Record<string, ExecutionResponse>;
+  details: string;
+  total_time_ms?: number;
+}
+
+export interface BlochVector {
+  qubit: number;
+  x: number;
+  y: number;
+  z: number;
+  r: number;
+  theta: number;
+  phi: number;
 }
 
 export interface AlgorithmSummary {
@@ -86,11 +123,12 @@ export interface ExecutionStatus {
 }
 
 export interface CodeExecutionResult {
-  stdout: string;
-  stderr: string;
-  execution_time_ms: number;
-  status: string;
+  stdout?: string | null;
+  stderr?: string | null;
+  execution_time_ms?: number;
+  status: string | { id: number; description: string } | null;
   source?: string;
+  time?: string;
 }
 
 export interface QuantumProblem {
@@ -149,4 +187,20 @@ export interface ProblemProgressState {
   attemptedProblemIds: string[];
   streakDays: number;
   totalXp: number;
+}
+
+export interface DiagnosticIssue {
+  type: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  qubits?: number[];
+  gate_indices?: number[];
+}
+
+export interface TutorResponse {
+  status: 'clean' | 'warning' | 'error';
+  issues: DiagnosticIssue[];
+  explanation: string;
+  circuit_summary?: Record<string, any>;
+  suggestions: string[];
 }

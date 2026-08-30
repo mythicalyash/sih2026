@@ -40,12 +40,69 @@ const PROBLEM_ACCEPTANCE: Record<string, string> = {
   break_entanglement: '52.0%',
 };
 
+const FALLBACK_PROBLEMS: QuantumProblem[] = [
+  {
+    id: 'superposition',
+    title: 'Create Equal Superposition',
+    short_description: 'Transform ground state |0⟩ into state ( |0⟩ + |1⟩ ) / √2',
+    difficulty: 'Beginner',
+    topic: 'Superposition',
+    xp: 100,
+    num_qubits: 1,
+    estimated_minutes: 5,
+    starter_circuit: { num_qubits: 1, gates: [] },
+    goal: 'Apply an H gate to qubit 0',
+    expected_behavior: 'P(0) = 0.5, P(1) = 0.5',
+    suggested_concept: 'Hadamard Gate',
+    hints: ['Apply H gate on q[0]'],
+    concept_explanation: 'Hadamard gate maps basis state |0⟩ to equal superposition state |+⟩.',
+    available_gates: ['h', 'x', 'z'],
+    requirements: ['Use 1 qubit', 'Apply H gate'],
+  },
+  {
+    id: 'flip_qubit',
+    title: 'Flip a Qubit (Pauli-X)',
+    short_description: 'Invert qubit state from |0⟩ to |1⟩ using a bit flip',
+    difficulty: 'Beginner',
+    topic: 'Quantum Gates',
+    xp: 100,
+    num_qubits: 1,
+    estimated_minutes: 3,
+    starter_circuit: { num_qubits: 1, gates: [] },
+    goal: 'Apply an X gate to qubit 0',
+    expected_behavior: 'P(1) = 1.0',
+    suggested_concept: 'Pauli-X Gate',
+    hints: ['Apply X gate on q[0]'],
+    concept_explanation: 'Pauli-X acts as the quantum NOT gate.',
+    available_gates: ['x', 'h', 'z'],
+    requirements: ['Use 1 qubit', 'Apply X gate'],
+  },
+  {
+    id: 'bell_state',
+    title: 'Generate Bell State (|Φ⁺⟩)',
+    short_description: 'Entangle 2 qubits to create the maximally entangled EPR pair',
+    difficulty: 'Intermediate',
+    topic: 'Entanglement',
+    xp: 150,
+    num_qubits: 2,
+    estimated_minutes: 8,
+    starter_circuit: { num_qubits: 2, gates: [] },
+    goal: 'Apply H on q[0] and CNOT from q[0] to q[1]',
+    expected_behavior: 'P(00) = 0.5, P(11) = 0.5',
+    suggested_concept: 'Quantum Entanglement & CNOT',
+    hints: ['Apply H on q[0]', 'Apply CX with control=q[0] and target=q[1]'],
+    concept_explanation: 'Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2 shows non-local correlation.',
+    available_gates: ['h', 'cx', 'x'],
+    requirements: ['Use 2 qubits', 'Apply H on q[0]', 'Apply CX(0, 1)'],
+  },
+];
+
 export function ProblemsListView({
   onSelectProblem,
   onOpenInSimulator,
   progress,
 }: ProblemsListViewProps) {
-  const [problems, setProblems] = useState<QuantumProblem[]>([]);
+  const [problems, setProblems] = useState<QuantumProblem[]>(FALLBACK_PROBLEMS);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<string>('All Topics');
@@ -62,7 +119,7 @@ export function ProblemsListView({
           setProblems(data);
         }
       } catch (err) {
-        console.error('Failed to load problems:', err);
+        console.error('Failed to load problems from API, using fallback data:', err);
       } finally {
         setLoading(false);
       }

@@ -25,6 +25,19 @@ import type {
 } from '@/types/quantum';
 import { BACKEND_URL } from '@/config';
 
+export function cleanQuantumText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\$\\?\|0\\?\rangle\$/g, '|0⟩')
+    .replace(/\$\\?\|1\\?\rangle\$/g, '|1⟩')
+    .replace(/\$\\?\|\+\\?\rangle\$/g, '|+⟩')
+    .replace(/\$\\?\|-\\?\rangle\$/g, '|-⟩')
+    .replace(/\\rangle/g, '⟩')
+    .replace(/\\langle/g, '⟨')
+    .replace(/\$([0-9]+)\$/g, '$1')
+    .replace(/\$([^$]+)\$/g, '$1');
+}
+
 interface ChallengeResultViewProps {
   problem: QuantumProblem;
   submittedCircuit: CircuitIR;
@@ -477,7 +490,9 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
             {/* AI Explanation Body */}
             <div className="text-xs text-[#38342e] leading-relaxed flex flex-col gap-2">
               <p>
-                {checkResult.ai_explanation || (
+                {checkResult.ai_explanation ? (
+                  cleanQuantumText(checkResult.ai_explanation)
+                ) : (
                   <>
                     Great job! You used a Hadamard gate to put the qubit into an equal superposition of |0⟩ and |1⟩.
                     <br /><br />
@@ -616,7 +631,7 @@ export const ChallengeResultView: React.FC<ChallengeResultViewProps> = ({
                     <strong className="block text-[10px] uppercase opacity-70 mb-0.5">
                       {msg.role === 'user' ? 'You' : 'AI Mentor'}
                     </strong>
-                    {msg.text}
+                    {cleanQuantumText(msg.text)}
                   </div>
                 ))
               )}

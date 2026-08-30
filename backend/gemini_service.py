@@ -12,14 +12,13 @@ from backend.converter import ir_to_qasm
 logger = logging.getLogger("qubit_lab.gemini")
 
 # Model configuration
-DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 FALLBACK_MODELS = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-2.5-flash-lite",
     "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
+    "gemini-2.5-pro",
+    "gemini-1.5-pro",
 ]
 
 # In-memory runtime API key override
@@ -134,8 +133,9 @@ Important pedagogical guidelines:
 1. Speak in a warm, encouraging, concise Socratic style (2-4 sentences max).
 2. Do NOT give away the complete solution directly on Hint 1 or early queries.
 3. Guide the student with thoughtful questions and clear conceptual hints.
-4. Use standard quantum notation like |0⟩, |1⟩, |+⟩, H gate, CNOT (control -> target).
-5. Ground your advice in the user's specific circuit state.
+4. Use plain clean text or Unicode quantum notation: |0⟩, |1⟩, |+⟩, |-⟩, 0, 1, H gate, CNOT.
+5. NEVER use LaTeX math delimiters like $...$, \\rangle, \\beta, or \\alpha. Write plain |0⟩ and |1⟩ and 50% instead of LaTeX strings.
+6. Ground your advice in the user's specific circuit state.
 """
 
 def generate_gemini_problem_hint(
