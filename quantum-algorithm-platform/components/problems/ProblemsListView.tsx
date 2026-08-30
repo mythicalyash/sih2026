@@ -287,19 +287,32 @@ export function ProblemsListView({
       {/* ========================================================================= */}
       <div className="flex flex-col gap-3">
         {/* Top Tag Counts */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs text-[#746e64] no-scrollbar">
-          {topTags.map((tag) => (
-            <button
-              key={tag.name}
-              onClick={() => setSelectedTopic(tag.name === selectedTopic ? 'All Topics' : tag.name)}
-              className="px-2.5 py-1 rounded-md bg-[#f0ece4] hover:bg-[#e4ded4] transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
-            >
-              <span>{tag.name}</span>
-              <span className="text-[10px] font-mono bg-white px-1.5 py-0.2 rounded text-[#211f1b] font-bold">
-                {tag.count}
-              </span>
-            </button>
-          ))}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+          {topTags.map((tag) => {
+            const isTagActive = selectedTopic === tag.name;
+            return (
+              <button
+                key={tag.name}
+                onClick={() => setSelectedTopic(tag.name === selectedTopic ? 'All Topics' : tag.name)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border ${
+                  isTagActive
+                    ? 'bg-[#c96b2c] text-white border-[#c96b2c] shadow-xs'
+                    : 'bg-[#f0ece4] text-[#2b2721] border-[#e4ded4] hover:bg-[#e4ded4] hover:text-[#000000]'
+                }`}
+                style={{ color: isTagActive ? '#ffffff' : '#2b2721' }}
+              >
+                <span style={{ color: isTagActive ? '#ffffff' : '#2b2721' }}>{tag.name}</span>
+                <span
+                  className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                    isTagActive ? 'bg-white/25 text-white' : 'bg-white text-[#211f1b] border border-[#ded7cb]'
+                  }`}
+                  style={{ color: isTagActive ? '#ffffff' : '#211f1b' }}
+                >
+                  {tag.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Category Pills */}
@@ -310,17 +323,28 @@ export function ProblemsListView({
               <button
                 key={t.name}
                 onClick={() => setSelectedTopic(t.name)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border ${
                   isActive
-                    ? 'bg-[#211f1b] text-white shadow-xs'
-                    : 'bg-[#fffdfa] border border-[#e4ded4] text-[#211f1b] hover:bg-[#f5f1e8]'
+                    ? 'bg-[#211f1b] border-[#211f1b] text-white shadow-xs'
+                    : 'bg-[#fffdfa] border-[#ded7cb] text-[#211f1b] hover:bg-[#f5f1e8]'
                 }`}
+                style={{
+                  backgroundColor: isActive ? '#211f1b' : '#fffdfa',
+                  color: isActive ? '#ffffff' : '#211f1b',
+                }}
               >
-                <span>{t.name}</span>
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-[#eee9df] text-[#746e64]'
-                  }`}
+                  className="font-bold"
+                  style={{ color: isActive ? '#ffffff' : '#211f1b' }}
+                >
+                  {t.name}
+                </span>
+                <span
+                  className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.22)' : '#ede7dc',
+                    color: isActive ? '#ffffff' : '#49443b',
+                  }}
                 >
                   {t.count}
                 </span>
