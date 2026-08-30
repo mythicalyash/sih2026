@@ -3,9 +3,21 @@ import math
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 
-from backend.schemas import CircuitIR, ExecutionResponse, AmplitudeItem, BackendInfo
+from backend.schemas import (
+    CircuitIR,
+    ExecutionResponse,
+    AmplitudeItem,
+    BackendInfo,
+    StepEvolutionItem,
+    StepEvolutionResponse,
+)
 from backend.converter import ir_to_qiskit, ir_to_cirq, normalize_gate_name
-from backend.state_analyzer import statevector_to_amplitudes, statevector_to_probabilities
+from backend.state_analyzer import (
+    statevector_to_amplitudes,
+    statevector_to_probabilities,
+    compute_bloch_vectors,
+    format_dirac_latex,
+)
 
 
 def _sample_counts_from_probs(probs: Dict[str, float], shots: int) -> Dict[str, int]:
@@ -563,4 +575,107 @@ def get_available_backends() -> List[BackendInfo]:
         pass
 
     return backends
+
+
+def run_circuit_step_by_step(circuit: CircuitIR) -> StepEvolutionResponse:
+    """
+    Simulate step-by-step state evolution of a quantum circuit.
+    Step 0 is the initial ground state |0...0>.
+    Subsequent steps evaluate state after applying gate 1, 2, ..., N.
+    """
+    from qiskit.quantum_info import Statevector
+
+    num_qubits = circuit.num_qubits
+    dim = 2 ** num_qubits
+    steps: List[StepEvolutionItem] = []
+
+    # Step 0: Ground state
+    init_sv = np.zeros(dim, dtype=complex)
+    init_sv[0] = 1.0
+    steps.append(
+        StepEvolutionItem(
+            step_index=0,
+            gate_name="init",
+            qubits=list(range(num_qubits)),
+            params=[],
+            description="Initialized system in pure ground state |0...0⟩.",
+            statevector=statevector_to_amplitudes(init_sv, num_qubits),
+            probabilities=statevector_to_probabilities(init_sv, num_qubits),
+            bloch_vectors=compute_bloch_vectors(init_sv, num_qubits),
+            latex_state=format_dirac_latex(init_sv, num_qubits),
+        )
+    )
+
+    if not circuit.gates:
+        return StepEvolutionResponse(
+            num_qubits=num_qubits,
+            total_steps=1,
+            steps=steps,
+        )
+
+    # Accumulate gates step-by-step
+    for idx, current_gate in enumerate(circuit.gates):
+        step_index = idx + 1
+        prefix_gates = circuit.gates[:idx + 1]
+        active_prefix = [g for g in prefix_gates if normalize_gate_name(g.name) != "measure"]
+
+        try:
+            sub_ir = CircuitIR(num_qubits=num_qubits, gates=active_prefix)
+            qc_sub = ir_to_qiskit(sub_ir)
+            sv_obj = Statevector.from_instruction(qc_sub)
+            sv_arr = np.array(sv_obj.data, dtype=complex)
+        except Exception:
+            # Fallback to ground state if error
+            sv_arr = np.zeros(dim, dtype=complex)
+            sv_arr[0] = 1.0
+
+        g_name = normalize_gate_name(current_gate.name).upper()
+        q_targets = current_gate.qubits
+        q_str = ", ".join(f"q[{q}]" for q in q_targets)
+
+        # Gate narrative description
+        if g_name == "H":
+            desc = f"Hadamard gate on {q_str} creates an equal superposition of basis states."
+        elif g_name in ["CX", "CNOT"]:
+            ctrl = q_targets[0] if len(q_targets) > 0 else 0
+            tgt = q_targets[1] if len(q_targets) > 1 else 1
+            desc = f"Controlled-NOT with control q[{ctrl}] and target q[{tgt}] introduces multi-qubit entanglement."
+        elif g_name == "X":
+            desc = f"Pauli-X (NOT) gate on {q_str} bit-flips |0⟩ ↔ |1⟩ (180° rotation around X-axis)."
+        elif g_name == "Y":
+            desc = f"Pauli-Y gate on {q_str} performs 180° rotation around Y-axis (bit + phase flip)."
+        elif g_name == "Z":
+            desc = f"Pauli-Z gate on {q_str} phase-flips |1⟩ → -|1⟩ (180° rotation around Z-axis)."
+        elif g_name in ["S", "SDG"]:
+            desc = f"Phase gate ({g_name}) on {q_str} rotates state around Z-axis by ±90° (π/2 phase)."
+        elif g_name in ["T", "TDG"]:
+            desc = f"T-gate ({g_name}) on {q_str} applies a π/4 non-Clifford phase rotation."
+        elif g_name == "MEASURE":
+            desc = f"Projective measurement operator on {q_str} collapses superposition into classical basis state."
+        elif g_name in ["RX", "RY", "RZ"]:
+            angle = current_gate.params[0] if current_gate.params else math.pi
+            desc = f"Parametric rotation {g_name}(θ={angle:.2f} rad) applied to {q_str} on the Bloch sphere."
+        else:
+            desc = f"Applied {g_name} gate operation on {q_str}."
+
+        steps.append(
+            StepEvolutionItem(
+                step_index=step_index,
+                gate_name=current_gate.name,
+                qubits=current_gate.qubits,
+                params=current_gate.params or [],
+                description=desc,
+                statevector=statevector_to_amplitudes(sv_arr, num_qubits),
+                probabilities=statevector_to_probabilities(sv_arr, num_qubits),
+                bloch_vectors=compute_bloch_vectors(sv_arr, num_qubits),
+                latex_state=format_dirac_latex(sv_arr, num_qubits),
+            )
+        )
+
+    return StepEvolutionResponse(
+        num_qubits=num_qubits,
+        total_steps=len(steps),
+        steps=steps,
+    )
+
 

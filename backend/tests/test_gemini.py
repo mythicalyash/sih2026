@@ -14,6 +14,7 @@ from backend.gemini_service import (
 def test_gemini_status_and_key_setting():
     status = is_gemini_active()
     assert "active" in status
+    assert "model" in status
     assert "gemini" in status["model"]
 
 

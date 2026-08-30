@@ -1,4 +1,4 @@
-#!/Users/architadarsh/sih2026/.venv/bin/python3.12
+#!/Users/kabir/sih2026/.venv/bin/python3
 import sys
 from antlr4._pygrun import main
 if __name__ == '__main__':
