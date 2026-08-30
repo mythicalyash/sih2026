@@ -12,6 +12,7 @@ import { ProblemsListView } from '@/components/problems/ProblemsListView'
 import { ProblemDetailView } from '@/components/problems/ProblemDetailView'
 import { ChallengeSolverView } from '@/components/problems/ChallengeSolverView'
 import { AITutorView } from '@/components/tutor/AITutorView'
+import LandingPage from '@/QubitLabLanding'
 import type { QuantumProblem, ProblemProgressState } from '@/types/quantum'
 
 const navItems = [
@@ -727,6 +728,8 @@ export default function Page() {
       <Dashboard setActive={handleSelectTab} />
     ) : active === 'Community' ? (
       <Community />
+    ) : active === 'Landing' ? (
+      <LandingPage onGetStarted={() => handleSelectTab('Learn Quantum')} />
     ) : (
       <SettingsView />
     );
