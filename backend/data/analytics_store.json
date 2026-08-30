@@ -5,14 +5,14 @@
     "role": "IIT Delhi \u2014 Quantum Information Group",
     "level": 8,
     "level_title": "Quantum Vanguard",
-    "xp": 20,
+    "xp": 280,
     "max_xp": 5700,
-    "weekly_xp": 1990,
+    "weekly_xp": 2250,
     "streak_days": 14,
     "last_active_date": "2026-08-30"
   },
   "stats": {
-    "simulations_count": 228,
+    "simulations_count": 254,
     "simulations_weekly_delta_pct": 18,
     "quizzes_taken": 45,
     "quizzes_correct": 40,
@@ -3647,6 +3647,318 @@
     {
       "id": "sim_1788105209083",
       "timestamp": "2026-08-30T15:53:29.083839+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105386724",
+      "timestamp": "2026-08-30T15:56:26.724666+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105386734",
+      "timestamp": "2026-08-30T15:56:26.734215+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105386836",
+      "timestamp": "2026-08-30T15:56:26.836982+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105386842",
+      "timestamp": "2026-08-30T15:56:26.842171+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105457914",
+      "timestamp": "2026-08-30T15:57:37.914854+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105457923",
+      "timestamp": "2026-08-30T15:57:37.923698+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105458030",
+      "timestamp": "2026-08-30T15:57:38.030229+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105458044",
+      "timestamp": "2026-08-30T15:57:38.044711+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105459951",
+      "timestamp": "2026-08-30T15:57:39.951934+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105462045",
+      "timestamp": "2026-08-30T15:57:42.045948+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105462091",
+      "timestamp": "2026-08-30T15:57:42.091118+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105466347",
+      "timestamp": "2026-08-30T15:57:46.347767+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 2,
+        "gates": 14
+      }
+    },
+    {
+      "id": "sim_1788105466392",
+      "timestamp": "2026-08-30T15:57:46.392544+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 2,
+        "gates": 14
+      }
+    },
+    {
+      "id": "sim_1788105468606",
+      "timestamp": "2026-08-30T15:57:48.606809+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105476979",
+      "timestamp": "2026-08-30T15:57:56.979686+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105483657",
+      "timestamp": "2026-08-30T15:58:03.657090+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qsim",
+        "qubits": 2,
+        "gates": 14
+      }
+    },
+    {
+      "id": "sim_1788105483683",
+      "timestamp": "2026-08-30T15:58:03.683667+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 2,
+        "gates": 14
+      }
+    },
+    {
+      "id": "sim_1788105484395",
+      "timestamp": "2026-08-30T15:58:04.395663+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105490815",
+      "timestamp": "2026-08-30T15:58:10.815176+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105496390",
+      "timestamp": "2026-08-30T15:58:16.390610+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105500973",
+      "timestamp": "2026-08-30T15:58:20.973786+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105513149",
+      "timestamp": "2026-08-30T15:58:33.149346+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "code_runner_python",
+        "qubits": 0,
+        "gates": 0
+      }
+    },
+    {
+      "id": "sim_1788105555265",
+      "timestamp": "2026-08-30T15:59:15.265837+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105555274",
+      "timestamp": "2026-08-30T15:59:15.274012+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "qiskit_aer",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105555360",
+      "timestamp": "2026-08-30T15:59:15.360374+00:00",
+      "date": "2026-08-30",
+      "type": "simulation_run",
+      "xp": 10,
+      "metadata": {
+        "backend": "multi_backend_compare",
+        "qubits": 4,
+        "gates": 2
+      }
+    },
+    {
+      "id": "sim_1788105555368",
+      "timestamp": "2026-08-30T15:59:15.368237+00:00",
       "date": "2026-08-30",
       "type": "simulation_run",
       "xp": 10,
