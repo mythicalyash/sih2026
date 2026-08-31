@@ -15,6 +15,58 @@ Qubit.lab combines theoretical quantum mechanics with live circuit execution. De
 - A learner dashboard tracking concept mastery, execution history, and daily challenge evaluations.
 
 ---
+## Setup and Installation
+
+### Prerequisites
+- Node.js 20+ or 22+
+- Python 3.11 or 3.12
+- `uv` (recommended) or `pip`
+
+---
+
+### 1. Backend Setup
+
+```bash
+# Navigate to project root
+cd sih1
+
+# Create and activate virtual environment
+uv venv backend/.venv --python 3.12
+source backend/.venv/bin/activate
+
+# Install dependencies
+uv pip install -r backend/requirements.txt
+
+# Copy environment configuration
+cp .env.example .env
+
+# Start FastAPI server on port 8008
+PYTHONPATH=. backend/.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8008 --reload
+```
+
+Interactive API documentation is available at `http://localhost:8008/docs`.
+
+---
+
+### 2. Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd sih1/quantum-algorithm-platform
+
+# Install dependencies
+npm install
+
+# Copy frontend environment configuration
+cp .env.local.example .env.local
+
+# Start Next.js development server on port 3000
+npm run dev -- --port 3000
+```
+
+The web application is accessible at `http://localhost:3000`.
+
+---
 
 ## Core Modules
 
@@ -141,58 +193,6 @@ graph TD
 
 ---
 
-## Setup and Installation
-
-### Prerequisites
-- Node.js 20+ or 22+
-- Python 3.11 or 3.12
-- `uv` (recommended) or `pip`
-
----
-
-### 1. Backend Setup
-
-```bash
-# Navigate to project root
-cd sih1
-
-# Create and activate virtual environment
-uv venv backend/.venv --python 3.12
-source backend/.venv/bin/activate
-
-# Install dependencies
-uv pip install -r backend/requirements.txt
-
-# Copy environment configuration
-cp .env.example .env
-
-# Start FastAPI server on port 8008
-PYTHONPATH=. backend/.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8008 --reload
-```
-
-Interactive API documentation is available at `http://localhost:8008/docs`.
-
----
-
-### 2. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd sih1/quantum-algorithm-platform
-
-# Install dependencies
-npm install
-
-# Copy frontend environment configuration
-cp .env.local.example .env.local
-
-# Start Next.js development server on port 3000
-npm run dev -- --port 3000
-```
-
-The web application is accessible at `http://localhost:3000`.
-
----
 
 ## Testing
 
