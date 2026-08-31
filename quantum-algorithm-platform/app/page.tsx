@@ -212,7 +212,7 @@ function Home({ setActive }: { setActive: (v: string) => void }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#ded7cb]/60">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#c96b2c] tracking-wider uppercase mb-0.5">
-            <span>Thursday, August 29, 2024</span>
+            <span>Thursday, August 31, 2026</span>
             <span>·</span>
             <span className="bg-[#fff5eb] border border-[#c96b2c]/30 px-2 py-0.2 rounded-full text-[10px]">
               Level 08 Quantum Explorer
