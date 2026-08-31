@@ -550,36 +550,6 @@ Future versions can introduce:
 ---
 
 
-
-## System Architecture
-
-```mermaid
-graph TD
-    User([Browser Client]) <--> Frontend[Next.js 16 + React 19 App<br/>Port 3000]
-    
-    subgraph Frontend Layer
-        Frontend --> AppShell[AppShell & Navigation]
-        Frontend --> Simulator[Simulator Workbench]
-        Frontend --> Courses[Course Studio]
-        Frontend --> TutorView[AI Tutor View]
-        Frontend --> ProblemBank[Problem Solver & Grader]
-        Frontend --> DashboardView[Learner Dashboard]
-    end
-
-    Frontend <--> Backend[FastAPI Python Backend<br/>Port 8008]
-    Frontend <--> Supabase[(Supabase Database / Auth)]
-
-    subgraph Backend Layer
-        Backend --> IRModule[Circuit IR Engine]
-        Backend --> QiskitSim[Qiskit Aer Simulator]
-        Backend --> PennySim[PennyLane Backend]
-        Backend --> CirqSim[Cirq Engine]
-        Backend --> Comparator[Cross-Backend Comparator]
-        Backend --> AIService[Gemini AI Service]
-        Backend --> LocalStore[(SQLite & JSON Analytics)]
-    end
-```
-
 ---
 
 ## Directory Structure
